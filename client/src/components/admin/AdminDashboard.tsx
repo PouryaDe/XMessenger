@@ -205,7 +205,7 @@ export const AdminDashboard: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to send:', err);
-      alert(t('imageUploadFailed') || 'خطا در ارسال تصویر');
+      alert(t('imageUploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -336,8 +336,7 @@ export const AdminDashboard: React.FC = () => {
                       <span>
                         {formatLastSeen(
                           lastSeenUsers[activeUser.id] || activeUser.last_seen,
-                          Boolean(onlineUsers[activeUser.id]),
-                          i18n.language || 'fa'
+                          Boolean(onlineUsers[activeUser.id])
                         )}
                       </span>
                     )}

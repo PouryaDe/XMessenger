@@ -172,7 +172,7 @@ export const UserChatView: React.FC = () => {
       }
     } catch (err) {
       console.error('Failed to send:', err);
-      alert(t('imageUploadFailed') || 'خطا در ارسال تصویر');
+      alert(t('imageUploadFailed'));
     } finally {
       setIsUploading(false);
     }
@@ -223,7 +223,7 @@ export const UserChatView: React.FC = () => {
               ) : isAdminOnline ? (
                 <span className="text-emerald-500 font-medium">{t('online')}</span>
               ) : (
-                <span>{formatLastSeen(adminLastSeen || adminInfo?.lastSeen, isAdminOnline, i18n.language || 'fa')}</span>
+                <span>{formatLastSeen(adminLastSeen || adminInfo?.lastSeen, isAdminOnline)}</span>
               )}
             </p>
           </div>

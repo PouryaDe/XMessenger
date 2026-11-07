@@ -1,20 +1,21 @@
+import i18n from '../i18n/index.js';
+
 export function formatLastSeen(
   lastSeenIso?: string | null,
-  isOnline: boolean = false,
-  lang: string = 'fa'
+  isOnline: boolean = false
 ): string {
   if (isOnline) {
-    return lang === 'fa' ? 'آنلاین' : 'online';
+    return i18n.t('lastSeenOnline');
   }
 
   if (!lastSeenIso) {
-    return lang === 'fa' ? 'آفلاین' : 'offline';
+    return i18n.t('lastSeenOffline');
   }
 
   try {
     const date = new Date(lastSeenIso);
     if (isNaN(date.getTime())) {
-      return lang === 'fa' ? 'آفلاین' : 'offline';
+      return i18n.t('lastSeenOffline');
     }
 
     const now = new Date();
@@ -22,22 +23,19 @@ export function formatLastSeen(
     const diffSec = Math.max(0, Math.floor(diffMs / 1000));
     const diffMin = Math.floor(diffSec / 60);
 
-    const timeStr = date.toLocaleTimeString(lang === 'fa' ? 'fa-IR' : 'en-US', {
+    const locale = i18n.language === 'fa' ? 'fa-IR' : 'en-US';
+    const timeStr = date.toLocaleTimeString(locale, {
       hour: '2-digit',
       minute: '2-digit',
       hour12: false
     });
 
     if (diffSec < 60) {
-      return lang === 'fa' ? 'آخرین بازدید لحظاتی پیش' : 'last seen just now';
+      return i18n.t('lastSeenJustNow');
     }
 
     if (diffMin < 60) {
-      if (lang === 'fa') {
-        const persianDigits = diffMin.toLocaleString('fa-IR');
-        return `آخرین بازدید ${persianDigits} دقیقه پیش`;
-      }
-      return `last seen ${diffMin} minute${diffMin > 1 ? 's' : ''} ago`;
+      return i18n.t('lastSeenMinutesAgo', { count: diffMin });
     }
 
     // Check same day (today)
@@ -47,7 +45,7 @@ export function formatLastSeen(
       date.getFullYear() === now.getFullYear();
 
     if (isToday) {
-      return lang === 'fa' ? `آخرین بازدید امروز ساعت ${timeStr}` : `last seen today at ${timeStr}`;
+      return i18n.t('lastSeenToday', { time: timeStr });
     }
 
     // Check yesterday
@@ -59,24 +57,17 @@ export function formatLastSeen(
       date.getFullYear() === yesterday.getFullYear();
 
     if (isYesterday) {
-      return lang === 'fa' ? `آخرین بازدید دیروز ساعت ${timeStr}` : `last seen yesterday at ${timeStr}`;
+      return i18n.t('lastSeenYesterday', { time: timeStr });
     }
 
     // Older date
-    if (lang === 'fa') {
-      const dateStr = new Intl.DateTimeFormat('fa-IR', {
-        month: 'short',
-        day: 'numeric'
-      }).format(date);
-      return `آخرین بازدید ${dateStr} ساعت ${timeStr}`;
-    } else {
-      const dateStr = date.toLocaleDateString('en-US', {
-        month: 'short',
-        day: 'numeric'
-      });
-      return `last seen ${dateStr} at ${timeStr}`;
-    }
+    const dateStr = new Intl.DateTimeFormat(locale, {
+      month: 'short',
+      day: 'numeric'
+    }).format(date);
+
+    return i18n.t('lastSeenAt', { date: dateStr, time: timeStr });
   } catch {
-    return lang === 'fa' ? 'آفلاین' : 'offline';
+    return i18n.t('lastSeenOffline');
   }
 }

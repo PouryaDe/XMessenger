@@ -166,7 +166,17 @@ const resources = {
       restoreSuccessMsg: 'دیتابیس با موفقیت بازیابی شد.',
       chooseFile: 'انتخاب فایل',
       noFileChosen: 'فایلی انتخاب نشده',
-      defaultOption: 'پیش‌فرض'
+      defaultOption: 'پیش‌فرض',
+      // Last Seen & Date
+      lastSeenOnline: 'آنلاین',
+      lastSeenOffline: 'آفلاین',
+      lastSeenJustNow: 'آخرین بازدید لحظاتی پیش',
+      lastSeenMinutesAgo: 'آخرین بازدید {{count}} دقیقه پیش',
+      lastSeenToday: 'آخرین بازدید امروز ساعت {{time}}',
+      lastSeenYesterday: 'آخرین بازدید دیروز ساعت {{time}}',
+      lastSeenAt: 'آخرین بازدید {{date}} ساعت {{time}}',
+      changeLanguage: 'تغییر زبان',
+      onlyImagesAllowed: 'فقط فایل‌های تصویری مجاز هستند'
     }
   },
   en: {
@@ -333,7 +343,18 @@ const resources = {
       restoringDatabase: 'Validating and restoring database...',
       restoreSuccessMsg: 'Database restored successfully.',
       chooseFile: 'Choose file',
-      noFileChosen: 'No file chosen'
+      noFileChosen: 'No file chosen',
+      // Last Seen & Date
+      lastSeenOnline: 'online',
+      lastSeenOffline: 'offline',
+      lastSeenJustNow: 'last seen just now',
+      lastSeenMinutesAgo: 'last seen {{count}} minute ago',
+      lastSeenMinutesAgo_plural: 'last seen {{count}} minutes ago',
+      lastSeenToday: 'last seen today at {{time}}',
+      lastSeenYesterday: 'last seen yesterday at {{time}}',
+      lastSeenAt: 'last seen {{date}} at {{time}}',
+      changeLanguage: 'Change Language',
+      onlyImagesAllowed: 'Only image files are allowed'
     }
   }
 };

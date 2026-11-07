@@ -211,7 +211,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                           const imgMatch = u.lastMessage.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
                           if (imgMatch) {
                             const cap = imgMatch[2] ? imgMatch[2].trim() : '';
-                            return `📷 ${t('photo') || 'عکس'}${cap ? `: ${cap}` : ''}`;
+                            return `📷 ${t('photo')}${cap ? `: ${cap}` : ''}`;
                           }
                           return u.lastMessage.text;
                         })()

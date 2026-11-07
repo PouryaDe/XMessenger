@@ -221,7 +221,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           {/* Feedback badge for Copied */}
           {copied && (
             <div className="absolute -top-7 start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-floating animate-message">
-              {t('copied') || 'کپی شد'}
+              {t('copied')}
             </div>
           )}
 
@@ -238,7 +238,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors"
               >
                 <Copy className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                <span>{t('copyText') || 'کپی متن'}</span>
+                <span>{t('copyText')}</span>
               </button>
 
               <button
@@ -246,7 +246,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
                 className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
               >
                 <Trash2 className="w-4 h-4 shrink-0" />
-                <span>{t('deleteForEveryone') || 'حذف دوطرفه'}</span>
+                <span>{t('deleteForEveryone')}</span>
               </button>
             </div>
           )}
