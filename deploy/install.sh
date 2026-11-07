@@ -32,9 +32,32 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Detect Script Directory
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd)"
+# Detect execution context (piped curl vs cloned repo)
+if [ -f "deploy/docker-compose.yml" ]; then
+  SCRIPT_DIR="$(pwd)/deploy"
+  PROJECT_ROOT="$(pwd)"
+elif [ -f "docker-compose.yml" ]; then
+  SCRIPT_DIR="$(pwd)"
+  PROJECT_ROOT="$(cd .. && pwd)"
+else
+  # Running directly via curl -sSL ... | sudo bash
+  echo -e "${BLUE}Detected one-line remote execution. Setting up /opt/xmessenger...${NC}"
+  INSTALL_DIR="/opt/xmessenger"
+  if ! command -v git &> /dev/null; then
+    apt-get update -y && apt-get install -y git curl openssl
+  fi
+  if [ -d "$INSTALL_DIR/.git" ]; then
+    echo -e "${YELLOW}Existing repository found in $INSTALL_DIR. Pulling latest changes...${NC}"
+    cd "$INSTALL_DIR"
+    git pull origin main || true
+  else
+    rm -rf "$INSTALL_DIR"
+    git clone https://github.com/PouryaDe/XMessenger.git "$INSTALL_DIR"
+    cd "$INSTALL_DIR"
+  fi
+  SCRIPT_DIR="$INSTALL_DIR/deploy"
+  PROJECT_ROOT="$INSTALL_DIR"
+fi
 
 # 2. Check & Install Dependencies (curl, openssl, git, docker)
 echo -e "${BLUE}[1/6] Checking system packages & dependencies...${NC}"
@@ -60,20 +83,28 @@ if ! docker compose version &> /dev/null; then
   apt-get update -y && apt-get install -y docker-compose-plugin || true
 fi
 
-# 3. Interactive Configuration
+# 3. Interactive Configuration (Supports piped curl with /dev/tty fallback)
 echo -e "\n${BLUE}[2/6] Configuring Domain and Security...${NC}"
 
 if [ -z "$DOMAIN" ]; then
-  read -p "Enter your domain or subdomain (e.g., chat.example.com): " DOMAIN
+  if [ -t 0 ]; then
+    read -p "Enter your domain or subdomain (e.g., chat.example.com): " DOMAIN
+  elif [ -e /dev/tty ]; then
+    read -p "Enter your domain or subdomain (e.g., chat.example.com): " DOMAIN < /dev/tty
+  fi
 fi
 
 if [ -z "$DOMAIN" ]; then
-  echo -e "${RED}[ERROR] Domain name cannot be empty.${NC}"
+  echo -e "${RED}[ERROR] Domain name cannot be empty. Please set DOMAIN=yourdomain.com before running.${NC}"
   exit 1
 fi
 
 if [ -z "$EMAIL" ]; then
-  read -p "Enter your email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL
+  if [ -t 0 ]; then
+    read -p "Enter your email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL
+  elif [ -e /dev/tty ]; then
+    read -p "Enter your email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL < /dev/tty
+  fi
 fi
 
 if [ -z "$EMAIL" ]; then
