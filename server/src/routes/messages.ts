@@ -202,7 +202,7 @@ export function createMessagesRouter(io?: Server) {
       }
 
       db.prepare(`
-        DELETE FROM messages 
+        DELETE FROM messages
         WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
       `).run(currentUser.id, admin.id, admin.id, currentUser.id);
 

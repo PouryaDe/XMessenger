@@ -14,7 +14,7 @@ export function startTtlWorker(io?: Server) {
   cleanupTimer = setInterval(() => {
     try {
       const now = new Date().toISOString();
-      
+
       // 1. Fetch expired message IDs to notify clients
       const expiredRows = db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE expires_at <= ?').all(now) as Array<{
         id: string;

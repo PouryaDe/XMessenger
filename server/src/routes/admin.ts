@@ -31,8 +31,8 @@ export function createAdminRouter(io?: Server) {
       const usersWithMeta = users.map(user => {
         // Count unread messages sent by user to admin
         const unreadCount = db.prepare(`
-          SELECT COUNT(*) as count 
-          FROM messages 
+          SELECT COUNT(*) as count
+          FROM messages
           WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
         `).get(user.id, req.user!.id) as { count: number };
 
@@ -91,7 +91,7 @@ export function createAdminRouter(io?: Server) {
       }
 
       const result = db.prepare('UPDATE users SET status = ? WHERE id = ? AND role = ?').run(status, id, 'user');
-      
+
       if (result.changes === 0) {
         return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
       }
@@ -112,7 +112,7 @@ export function createAdminRouter(io?: Server) {
     try {
       const { id } = req.params;
       const user = db.prepare('SELECT id, role FROM users WHERE id = ?').get(id) as { id: string; role: string } | undefined;
-      
+
       if (!user || user.role === 'admin') {
         return res.status(400).json({ error: 'CANNOT_DELETE', message: 'Cannot delete admin or non-existent user' });
       }
@@ -174,7 +174,7 @@ export function createAdminRouter(io?: Server) {
       const adminId = req.user!.id;
 
       db.prepare(`
-        DELETE FROM messages 
+        DELETE FROM messages
         WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
       `).run(adminId, userId, userId, adminId);
 

@@ -68,7 +68,7 @@ export function initDatabase() {
 
   // Seed initial Admin if not exists
   const existingAdmin = db.prepare("SELECT id, username FROM users WHERE role = 'admin'").get() as { id: string; username: string } | undefined;
-  
+
   if (!existingAdmin) {
     const adminId = uuidv4();
     const defaultAdminUsername = process.env.ADMIN_USERNAME || 'admin';

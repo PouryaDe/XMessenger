@@ -18,7 +18,7 @@ export interface EncryptedPayload {
 export function encryptMessage(plainText: string): EncryptedPayload {
   const iv = crypto.randomBytes(IV_LENGTH);
   const cipher = crypto.createCipheriv(ALGORITHM, KEY_BUFFER, iv);
-  
+
   let encrypted = cipher.update(plainText, 'utf8', 'hex');
   encrypted += cipher.final('hex');
   const authTag = cipher.getAuthTag().toString('hex');

@@ -37,7 +37,7 @@ export function authenticate(req: AuthenticatedRequest, res: Response, next: Nex
 
   try {
     const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
-    
+
     // Fetch live user status from database to prevent stale tokens after ban/approval changes
     const user = db.prepare('SELECT id, username, role, status FROM users WHERE id = ?').get(decoded.id) as AuthUser | undefined;
 
@@ -67,11 +67,11 @@ export function requireActive(req: AuthenticatedRequest, res: Response, next: Ne
   if (!req.user) {
     return res.status(401).json({ error: 'UNAUTHORIZED', message: 'Authentication required' });
   }
-  
+
   if (req.user.status === 'pending') {
-    return res.status(403).json({ 
-      error: 'ACCOUNT_PENDING_APPROVAL', 
-      message: 'Account is pending administrative approval' 
+    return res.status(403).json({
+      error: 'ACCOUNT_PENDING_APPROVAL',
+      message: 'Account is pending administrative approval'
     });
   }
 
