@@ -9,13 +9,13 @@ import { MessageItem } from '../common/MessageItem.js';
 import { getSocket } from '../../services/socket.js';
 import { formatLastSeen } from '../../utils/date.js';
 import { 
-  Send, 
+  Paperclip,
   CheckCircle, 
   Ban, 
   Trash2, 
   ArrowLeft, 
-  UserX,
-  MessageSquare
+  UserX, 
+  MessageSquare 
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -360,31 +360,52 @@ export const AdminDashboard: React.FC = () => {
             <footer className="p-4 shrink-0">
               <form
                 onSubmit={handleSend}
-                className="flex items-center gap-2.5 max-w-3xl mx-auto"
-                dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
+                className="max-w-3xl mx-auto"
               >
-                <div data-input-pill className="flex-1 flex items-center px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.05] dark:border-white/5">
+                <div
+                  data-input-pill
+                  dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
+                  className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.06] dark:border-white/10 transition-all focus-within:border-stone-400 dark:focus-within:border-slate-500"
+                >
+                  {/* Attachment Button */}
+                  <button
+                    type="button"
+                    className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0 ms-1"
+                    title={t('attachFile')}
+                  >
+                    <Paperclip className="w-4 h-4" />
+                  </button>
+
                   <input
                     type="text"
                     dir={isInputRtl ? 'rtl' : 'ltr'}
                     value={inputText}
                     onChange={handleInputChange}
                     placeholder={t('typeMessage')}
-                    className={`w-full bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans ${
+                    className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans px-3 ${
                       isInputRtl ? 'text-right' : 'text-left'
                     }`}
                   />
-                </div>
 
-                {/* Telegram-style Circular Send Button */}
-                <button
-                  type="submit"
-                  disabled={!inputText.trim()}
-                  className="w-11 h-11 rounded-full bg-[#2AABEE] hover:bg-[#229ED9] text-white shadow-soft flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 shrink-0"
-                  title={t('send')}
-                >
-                  <Send className="w-5 h-5 text-white" />
-                </button>
+                  {/* Telegram-style Circular Send Button INSIDE the Pill */}
+                  <button
+                    type="submit"
+                    disabled={!inputText.trim()}
+                    className="w-9 h-9 rounded-full bg-[#2AABEE] hover:bg-[#229ED9] text-white shadow-soft flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-35 disabled:scale-100 disabled:cursor-not-allowed shrink-0 mx-0.5"
+                    title={t('send')}
+                  >
+                    {/* Authentic Telegram Paper Airplane Icon */}
+                    <svg
+                      viewBox="0 0 32 32"
+                      fill="currentColor"
+                      className={`w-4 h-4 text-white transition-transform ${
+                        i18n.language === 'fa' ? '-scale-x-100 -translate-x-0.5' : 'translate-x-0.5'
+                      }`}
+                    >
+                      <path d="M29.919 6.163l-4.225 19.925c-0.319 1.406-1.15 1.756-2.331 1.094l-6.438-4.744-3.106 2.988c-0.344 0.344-0.631 0.631-1.294 0.631l0.463-6.556 11.931-10.781c0.519-0.462-0.113-0.719-0.806-0.256l-14.75 9.288-6.35-1.988c-1.381-0.431-1.406-1.381 0.288-2.044l24.837-9.569c1.15-0.431 2.169 0.231 1.825 1.863z" />
+                    </svg>
+                  </button>
+                </div>
               </form>
             </footer>
           </>
