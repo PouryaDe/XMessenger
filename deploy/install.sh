@@ -371,9 +371,10 @@ if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-certbot$'; then
     sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done;'
 fi
 
-# 10. Install Global Multi-Domain CLI Management Tool (xmessenger)
-cp -f "${PROJECT_ROOT}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || cp -f "deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
-chmod +x /usr/local/bin/xmessenger 2>/dev/null || true
+# 10. Install Global Multi-Domain CLI Management Tool (xmessenger & xupdate)
+ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || cp -f "${PROJECT_ROOT}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
+ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
+chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" /usr/local/bin/xmessenger /usr/local/bin/xupdate 2>/dev/null || true
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${GREEN}${BOLD}🎉 XMessenger for ${DOMAIN} successfully deployed!${NC}"

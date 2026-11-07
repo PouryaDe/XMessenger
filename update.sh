@@ -47,22 +47,32 @@ UPDATED_COUNT=0
 
 CONTAINERS=$(docker ps -a --format '{{.Names}}' | grep '^xmessenger-' | grep -v 'nginx' | grep -v 'certbot' || true)
 
-# If no container matched, check instances directory as fallback
-if [ -z "$CONTAINERS" ] && [ -d "${BASE_DIR}/instances" ]; then
+# Include any configured domain instances
+if [ -d "${BASE_DIR}/instances" ]; then
   for d in $(find "${BASE_DIR}/instances" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null || true); do
     s=$(echo "$d" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
     CONTAINERS="${CONTAINERS} xmessenger-${s}"
   done
 fi
 
+# Ensure primary instance is always included if exists
+if docker ps -a --format '{{.Names}}' | grep -q 'xmessenger-xchat-iranistream-com'; then
+  CONTAINERS="${CONTAINERS} xmessenger-xchat-iranistream-com"
+fi
+
+# Deduplicate container names
+CONTAINERS=$(echo "$CONTAINERS" | tr ' ' '\n' | sort -u | grep -v '^$' || true)
+
 for c in $CONTAINERS; do
   [ -z "$c" ] && continue
-  echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
-  docker cp client/dist/. "${c}:/app/client-dist/"
-  docker cp server/dist/. "${c}:/app/dist/"
-  docker restart "${c}"
-  echo -e "${GREEN}✓ Container ${c} updated and restarted!${NC}"
-  UPDATED_COUNT=$((UPDATED_COUNT + 1))
+  if docker ps -a --format '{{.Names}}' | grep -q "^${c}$"; then
+    echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
+    docker cp client/dist/. "${c}:/app/client-dist/"
+    docker cp server/dist/. "${c}:/app/dist/"
+    docker restart "${c}"
+    echo -e "${GREEN}✓ Container ${c} updated and restarted!${NC}"
+    UPDATED_COUNT=$((UPDATED_COUNT + 1))
+  fi
 done
 
 if [ "$UPDATED_COUNT" -eq 0 ]; then
@@ -84,6 +94,11 @@ ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
 chmod +x "${BASE_DIR}/update.sh" 2>/dev/null || true
 ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 chmod +x "${BASE_DIR}/deploy/xmessenger.sh" 2>/dev/null || true
+
+# Also alias in root .bashrc for convenience
+if [ -f /root/.bashrc ]; then
+  grep -q "alias xupdate=" /root/.bashrc 2>/dev/null || echo "alias xupdate='bash /opt/xmessenger/update.sh'" >> /root/.bashrc
+fi
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${GREEN}${BOLD}✓ XMessenger hot update completed successfully!${NC}"
