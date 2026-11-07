@@ -19,6 +19,12 @@ BASE_DIR="/opt/xmessenger"
 SHARED_DIR="${BASE_DIR}/shared"
 INSTANCES_DIR="${BASE_DIR}/instances"
 
+# Self-healing: ensure global shortcuts always point to latest repository files
+if [ -d "${BASE_DIR}" ] && [ "$EUID" -eq 0 ]; then
+  ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
+  ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
+fi
+
 # Direct CLI commands (non-interactive shortcuts)
 if [ "$1" == "update" ] || [ "$1" == "up" ] || [ "$1" == "-u" ]; then
   cd "${BASE_DIR}"
@@ -253,8 +259,9 @@ while true; do
       show_banner
       echo -e "${YELLOW}Syncing and updating XMessenger to latest version...${NC}\n"
       cd "${BASE_DIR}"
-      git fetch origin main 2>/dev/null || true
-      git reset --hard origin/main 2>/dev/null || true
+      git config --global --add safe.directory "${BASE_DIR}" 2>/dev/null || true
+      git fetch origin main
+      git reset --hard origin/main
       bash "${BASE_DIR}/update.sh"
       read -p "Press Enter to continue..." dummy
       ;;

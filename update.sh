@@ -37,13 +37,26 @@ echo -e "${NC}"
 
 # 1. Force sync with latest code from GitHub (immune to local merge conflicts)
 echo -e "${BLUE}[1/4] Syncing latest updates from GitHub...${NC}"
+git config --global --add safe.directory "${BASE_DIR}" 2>/dev/null || true
 git fetch origin main
 git reset --hard origin/main
 
 # 2. Hot-deploy compiled assets directly into all running containers (Instant update)
 echo -e "\n${BLUE}[2/4] Live-updating all running messenger containers...${NC}"
 UPDATED_COUNT=0
-for c in $(docker ps -a --format '{{.Names}}' | grep '^xmessenger-' | grep -v 'nginx' | grep -v 'certbot'); do
+
+CONTAINERS=$(docker ps -a --format '{{.Names}}' | grep '^xmessenger-' | grep -v 'nginx' | grep -v 'certbot' || true)
+
+# If no container matched, check instances directory as fallback
+if [ -z "$CONTAINERS" ] && [ -d "${BASE_DIR}/instances" ]; then
+  for d in $(find "${BASE_DIR}/instances" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null || true); do
+    s=$(echo "$d" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+    CONTAINERS="${CONTAINERS} xmessenger-${s}"
+  done
+fi
+
+for c in $CONTAINERS; do
+  [ -z "$c" ] && continue
   echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
   docker cp client/dist/. "${c}:/app/client-dist/"
   docker cp server/dist/. "${c}:/app/dist/"
