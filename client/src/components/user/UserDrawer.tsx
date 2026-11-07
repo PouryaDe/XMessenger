@@ -8,7 +8,6 @@ import { ThemeToggle } from '../common/ThemeToggle.js';
 import { 
   X, 
   ShieldCheck, 
-  User as UserIcon, 
   KeyRound, 
   Trash2, 
   LogOut
@@ -62,56 +61,56 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     <div className="fixed inset-0 z-50 flex justify-end rtl:justify-start">
       {/* Backdrop */}
       <div 
-        className="fixed inset-0 bg-slate-950/60 backdrop-blur-xs transition-opacity"
+        className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity"
         onClick={onClose}
       />
 
       {/* Drawer content */}
-      <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-white dark:bg-slate-900 border-x border-gray-200 dark:border-slate-800 shadow-2xl flex flex-col z-10 animate-message">
+      <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-x border-stone-200/60 dark:border-slate-800 shadow-2xl flex flex-col z-10 animate-message font-sans">
         {/* Header */}
-        <div className="p-5 border-b border-gray-100 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-6 border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary-500/10 dark:bg-primary-500/20 text-primary-500 flex items-center justify-center font-bold">
-              <UserIcon className="w-5 h-5" />
+            <div className="w-11 h-11 rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10 text-sm font-mono uppercase">
+              {user?.username.substring(0, 2)}
             </div>
             <div>
-              <h3 className="font-semibold text-gray-900 dark:text-white text-sm">
+              <h3 className="font-bold text-slate-900 dark:text-white text-sm">
                 {user?.username}
               </h3>
-              <span className="text-[11px] text-primary-600 dark:text-primary-400 font-mono">
+              <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">
                 {t('statusActive')}
               </span>
             </div>
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-slate-800"
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           >
-            <X className="w-5 h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* Body Menu Items */}
-        <div className="flex-1 overflow-y-auto p-4 space-y-3">
+        <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
           {/* Privacy Security Box */}
-          <div className="p-3.5 rounded-2xl bg-primary-50/50 dark:bg-primary-950/20 border border-primary-200/50 dark:border-primary-900/30">
-            <div className="flex items-center gap-2 text-primary-600 dark:text-primary-400 font-medium text-xs mb-1.5">
+          <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5">
+            <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1.5">
               <ShieldCheck className="w-4 h-4 shrink-0" />
               <span>{t('security')}</span>
             </div>
-            <p className="text-[11px] text-gray-600 dark:text-slate-400 leading-relaxed">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-relaxed">
               {t('encryptionInfo')}
             </p>
           </div>
 
-          {/* Quick Toggles */}
-          <div className="p-3 rounded-2xl bg-gray-50 dark:bg-slate-800/60 border border-gray-200/70 dark:border-slate-800 space-y-2.5">
+          {/* Quick Toggles in Rounded Card */}
+          <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5 space-y-3">
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">{t('language')}</span>
+              <span className="text-xs text-slate-800 dark:text-slate-300 font-medium">{t('language')}</span>
               <LanguageToggle />
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-xs text-gray-700 dark:text-gray-300 font-medium">{t('theme')}</span>
+              <span className="text-xs text-slate-800 dark:text-slate-300 font-medium">{t('theme')}</span>
               <ThemeToggle />
             </div>
           </div>
@@ -119,27 +118,31 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
           {/* Password change option */}
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl text-xs font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
+            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-white/80 transition-all"
           >
-            <KeyRound className="w-4 h-4 text-primary-500" />
+            <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 shrink-0">
+              <KeyRound className="w-4 h-4" />
+            </div>
             <span>{t('changePassword')}</span>
           </button>
 
           {/* Wipe Entire Chat */}
           <button
             onClick={handleClearHistory}
-            className="w-full flex items-center gap-3 p-3 rounded-2xl text-xs font-medium text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors"
+            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50/50 transition-all"
           >
-            <Trash2 className="w-4 h-4" />
+            <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+              <Trash2 className="w-4 h-4" />
+            </div>
             <span>{t('clearChat')}</span>
           </button>
         </div>
 
         {/* Footer Logout */}
-        <div className="p-4 border-t border-gray-100 dark:border-slate-800">
+        <div className="p-5 border-t border-stone-200/50 dark:border-slate-800">
           <button
             onClick={logout}
-            className="w-full py-2.5 px-4 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-red-500 hover:text-white dark:hover:bg-red-600 text-gray-700 dark:text-slate-300 text-xs font-medium transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold transition-all shadow-md hover:scale-102 active:scale-98 flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             <span>{t('logout')}</span>
@@ -149,10 +152,10 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
 
       {/* Change Password Modal */}
       {showPasswordModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-black/70 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl p-6 shadow-2xl">
-            <h4 className="text-sm font-bold mb-4 text-gray-900 dark:text-white flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-primary-500" />
+        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
+          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-stone-200/70 dark:border-slate-800 rounded-[28px] p-6 shadow-floating">
+            <h4 className="text-sm font-bold mb-4 text-slate-900 dark:text-white flex items-center gap-2">
+              <KeyRound className="w-4 h-4 text-amber-500" />
               <span>{t('changePassword')}</span>
             </h4>
 
@@ -162,25 +165,25 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
             )}
 
-            <form onSubmit={handlePasswordSubmit} className="space-y-3">
+            <form onSubmit={handlePasswordSubmit} className="space-y-3 font-sans">
               <div>
-                <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">{t('currentPassword')}</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">{t('currentPassword')}</label>
                 <input
                   type="password"
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
               <div>
-                <label className="block text-xs text-gray-500 dark:text-slate-400 mb-1">{t('newPassword')}</label>
+                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">{t('newPassword')}</label>
                 <input
                   type="password"
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  className="w-full px-3 py-2 rounded-xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 text-xs"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
                 />
               </div>
 
@@ -188,13 +191,13 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => setShowPasswordModal(false)}
-                  className="flex-1 py-2 rounded-xl bg-gray-100 dark:bg-slate-800 text-xs font-medium"
+                  className="flex-1 py-2.5 rounded-full bg-stone-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300"
                 >
                   {t('cancel')}
                 </button>
                 <button
                   type="submit"
-                  className="flex-1 py-2 rounded-xl bg-primary-600 text-white text-xs font-medium hover:bg-primary-500"
+                  className="flex-1 py-2.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold shadow-md"
                 >
                   {t('save')}
                 </button>

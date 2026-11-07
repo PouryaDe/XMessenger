@@ -54,34 +54,34 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans">
       {/* Top action controls */}
-      <div className="fixed top-4 right-4 rtl:right-auto rtl:left-4 flex items-center gap-2">
+      <div className="fixed top-5 right-5 rtl:right-auto rtl:left-5 flex items-center gap-2.5">
         <LanguageToggle />
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-md bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-800 rounded-3xl shadow-2xl p-6 sm:p-8 relative overflow-hidden">
-        {/* Glow decoration */}
-        <div className="absolute -top-12 -right-12 w-32 h-32 bg-primary-500/20 rounded-full blur-2xl pointer-events-none" />
-        <div className="absolute -bottom-12 -left-12 w-32 h-32 bg-blue-500/20 rounded-full blur-2xl pointer-events-none" />
+      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-slate-900/95 border border-stone-200/60 dark:border-slate-800 rounded-[32px] shadow-floating p-7 sm:p-9 relative overflow-hidden">
+        {/* Soft Ambient Glow */}
+        <div className="absolute -top-16 -right-16 w-36 h-36 bg-amber-300/20 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-emerald-300/20 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-6">
-          <div className="w-14 h-14 rounded-2xl bg-primary-500/10 dark:bg-primary-500/20 border border-primary-500/30 flex items-center justify-center mb-3 shadow-inner">
-            <Shield className="w-8 h-8 text-primary-500" />
+        <div className="flex flex-col items-center text-center mb-7">
+          <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-slate-800 border border-stone-200/50 dark:border-slate-700 flex items-center justify-center mb-4 shadow-soft">
+            <Shield className="w-8 h-8 text-slate-800 dark:text-amber-400" />
           </div>
-          <h1 className="text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {t('appName')}
           </h1>
-          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1 max-w-xs">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
             {t('tagline')}
           </p>
         </div>
 
         {/* Error notification */}
         {error && (
-          <div className="mb-4 p-3 rounded-xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+          <div className="mb-4 p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
@@ -90,7 +90,7 @@ export const AuthModal: React.FC = () => {
         {/* Form */}
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1">
               {t('username')}
             </label>
             <div className="relative">
@@ -102,14 +102,14 @@ export const AuthModal: React.FC = () => {
                 autoComplete="username"
                 dir="ltr"
                 placeholder="e.g. user101"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all font-mono"
+                className="w-full px-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 font-mono shadow-inner"
               />
-              <UserIcon className="w-4 h-4 text-gray-400 absolute right-3 rtl:right-auto rtl:left-3 top-3.5" />
+              <UserIcon className="w-4 h-4 text-slate-400 absolute right-4 rtl:right-auto rtl:left-4 top-3.5" />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1">
               {t('password')}
             </label>
             <div className="relative">
@@ -120,15 +120,15 @@ export const AuthModal: React.FC = () => {
                 required
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 dir="ltr"
-                className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+                className="w-full px-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
               />
-              <Lock className="w-4 h-4 text-gray-400 absolute right-3 rtl:right-auto rtl:left-3 top-3.5" />
+              <Lock className="w-4 h-4 text-slate-400 absolute right-4 rtl:right-auto rtl:left-4 top-3.5" />
             </div>
           </div>
 
           {isRegister && (
             <div>
-              <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1.5">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1">
                 {t('confirmPassword')}
               </label>
               <div className="relative">
@@ -139,20 +139,21 @@ export const AuthModal: React.FC = () => {
                   required
                   autoComplete="new-password"
                   dir="ltr"
-                  className="w-full px-4 py-2.5 rounded-xl border border-gray-300 dark:border-slate-700 bg-gray-50 dark:bg-slate-800/80 text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all"
+                  className="w-full px-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
                 />
-                <CheckCircle2 className="w-4 h-4 text-gray-400 absolute right-3 rtl:right-auto rtl:left-3 top-3.5" />
+                <CheckCircle2 className="w-4 h-4 text-slate-400 absolute right-4 rtl:right-auto rtl:left-4 top-3.5" />
               </div>
             </div>
           )}
 
+          {/* Black Primary Action Button */}
           <button
             type="submit"
             disabled={Boolean(loading || (isRegister && appMeta && !appMeta.registrationEnabled))}
-            className="w-full py-3 px-4 rounded-xl bg-primary-600 hover:bg-primary-500 text-white font-medium text-sm transition-all shadow-lg shadow-primary-500/25 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed mt-2"
+            className="w-full py-3.5 px-5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-xs transition-all shadow-md hover:scale-102 active:scale-98 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed mt-3"
           >
             {loading ? (
-              <span className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              <span className="w-4 h-4 border-2 border-white/40 border-t-white dark:border-slate-900/40 dark:border-t-slate-900 rounded-full animate-spin" />
             ) : (
               <>
                 <span>{isRegister ? t('register') : t('login')}</span>
@@ -163,14 +164,14 @@ export const AuthModal: React.FC = () => {
         </form>
 
         {/* Toggle between Login and Register */}
-        <div className="mt-6 pt-4 border-t border-gray-100 dark:border-slate-800 text-center">
+        <div className="mt-6 pt-4 border-t border-stone-100 dark:border-slate-800 text-center">
           {isRegister ? (
             <button
               onClick={() => {
                 setIsRegister(false);
                 setError(null);
               }}
-              className="text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium"
+              className="text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 font-semibold"
             >
               {t('haveAccount')}
             </button>
@@ -181,7 +182,7 @@ export const AuthModal: React.FC = () => {
                   setIsRegister(true);
                   setError(null);
                 }}
-                className="text-xs text-primary-600 dark:text-primary-400 hover:underline font-medium"
+                className="text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 font-semibold"
               >
                 {t('noAccount')}
               </button>
@@ -193,9 +194,9 @@ export const AuthModal: React.FC = () => {
           )}
         </div>
 
-        {/* Privacy badge */}
-        <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-gray-400 dark:text-slate-500">
-          <Shield className="w-3.5 h-3.5 text-primary-500" />
+        {/* Bottom security pill */}
+        <div className="mt-4 flex items-center justify-center gap-1.5 text-[11px] text-slate-400">
+          <Shield className="w-3.5 h-3.5 text-emerald-500" />
           <span>E2E & AES-256 Storage Protected</span>
         </div>
       </div>

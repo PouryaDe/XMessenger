@@ -1,0 +1,103 @@
+# UI/UX Design System Specification (Warm Minimalist & Floating Cards)
+
+This design system contract defines the visual identity, typography, spacing, component primitives, and interaction patterns for **XMessenger**, directly derived from the mobile-first luxury concept design.
+
+---
+
+## 1. Visual Theme & Color Palette
+
+### Light Mode (Warm Cream & Ambient Glow)
+- **Background**: Ambient radial/linear gradient from warm cream to soft vanilla sand:
+  - Gradient: `from-[#FAF6EE] via-[#F6EEDF] to-[#EFE4D2]`
+  - CSS/Tailwind: `bg-gradient-to-b from-amber-50/60 via-[#F7F1E5] to-[#EFE6D5]`
+- **Card Surfaces**: Pure crisp white (`#FFFFFF`) with ultra-smooth rounded corners and subtle diffuse shadow (`shadow-[0_4px_20px_rgba(0,0,0,0.04)]`).
+- **Surface Borders**: Ultra-delicate border `border border-white/70` or `border-stone-200/50`.
+- **Primary Accent / Dark Accent**: Deep obsidian black / charcoal (`#111827`, `#0F172A`) for high-contrast primary circular buttons and bold typography.
+- **Secondary Accent**: Emerald/Mint (`#10B981`) for online presence and security badges, Warm Amber (`#F59E0B`) for ephemeral TTL flame timers and pending alerts.
+- **Text Hierarchy**:
+  - Headings: `#0F172A` (Charcoal Black, font-extrabold / font-bold)
+  - Body: `#334155` (Slate Gray)
+  - Muted / Placeholders: `#94A3B8` (Soft Gray)
+
+### Dark Mode (Deep Obsidian & Golden Amber Tint)
+- **Background**: Deep obsidian with subtle warm undertones:
+  - Gradient: `from-[#0B0F17] via-[#111827] to-[#0A0D14]`
+- **Card Surfaces**: Dark slate cards (`#1E293B` / `#162032`) with `border border-slate-700/60` and `shadow-[0_4px_24px_rgba(0,0,0,0.4)]`.
+- **Primary Accent**: Pure white or bright emerald for active controls, with crisp high-contrast icon buttons.
+
+---
+
+## 2. Geometry & Corner Radii
+
+- **Cards & Containers**: Ultra-rounded `rounded-3xl` (`24px` to `28px`).
+- **Inputs & Search Bars**: Pill-shaped `rounded-full` (`9999px`).
+- **Action Buttons & Badges**: Fully circular `rounded-full` (`w-10 h-10` or `w-11 h-11` or `w-12 h-12`).
+- **Message Bubbles**: Smooth high-radius bubbles `rounded-2xl` (`18px`) with tailored corner for sender/counterpart.
+
+---
+
+## 3. Core Component Primitives
+
+### 3.1. Circular Action Buttons (Header & Navigation)
+- Circular buttons on light/dark backgrounds:
+  ```tsx
+  <button className="w-10 h-10 rounded-full bg-white/90 dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-sm border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all">
+    <Icon className="w-5 h-5" />
+  </button>
+  ```
+
+### 3.2. Top Header (Mobile & Desktop)
+- Small user avatar on one side, title in center/side, circular actions (notification bell, grid menu, language/theme) on the other.
+- Floating glassmorphism or clean transparent backdrop blur.
+
+### 3.3. Quick Action Cards (2-Column Grid)
+- Large square or rectangular white cards with high radius:
+  ```tsx
+  <div className="bg-white dark:bg-slate-900 rounded-[26px] p-5 shadow-sm border border-black/5 dark:border-white/5 flex flex-col justify-between">
+    <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center mb-4">
+      <Icon className="w-5 h-5" />
+    </div>
+    <div className="flex items-end justify-between">
+      <h3 className="font-bold text-sm text-slate-800 dark:text-white">Title</h3>
+      <span className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-600 dark:text-slate-300">
+        <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+      </span>
+    </div>
+  </div>
+  ```
+
+### 3.4. Recent Activities / Chat Items
+- Horizontal card with rounded icon on left, title & subtitle in middle, chevron arrow on right:
+  ```tsx
+  <div className="bg-white dark:bg-slate-900 rounded-2xl p-4 shadow-sm border border-black/5 dark:border-white/5 flex items-center justify-between">
+    <div className="flex items-center gap-3">
+      <div className="w-10 h-10 rounded-xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-slate-700 dark:text-slate-300">
+        <Icon className="w-5 h-5" />
+      </div>
+      <div>
+        <h4 className="font-semibold text-xs text-slate-900 dark:text-white">Item Name</h4>
+        <p className="text-[11px] text-slate-400">Subtitle description</p>
+      </div>
+    </div>
+    <ChevronRight className="w-4 h-4 text-slate-400 rtl:rotate-180" />
+  </div>
+  ```
+
+### 3.5. Chat Messages (Bubble & Avatar)
+- Sender Message:
+  - Clean elevated bubble with smooth shadow, sender avatar on outer side.
+  - Flame TTL badge with remaining time countdown.
+  - Action row on hover/touch: copy, delete for everyone, TTL info.
+- Recipient / Admin Message:
+  - Clean white/tinted card bubble with Admin shield avatar on outer side.
+
+### 3.6. Bottom Floating Pill Input Bar
+- Floats above the bottom of the screen with margin:
+  - Inner white pill input container with attachment icon, input field, and send trigger.
+  - Adjacent circular dark floating button (`w-12 h-12 bg-slate-900 text-white rounded-full shadow-lg`) for primary action (Send / Voice / Quick Action).
+
+---
+
+## 4. Typography & RTL Standards
+- Font Family: **Vazirmatn** for Persian (`lang="fa"`, `dir="rtl"`) and **Inter / system-ui** for English (`lang="en"`, `dir="ltr"`).
+- Icons: Lucide Icons with proper bidirectional mirroring (`rtl:rotate-180` for forward/back arrows).

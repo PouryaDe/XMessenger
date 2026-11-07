@@ -1,7 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { Message } from '../../services/api.js';
 import { useTranslation } from 'react-i18next';
-import { Trash2, Check, CheckCheck, Flame } from 'lucide-react';
+import { 
+  Trash2, 
+  Check, 
+  CheckCheck, 
+  Flame, 
+  Copy, 
+  ThumbsUp, 
+  User as UserIcon,
+  Sparkles
+} from 'lucide-react';
 
 interface Props {
   message: Message;
@@ -12,7 +21,8 @@ interface Props {
 export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState<string>('');
-  const [showActions, setShowActions] = useState(false);
+  const [copied, setCopied] = useState(false);
+  const [liked, setLiked] = useState(false);
 
   // Calculate remaining TTL
   useEffect(() => {
@@ -42,87 +52,101 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
     return () => clearInterval(interval);
   }, [message.expiresAt]);
 
+  const handleCopy = () => {
+    navigator.clipboard.writeText(message.text);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1500);
+  };
+
   const formattedTime = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit'
   });
 
   return (
-    <div
-      className={`group flex items-end gap-1.5 my-1.5 animate-message ${
-        isOwn ? 'justify-end' : 'justify-start'
-      }`}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
-    >
-      {/* Delete button (hover on desktop or toggle) */}
-      {isOwn && showActions && (
-        <button
-          onClick={() => {
-            if (window.confirm(t('confirmDeleteMessage'))) {
-              onDelete(message.id);
-            }
-          }}
-          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-full text-red-400 hover:text-red-500 hover:bg-red-500/10 transition-opacity"
-          title={t('deleteForEveryone')}
-        >
-          <Trash2 className="w-4 h-4" />
-        </button>
-      )}
-
-      {/* Message bubble */}
-      <div
-        className={`relative max-w-[85%] sm:max-w-md md:max-w-lg px-4 py-2.5 rounded-2xl shadow-sm text-sm break-words leading-relaxed select-text ${
-          isOwn
-            ? 'bg-primary-600 text-white rounded-br-xs dark:bg-primary-600'
-            : 'bg-white dark:bg-slate-800 text-gray-800 dark:text-gray-100 rounded-bl-xs border border-gray-100 dark:border-slate-700/60'
-        }`}
-      >
-        <p className="whitespace-pre-wrap">{message.text}</p>
-
-        {/* Footer: Time + TTL remaining + Read status */}
+    <div className={`group flex flex-col my-3 animate-message ${isOwn ? 'items-end' : 'items-start'}`}>
+      <div className={`flex items-end gap-2.5 max-w-[88%] sm:max-w-md md:max-w-lg ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}>
+        
+        {/* Message Bubble Card */}
         <div
-          className={`flex items-center gap-1.5 mt-1 text-[11px] font-sans ${
-            isOwn ? 'text-primary-100 justify-end' : 'text-gray-400 dark:text-slate-400 justify-end'
+          className={`relative px-4 py-3 rounded-[22px] shadow-soft border transition-all text-sm leading-relaxed ${
+            isOwn
+              ? 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border-white/80 dark:border-slate-700/60 rounded-br-xs'
+              : 'bg-white/95 dark:bg-slate-900 text-slate-800 dark:text-slate-100 border-white/80 dark:border-slate-800 rounded-bl-xs'
           }`}
         >
-          {/* TTL Badge */}
-          <span
-            className="flex items-center gap-0.5 px-1 py-0.2 rounded bg-black/10 dark:bg-white/10 text-[10px]"
-            title={`حذف پس‌زمینه در: ${message.expiresAt}`}
-          >
-            <Flame className="w-2.5 h-2.5 text-amber-300 animate-pulse" />
-            <span>{timeLeft}</span>
-          </span>
+          {/* Message content */}
+          <p className="whitespace-pre-wrap select-text font-normal">{message.text}</p>
 
-          <span>{formattedTime}</span>
-
-          {isOwn && (
-            <span>
-              {message.isRead ? (
-                <CheckCheck className="w-3.5 h-3.5 text-emerald-200 inline" />
-              ) : (
-                <Check className="w-3.5 h-3.5 text-primary-200 inline" />
-              )}
+          {/* Footer inside bubble: TTL Badge + Time + Read status */}
+          <div className="flex items-center gap-1.5 mt-1.5 text-[10px] text-slate-400 dark:text-slate-500 font-sans justify-end">
+            {/* Ephemeral Flame Tag */}
+            <span
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium"
+              title={`زمان انقضا: ${new Date(message.expiresAt).toLocaleTimeString()}`}
+            >
+              <Flame className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
+              <span>{timeLeft}</span>
             </span>
+
+            <span>{formattedTime}</span>
+
+            {isOwn && (
+              <span>
+                {message.isRead ? (
+                  <CheckCheck className="w-3.5 h-3.5 text-primary-500 inline" />
+                ) : (
+                  <Check className="w-3.5 h-3.5 text-slate-400 inline" />
+                )}
+              </span>
+            )}
+          </div>
+        </div>
+
+        {/* Circular Avatar Beside Message (as shown in concept image) */}
+        <div className="shrink-0 mb-0.5">
+          {isOwn ? (
+            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+              <UserIcon className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+            </div>
+          ) : (
+            <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-amber-400 to-amber-200 dark:from-amber-600 dark:to-amber-400 text-white flex items-center justify-center shadow-xs">
+              <Sparkles className="w-4 h-4 text-slate-900 dark:text-white" />
+            </div>
           )}
         </div>
       </div>
 
-      {/* Delete button if message sent by counterpart and admin wants to wipe */}
-      {!isOwn && showActions && (
+      {/* Concept Micro-Actions Underneath Bubble */}
+      <div className={`flex items-center gap-2 mt-1 px-3 text-slate-400 opacity-60 group-hover:opacity-100 transition-opacity ${isOwn ? 'justify-end' : 'justify-start'}`}>
+        <button
+          onClick={handleCopy}
+          className="p-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
+          title={copied ? t('copied') : 'کپی متن'}
+        >
+          <Copy className="w-3.5 h-3.5" />
+        </button>
+
+        <button
+          onClick={() => setLiked(!liked)}
+          className={`p-1 transition-colors ${liked ? 'text-primary-500' : 'hover:text-slate-700 dark:hover:text-slate-200'}`}
+          title="پسندیدن"
+        >
+          <ThumbsUp className="w-3.5 h-3.5" />
+        </button>
+
         <button
           onClick={() => {
             if (window.confirm(t('confirmDeleteMessage'))) {
               onDelete(message.id);
             }
           }}
-          className="opacity-0 group-hover:opacity-100 p-1.5 rounded-full text-red-400 hover:text-red-500 hover:bg-red-500/10 transition-opacity"
+          className="p-1 hover:text-red-500 transition-colors"
           title={t('deleteForEveryone')}
         >
-          <Trash2 className="w-4 h-4" />
+          <Trash2 className="w-3.5 h-3.5" />
         </button>
-      )}
+      </div>
     </div>
   );
 };

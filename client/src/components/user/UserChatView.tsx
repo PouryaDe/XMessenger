@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { MessageItem } from '../common/MessageItem.js';
@@ -7,14 +6,21 @@ import { UserDrawer } from './UserDrawer.js';
 import { getSocket } from '../../services/socket.js';
 import { 
   Send, 
-  Menu, 
+  ArrowLeft, 
+  MoreHorizontal, 
+  Search, 
+  PenSquare, 
   ShieldCheck, 
-  Flame,
+  Flame, 
+  Paperclip, 
+  Bell, 
+  LayoutGrid, 
+  ChevronRight,
+  Sparkles,
   Lock
 } from 'lucide-react';
 
 export const UserChatView: React.FC = () => {
-  const { t } = useTranslation();
   const { user, adminInfo } = useAuthStore();
   const { 
     messages, 
@@ -31,8 +37,10 @@ export const UserChatView: React.FC = () => {
     sendTyping
   } = useChatStore();
 
+  const [viewMode, setViewMode] = useState<'home' | 'chat'>('home');
   const [inputText, setInputText] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -84,8 +92,10 @@ export const UserChatView: React.FC = () => {
 
   // Auto scroll
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    if (viewMode === 'chat') {
+      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, viewMode]);
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
@@ -97,6 +107,9 @@ export const UserChatView: React.FC = () => {
 
     try {
       await sendMessage(text);
+      if (viewMode === 'home') {
+        setViewMode('chat');
+      }
     } catch (err) {
       console.error('Failed to send:', err);
     }
@@ -114,109 +127,328 @@ export const UserChatView: React.FC = () => {
   };
 
   const isOpponentTyping = adminInfo ? typingUsers[adminInfo.id] : false;
+  const lastMessage = messages[messages.length - 1];
+
+  // Filter messages for search
+  const filteredMessages = searchQuery.trim()
+    ? messages.filter((m) => m.text.toLowerCase().includes(searchQuery.toLowerCase()))
+    : messages;
 
   return (
-    <div className="flex flex-col h-full w-full max-w-4xl mx-auto bg-gray-50 dark:bg-slate-950 sm:border-x border-gray-200 dark:border-slate-800 shadow-xl overflow-hidden relative">
-      {/* Top Header */}
-      <header className="h-16 px-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-b border-gray-200 dark:border-slate-800 flex items-center justify-between shrink-0 z-20">
-        <div className="flex items-center gap-3">
-          {/* Admin Avatar */}
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-gradient-to-tr from-primary-600 to-emerald-400 text-white flex items-center justify-center font-bold shadow-sm">
-              <ShieldCheck className="w-5 h-5" />
+    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:border-x border-stone-200/60 dark:border-slate-800 shadow-2xl overflow-hidden font-sans">
+      
+      {/* =========================================================================
+          VIEW MODE 1: HOME / DASHBOARD SCREEN (Screen 1 in Concept)
+         ========================================================================= */}
+      {viewMode === 'home' && (
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          {/* Top Bar */}
+          <header className="px-6 pt-6 pb-2 flex items-center justify-between shrink-0">
+            {/* User Profile Avatar */}
+            <div className="flex items-center gap-2.5">
+              <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-800 dark:text-white flex items-center justify-center font-bold text-xs uppercase shadow-soft border border-white/60 dark:border-slate-600">
+                {user?.username.substring(0, 2)}
+              </div>
+              <div>
+                <p className="text-[11px] text-slate-400 font-medium">خوش آمدید</p>
+                <h3 className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{user?.username}</h3>
+              </div>
             </div>
-            <div
-              className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-900 ${
-                isAdminOnline ? 'bg-emerald-500' : 'bg-gray-400'
-              }`}
-            />
+
+            {/* Circular Action Buttons */}
+            <div className="flex items-center gap-2">
+              <button 
+                onClick={() => setDrawerOpen(true)}
+                className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+                title="اعلان‌ها و وضعیت"
+              >
+                <Bell className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+              </button>
+
+              <button
+                onClick={() => setDrawerOpen(true)}
+                className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+                title="منوی اصلی و تنظیمات"
+              >
+                <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+              </button>
+            </div>
+          </header>
+
+          {/* Scrollable Content */}
+          <div className="flex-1 overflow-y-auto px-6 py-3 space-y-5">
+            {/* Editorial Heading */}
+            <div className="pt-2">
+              <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
+                ارتباط امن<br />
+                <span className="text-slate-600 dark:text-slate-300">با مدیریت سیستم</span>
+              </h1>
+            </div>
+
+            {/* Pill Search Bar */}
+            <div className="relative">
+              <Search className="w-4 h-4 text-slate-400 absolute right-4 rtl:right-auto rtl:left-4 top-3.5" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="جستجو در پیام‌ها یا سوابق..."
+                className="w-full pl-11 pr-11 py-3 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 font-sans"
+              />
+            </div>
+
+            {/* Quick Action Feature Cards (2 Column Grid as in concept) */}
+            <div className="grid grid-cols-2 gap-3.5">
+              {/* Card 1: Start/Go to Chat */}
+              <div 
+                onClick={() => setViewMode('chat')}
+                className="bg-white dark:bg-slate-800/90 rounded-[26px] p-5 shadow-soft border border-black/5 dark:border-white/5 flex flex-col justify-between cursor-pointer hover:shadow-floating hover:-translate-y-0.5 transition-all group"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-amber-50 dark:bg-slate-700/60 text-slate-800 dark:text-amber-300 flex items-center justify-center mb-5 shadow-xs">
+                  <PenSquare className="w-5 h-5 text-slate-800 dark:text-amber-300" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">
+                    گفتگوی آنلاین
+                  </h3>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[11px] text-slate-400">ورود به چت</span>
+                    <span className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-colors">
+                      <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Card 2: Ephemeral TTL Info */}
+              <div 
+                onClick={() => setDrawerOpen(true)}
+                className="bg-white dark:bg-slate-800/90 rounded-[26px] p-5 shadow-soft border border-black/5 dark:border-white/5 flex flex-col justify-between cursor-pointer hover:shadow-floating hover:-translate-y-0.5 transition-all group"
+              >
+                <div className="w-11 h-11 rounded-2xl bg-emerald-50 dark:bg-slate-700/60 text-emerald-600 dark:text-emerald-400 flex items-center justify-center mb-5 shadow-xs">
+                  <Flame className="w-5 h-5 text-amber-500 animate-pulse" />
+                </div>
+                <div>
+                  <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">
+                    پیام‌های گذرا
+                  </h3>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">حذف ۲۴ ساعته</span>
+                    <span className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-colors">
+                      <ChevronRight className="w-4 h-4 rtl:rotate-180" />
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Recent Activities Section */}
+            <div>
+              <div className="flex items-center justify-between mb-3 px-1">
+                <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200">
+                  فعالیت‌های اخیر
+                </h4>
+                <button 
+                  onClick={() => setViewMode('chat')}
+                  className="text-[11px] font-medium text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
+                >
+                  مشاهده همه
+                </button>
+              </div>
+
+              <div className="space-y-2.5">
+                {/* Activity Item 1: Last Conversation Thread */}
+                <div 
+                  onClick={() => setViewMode('chat')}
+                  className="bg-white dark:bg-slate-800/90 rounded-2xl p-4 shadow-soft border border-black/5 dark:border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-all"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-10 h-10 rounded-xl bg-amber-50 dark:bg-slate-700/50 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="overflow-hidden">
+                      <h5 className="font-bold text-xs text-slate-900 dark:text-white truncate">
+                        گفتگو با مدیریت سیستم
+                      </h5>
+                      <p className="text-[11px] text-slate-400 truncate mt-0.5">
+                        {lastMessage ? lastMessage.text : 'پیامی ارسال نشده است'}
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 rtl:rotate-180 shrink-0" />
+                </div>
+
+                {/* Activity Item 2: Security & At-Rest Encryption */}
+                <div 
+                  onClick={() => setDrawerOpen(true)}
+                  className="bg-white dark:bg-slate-800/90 rounded-2xl p-4 shadow-soft border border-black/5 dark:border-white/5 flex items-center justify-between cursor-pointer hover:bg-white/80 transition-all"
+                >
+                  <div className="flex items-center gap-3 overflow-hidden">
+                    <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-slate-700/50 flex items-center justify-center text-emerald-600 dark:text-emerald-400 shrink-0">
+                      <ShieldCheck className="w-5 h-5" />
+                    </div>
+                    <div className="overflow-hidden">
+                      <h5 className="font-bold text-xs text-slate-900 dark:text-white">
+                        امنیت رمزنگاری AES-256
+                      </h5>
+                      <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
+                        محافظت کامل داده‌ها در دیتابیس
+                      </p>
+                    </div>
+                  </div>
+                  <ChevronRight className="w-4 h-4 text-slate-400 rtl:rotate-180 shrink-0" />
+                </div>
+              </div>
+            </div>
           </div>
 
-          <div>
-            <div className="flex items-center gap-1.5">
-              <h2 className="font-semibold text-sm text-gray-900 dark:text-white">
-                {t('chatWithAdmin')}
-              </h2>
-              <span className="text-[10px] px-1.5 py-0.5 rounded-full bg-primary-500/10 text-primary-600 dark:text-primary-400 font-medium">
-                Admin
-              </span>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-slate-400 flex items-center gap-1">
-              {isOpponentTyping ? (
-                <span className="text-primary-500 font-medium animate-pulse">{t('typing')}</span>
-              ) : isAdminOnline ? (
-                <span className="text-emerald-500">{t('online')}</span>
-              ) : (
-                <span>{t('offline')}</span>
-              )}
-            </p>
-          </div>
+          {/* Floating Pill Input Bar on Home (Bottom as in concept) */}
+          <footer className="p-4 shrink-0">
+            <form onSubmit={handleSend} className="flex items-center gap-2.5">
+              <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-floating border border-black/5 dark:border-white/5">
+                <span className="text-slate-400 text-sm font-light">+</span>
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={handleInputChange}
+                  placeholder="پیام سریع خود را بنویسید..."
+                  className="flex-1 bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans"
+                />
+              </div>
+
+              {/* Circular Primary Action Button */}
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className="w-12 h-12 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+                title="ارسال پیام"
+              >
+                <Send className="w-4 h-4 rtl:rotate-180" />
+              </button>
+            </form>
+          </footer>
         </div>
+      )}
 
-        {/* Right action button */}
-        <button
-          onClick={() => setDrawerOpen(true)}
-          className="p-2 rounded-xl text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 transition-colors"
-          title="منوی تنظیمات و پروفایل"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-      </header>
+      {/* =========================================================================
+          VIEW MODE 2: DIRECT CHAT VIEW (Screen 2 in Concept)
+         ========================================================================= */}
+      {viewMode === 'chat' && (
+        <div className="flex-1 flex flex-col h-full overflow-hidden">
+          {/* Concept Top Navigation Bar */}
+          <header className="px-5 py-4 flex items-center justify-between shrink-0 bg-transparent z-10">
+            {/* Circular Back Button */}
+            <button
+              onClick={() => setViewMode('home')}
+              className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+              title="بازگشت به صفحه اصلی"
+            >
+              <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
+            </button>
 
-      {/* Ephemeral Warning Banner */}
-      <div className="bg-amber-500/10 dark:bg-amber-500/5 border-b border-amber-500/20 px-4 py-1.5 flex items-center justify-center gap-2 text-[11px] text-amber-700 dark:text-amber-400 shrink-0">
-        <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-        <span className="truncate">{t('ephemeralNotice')}</span>
-      </div>
-
-      {/* Message Stream */}
-      <main className="flex-1 overflow-y-auto p-4 space-y-1">
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-gray-400 dark:text-slate-500">
-            <div className="w-16 h-16 rounded-full bg-gray-100 dark:bg-slate-900 border border-gray-200 dark:border-slate-800 flex items-center justify-center mb-3 text-primary-500">
-              <Lock className="w-7 h-7" />
+            {/* Centered Chat Title & Status */}
+            <div className="text-center">
+              <h2 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                گفتگو با مدیریت
+              </h2>
+              <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
+                {isOpponentTyping ? (
+                  <span className="text-amber-500 font-medium animate-pulse">در حال نوشتن...</span>
+                ) : isAdminOnline ? (
+                  <span className="text-emerald-500 font-medium">آنلاین</span>
+                ) : (
+                  <span>آفلاین</span>
+                )}
+              </p>
             </div>
-            <p className="text-sm font-medium text-gray-700 dark:text-slate-300">
-              گفتگوی کاملاً امن و محرمانه با ادمین
-            </p>
-            <p className="text-xs max-w-xs mt-1">
-              پیام‌های ارسالی شما مستقیماً برای مدیر سیستم ارسال شده و طبق زمان تعیین شده به طور خودکار حذف می‌شوند.
-            </p>
+
+            {/* Circular More Options Button */}
+            <button
+              onClick={() => setDrawerOpen(true)}
+              className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+              title="تنظیمات گفتگو"
+            >
+              <MoreHorizontal className="w-5 h-5" />
+            </button>
+          </header>
+
+          {/* Ephemeral Flame Tag Indicator */}
+          <div className="px-5 py-1 flex items-center justify-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 shrink-0">
+            <Flame className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
+            <span className="font-sans">پیام‌ها پس از ۲۴ ساعت به طور خودکار دوطرفه حذف می‌شوند.</span>
           </div>
-        ) : (
-          messages.map((msg) => (
-            <MessageItem
-              key={msg.id}
-              message={msg}
-              isOwn={msg.isOwn ?? (msg.senderId === user?.id)}
-              onDelete={deleteMessage}
-            />
-          ))
-        )}
-        <div ref={messagesEndRef} />
-      </main>
 
-      {/* Bottom Input Area */}
-      <footer className="p-3 bg-white dark:bg-slate-900 border-t border-gray-200 dark:border-slate-800 shrink-0">
-        <form onSubmit={handleSend} className="flex items-center gap-2">
-          <input
-            type="text"
-            value={inputText}
-            onChange={handleInputChange}
-            placeholder={t('typeMessage')}
-            className="flex-1 px-4 py-3 rounded-2xl bg-gray-100 dark:bg-slate-800 border-none text-gray-900 dark:text-white text-sm focus:outline-none focus:ring-2 focus:ring-primary-500 transition-all placeholder:text-gray-400 dark:placeholder:text-slate-500"
-          />
+          {/* Messages Stream */}
+          <main className="flex-1 overflow-y-auto px-5 py-2 space-y-1">
+            {filteredMessages.length === 0 ? (
+              <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
+                <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/5 flex items-center justify-center mb-3 text-amber-500">
+                  <Lock className="w-7 h-7" />
+                </div>
+                <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                  گفتگوی کاملاً امن و محرمانه
+                </h4>
+                <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
+                  پیام شما مستقیماً برای مدیر سیستم ارسال شده و در دیتابیس با کلید رمزنگاری AES-256 ذخیره می‌گردد.
+                </p>
+              </div>
+            ) : (
+              filteredMessages.map((msg) => (
+                <MessageItem
+                  key={msg.id}
+                  message={msg}
+                  isOwn={msg.isOwn ?? (msg.senderId === user?.id)}
+                  onDelete={deleteMessage}
+                />
+              ))
+            )}
+            <div ref={messagesEndRef} />
+          </main>
 
-          <button
-            type="submit"
-            disabled={!inputText.trim()}
-            className="p-3 rounded-2xl bg-primary-600 hover:bg-primary-500 text-white disabled:opacity-40 disabled:cursor-not-allowed transition-all shadow-md shadow-primary-500/20 shrink-0"
-            title={t('send')}
-          >
-            <Send className="w-5 h-5 rtl:rotate-180" />
-          </button>
-        </form>
-      </footer>
+          {/* Floating Pill Input Bar (Exact Right Screen in Concept) */}
+          <footer className="p-4 shrink-0">
+            <form onSubmit={handleSend} className="flex items-center gap-2.5">
+              {/* Inner White Pill Input */}
+              <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-floating border border-black/5 dark:border-white/5">
+                <button
+                  type="button"
+                  onClick={() => alert('رمزنگاری فایل‌های ارسالی فعال است.')}
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  title="ضمیمه کردن"
+                >
+                  <Paperclip className="w-4 h-4" />
+                </button>
+
+                <input
+                  type="text"
+                  value={inputText}
+                  onChange={handleInputChange}
+                  placeholder="پیام خود را بنویسید..."
+                  className="flex-1 bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans"
+                />
+
+                <button
+                  type="submit"
+                  disabled={!inputText.trim()}
+                  className="text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors"
+                >
+                  <Send className="w-4 h-4 rtl:rotate-180" />
+                </button>
+              </div>
+
+              {/* Distinct Circular Dark Action Button (as shown in concept image) */}
+              <button
+                type="submit"
+                disabled={!inputText.trim()}
+                className="w-12 h-12 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+                title="ارسال"
+              >
+                <Send className="w-4 h-4 rtl:rotate-180" />
+              </button>
+            </form>
+          </footer>
+        </div>
+      )}
 
       {/* User Settings Drawer */}
       <UserDrawer isOpen={drawerOpen} onClose={() => setDrawerOpen(false)} />
