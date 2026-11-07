@@ -92,6 +92,13 @@ fi
 echo -e "\n${BLUE}[4/4] Reloading Nginx reverse proxy...${NC}"
 docker restart xmessenger-nginx 2>/dev/null || true
 
+# 5. Ensure global shortcuts exist in /usr/local/bin
+ln -sf "${PROJECT_ROOT}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
+chmod +x /usr/local/bin/xupdate 2>/dev/null || true
+cp -f "${PROJECT_ROOT}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
+chmod +x /usr/local/bin/xmessenger 2>/dev/null || true
+
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${GREEN}${BOLD}✓ XMessenger hot update completed successfully!${NC}"
+echo -e "${GREEN}${BOLD}✓ You can now update anytime simply by typing: xupdate${NC}"
 echo -e "${GREEN}${BOLD}==================================================================${NC}\n"

@@ -19,6 +19,25 @@ BASE_DIR="/opt/xmessenger"
 SHARED_DIR="${BASE_DIR}/shared"
 INSTANCES_DIR="${BASE_DIR}/instances"
 
+# Direct CLI commands (non-interactive shortcuts)
+if [ "$1" == "update" ] || [ "$1" == "up" ] || [ "$1" == "-u" ]; then
+  exec bash "${BASE_DIR}/update.sh"
+fi
+
+if [ "$1" == "restart" ]; then
+  docker restart xmessenger-nginx 2>/dev/null || true
+  for c in $(docker ps --format '{{.Names}}' | grep '^xmessenger-'); do
+    docker restart "$c" 2>/dev/null || true
+  done
+  echo "All XMessenger containers restarted."
+  exit 0
+fi
+
+if [ "$1" == "status" ] || [ "$1" == "ps" ]; then
+  docker ps --filter "name=xmessenger"
+  exit 0
+fi
+
 show_banner() {
   clear
   echo -e "${CYAN}${BOLD}"
@@ -229,18 +248,8 @@ while true; do
       ;;
     [uU])
       show_banner
-      echo -e "${BLUE}Pulling latest version from GitHub and rebuilding image...${NC}\n"
-      cd "${BASE_DIR}"
-      git pull origin main || true
-      export DOCKER_BUILDKIT=1
-      docker build -t xmessenger-core:latest -f Dockerfile .
-      # Restart all existing instance containers
-      for D in "${DOMAINS[@]}"; do
-        S=$(echo "$D" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
-        docker restart "xmessenger-${S}" 2>/dev/null || true
-      done
-      echo -e "\n${GREEN}All messenger instances updated successfully!${NC}"
-      sleep 2
+      bash "${BASE_DIR}/update.sh"
+      read -p "Press Enter to continue..." dummy
       ;;
     *)
       echo -e "${RED}Invalid choice!${NC}"
