@@ -115,7 +115,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           onClick={handleBubbleClick}
           className={`relative px-4 py-2.5 rounded-[22px] transition-all cursor-pointer text-sm leading-relaxed border ${
             isOwn
-              ? 'bg-slate-900 text-white dark:bg-gradient-to-tr dark:from-amber-600/35 dark:to-amber-500/25 dark:text-amber-50 border-black/10 dark:border-amber-500/40 rounded-br-xs shadow-soft'
+              ? 'bg-[#E3EDF7] text-slate-900 dark:bg-[#1E334D] dark:text-slate-100 border-[#CEE0EF] dark:border-white/10 rounded-br-xs shadow-soft'
               : 'bg-white text-slate-900 dark:bg-slate-800/90 dark:text-slate-100 border-black/5 dark:border-white/10 rounded-bl-xs shadow-soft'
           }`}
         >
@@ -131,19 +131,19 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           <div
             dir="ltr"
             className={`flex items-center gap-1.5 mt-1.5 text-[10px] font-sans justify-end ${
-              isOwn ? 'text-slate-300 dark:text-amber-200/80' : 'text-slate-400 dark:text-slate-400'
+              isOwn ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400 dark:text-slate-400'
             }`}
           >
-            {/* Ephemeral Flame Tag */}
+            {/* Ephemeral Flame Tag - Subtle & Calm (No glaring amber) */}
             <span
               className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium ${
                 isOwn
-                  ? 'bg-white/15 dark:bg-amber-400/20 text-amber-300 dark:text-amber-200'
-                  : 'bg-amber-500/10 text-amber-600 dark:text-amber-400'
+                  ? 'bg-black/[0.04] dark:bg-black/25 text-slate-500 dark:text-slate-400'
+                  : 'bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-slate-400'
               }`}
               title={`${t('expiresAt')}${new Date(message.expiresAt).toLocaleTimeString()}`}
             >
-              <Flame className="w-2.5 h-2.5 text-amber-400 animate-pulse" />
+              <Flame className="w-2.5 h-2.5 text-slate-400 dark:text-slate-400" />
               <span>{timeLeft}</span>
             </span>
 
@@ -152,9 +152,9 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
             {isOwn && (
               <span>
                 {message.isRead ? (
-                  <CheckCheck className="w-3.5 h-3.5 text-emerald-400 inline" />
+                  <CheckCheck className="w-3.5 h-3.5 text-[#2AABEE] dark:text-[#2AABEE] inline" />
                 ) : (
-                  <Check className="w-3.5 h-3.5 text-slate-300 dark:text-amber-200/70 inline" />
+                  <Check className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 inline" />
                 )}
               </span>
             )}
@@ -197,12 +197,12 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
         {/* Circular Avatar Beside Message */}
         <div className="shrink-0 mb-0.5 select-none">
           {isOwn ? (
-            <div className="w-8 h-8 rounded-full bg-slate-800 dark:bg-amber-500/25 text-amber-400 border border-black/10 dark:border-amber-400/40 flex items-center justify-center font-bold text-xs uppercase shadow-xs">
+            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-black/5 dark:border-white/10 flex items-center justify-center font-bold text-xs uppercase shadow-xs">
               <UserIcon className="w-4 h-4" />
             </div>
           ) : (
-            <div className="w-8 h-8 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-black/5 dark:border-white/10 flex items-center justify-center font-bold text-xs uppercase font-mono shadow-xs">
-              <Sparkles className="w-4 h-4 text-amber-500" />
+            <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-black/5 dark:border-white/10 flex items-center justify-center font-bold text-xs uppercase font-mono shadow-xs">
+              <Sparkles className="w-4 h-4 text-slate-400 dark:text-slate-400" />
             </div>
           )}
         </div>
