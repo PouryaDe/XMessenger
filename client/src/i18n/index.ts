@@ -262,7 +262,11 @@ const resources = {
   }
 };
 
-const savedLang = localStorage.getItem('xmessenger_lang') || 'fa';
+const rawSavedLang = typeof window !== 'undefined' ? localStorage.getItem('xmessenger_lang') : null;
+const savedLang = rawSavedLang === 'en' ? 'en' : 'fa';
+if (typeof window !== 'undefined' && !rawSavedLang) {
+  localStorage.setItem('xmessenger_lang', 'fa');
+}
 
 i18n
   .use(initReactI18next)

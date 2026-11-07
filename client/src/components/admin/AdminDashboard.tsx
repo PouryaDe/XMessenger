@@ -43,9 +43,13 @@ export const AdminDashboard: React.FC = () => {
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [inputText, setInputText] = useState('');
-  const [selectedTtl, setSelectedTtl] = useState<number | undefined>(undefined);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Dynamic text direction detection (RTL for Persian, LTR for English)
+  const isInputRtl = !inputText.trim()
+    ? (i18n.language === 'fa')
+    : /^[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(inputText.trim());
 
   // Load all users
   const refreshUsers = async () => {
@@ -146,7 +150,7 @@ export const AdminDashboard: React.FC = () => {
     sendTyping(false, activeUserId);
 
     try {
-      await sendMessage(text, activeUserId, selectedTtl);
+      await sendMessage(text, activeUserId);
     } catch (err) {
       console.error('Failed to send:', err);
     }
@@ -354,39 +358,32 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Bottom Floating Pill Input Area */}
             <footer className="p-4 shrink-0">
-              <form onSubmit={handleSend} className="flex items-center gap-2.5 max-w-3xl mx-auto">
-                <div data-input-pill className="flex-1 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.05] dark:border-white/5">
-                  {/* Fast TTL selector dropdown for Admin */}
-                  <select
-                    value={selectedTtl || ''}
-                    onChange={(e) => setSelectedTtl(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                    className="py-1.5 rounded-full bg-stone-100 dark:bg-slate-700 text-[11px] text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-                    title={t('ttlTimerTitle')}
-                  >
-                    <option value="">{t('defaultOption')}</option>
-                    <option value="900">{t('ttl15m')}</option>
-                    <option value="3600">{t('ttl1h')}</option>
-                    <option value="21600">{t('ttl6h')}</option>
-                    <option value="86400">{t('ttl24h')}</option>
-                    <option value="172800">{t('ttl2d')}</option>
-                  </select>
-
+              <form
+                onSubmit={handleSend}
+                className="flex items-center gap-2.5 max-w-3xl mx-auto"
+                dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
+              >
+                <div data-input-pill className="flex-1 flex items-center px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.05] dark:border-white/5">
                   <input
                     type="text"
+                    dir={isInputRtl ? 'rtl' : 'ltr'}
                     value={inputText}
                     onChange={handleInputChange}
                     placeholder={t('typeMessage')}
-                    className="flex-1 bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans"
+                    className={`w-full bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans ${
+                      isInputRtl ? 'text-right' : 'text-left'
+                    }`}
                   />
                 </div>
 
+                {/* Telegram-style Circular Send Button */}
                 <button
                   type="submit"
                   disabled={!inputText.trim()}
-                  className="w-12 h-12 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+                  className="w-11 h-11 rounded-full bg-[#2AABEE] hover:bg-[#229ED9] text-white shadow-soft flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 shrink-0"
                   title={t('send')}
                 >
-                  <Send className="w-4 h-4 rtl:rotate-180" />
+                  <Send className="w-5 h-5 text-white" />
                 </button>
               </form>
             </footer>

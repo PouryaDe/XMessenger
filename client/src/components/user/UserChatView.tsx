@@ -50,6 +50,11 @@ export const UserChatView: React.FC = () => {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
+  // Dynamic text direction detection (RTL for Persian, LTR for English)
+  const isInputRtl = !inputText.trim()
+    ? (i18n.language === 'fa')
+    : /^[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(inputText.trim());
+
   // Load initial messages
   useEffect(() => {
     loadMessages();
@@ -421,14 +426,18 @@ export const UserChatView: React.FC = () => {
             <div ref={messagesEndRef} />
           </main>
 
-          {/* Floating Pill Input Bar (Exact Right Screen in Concept) */}
+          {/* Floating Pill Input Bar */}
           <footer className="p-4 shrink-0">
-            <form onSubmit={handleSend} className="flex items-center gap-2.5">
+            <form
+              onSubmit={handleSend}
+              className="flex items-center gap-2.5"
+              dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
+            >
               {/* Inner White Pill Input */}
               <div data-input-pill className="flex-1 flex items-center gap-3 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.05] dark:border-white/5">
                 <button
                   type="button"
-                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                  className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0"
                   title={t('attachFile')}
                 >
                   <Paperclip className="w-4 h-4" />
@@ -436,29 +445,24 @@ export const UserChatView: React.FC = () => {
 
                 <input
                   type="text"
+                  dir={isInputRtl ? 'rtl' : 'ltr'}
                   value={inputText}
                   onChange={handleInputChange}
                   placeholder={t('typeMessage')}
-                  className="flex-1 bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans"
+                  className={`w-full bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans ${
+                    isInputRtl ? 'text-right' : 'text-left'
+                  }`}
                 />
-
-                <button
-                  type="submit"
-                  disabled={!inputText.trim()}
-                  className="text-slate-400 hover:text-slate-900 dark:hover:text-white disabled:opacity-30 transition-colors"
-                >
-                  <Send className="w-4 h-4 rtl:rotate-180" />
-                </button>
               </div>
 
-              {/* Distinct Circular Dark Action Button (as shown in concept image) */}
+              {/* Telegram-style Circular Send Button */}
               <button
                 type="submit"
                 disabled={!inputText.trim()}
-                className="w-12 h-12 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
+                className="w-11 h-11 rounded-full bg-[#2AABEE] hover:bg-[#229ED9] text-white shadow-soft flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-40 disabled:scale-100 disabled:cursor-not-allowed disabled:bg-slate-300 dark:disabled:bg-slate-700 shrink-0"
                 title={t('send')}
               >
-                <Send className="w-4 h-4 rtl:rotate-180" />
+                <Send className="w-5 h-5 text-white" />
               </button>
             </form>
           </footer>
