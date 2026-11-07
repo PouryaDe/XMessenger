@@ -61,3 +61,29 @@ html, body, #root {
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
+
+/* Custom styled select dropdowns: Arrow never clips into rounded pill borders */
+select {
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+  background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%2394a3b8' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.75' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-size: 1.25rem 1.25rem;
+}
+
+[dir="rtl"] select,
+html[dir="rtl"] select,
+body[dir="rtl"] select {
+  background-position: left 1rem center;
+  padding-left: 2.75rem !important;
+  padding-right: 1.25rem !important;
+}
+
+[dir="ltr"] select,
+html[dir="ltr"] select,
+body[dir="ltr"] select {
+  background-position: right 1rem center;
+  padding-right: 2.75rem !important;
+  padding-left: 1.25rem !important;
+}

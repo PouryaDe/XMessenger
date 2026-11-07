@@ -121,7 +121,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <select
               value={settings.defaultTtlSeconds}
               onChange={(e) => setSettings({ ...settings, defaultTtlSeconds: parseInt(e.target.value, 10) })}
-              className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 font-sans"
+              className="w-full py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800 text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-400 font-sans cursor-pointer shadow-inner"
             >
               <option value={900}>{t('ttl15m')}</option>
               <option value={3600}>{t('ttl1h')}</option>

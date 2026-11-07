@@ -101,3 +101,13 @@ This design system contract defines the visual identity, typography, spacing, co
 ## 4. Typography & RTL Standards
 - Font Family: **Vazirmatn** for Persian (`lang="fa"`, `dir="rtl"`) and **Inter / system-ui** for English (`lang="en"`, `dir="ltr"`).
 - Icons: Lucide Icons with proper bidirectional mirroring (`rtl:rotate-180` for forward/back arrows).
+
+### 4.1. Select Inputs & Form Controls (Permanent Standard)
+- **Arrow Alignment & Padding**: Never let native select arrows touch or clip into rounded pill borders (`rounded-full` or `rounded-3xl`).
+- **`appearance-none` Mandatory**: Always reset default browser styling (`appearance: none; -webkit-appearance: none;`).
+- **Bidirectional Inset Position**:
+  - In Persian/RTL (`[dir="rtl"]`): The dropdown arrow MUST be placed comfortably inside the left curve (`background-position: left 1rem center`), and left padding MUST be at least `2.75rem` (`44px`) so text and arrow never collide.
+  - In English/LTR (`[dir="ltr"]`): The dropdown arrow MUST be placed comfortably inside the right curve (`background-position: right 1rem center`), with right padding at least `2.75rem` (`44px`).
+- **Auth Inputs (Username / Password)**:
+  - Form inputs for usernames, passwords, tokens, or codes MUST ALWAYS be left-aligned (`dir="ltr" text-left`) in both Persian and English.
+  - Field icons must have fixed positioning and the input must have generous padding (e.g. `pl-11`) so text never overlaps icons.

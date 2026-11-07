@@ -335,7 +335,7 @@ export const AdminDashboard: React.FC = () => {
                   <select
                     value={selectedTtl || ''}
                     onChange={(e) => setSelectedTtl(e.target.value ? parseInt(e.target.value, 10) : undefined)}
-                    className="px-2 py-1 rounded-full bg-stone-100 dark:bg-slate-700 text-[11px] text-slate-700 dark:text-slate-300 focus:outline-none"
+                    className="py-1.5 rounded-full bg-stone-100 dark:bg-slate-700 text-[11px] text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
                     title="تایمر انقضای این پیام"
                   >
                     <option value="">پیش‌فرض</option>
