@@ -21,6 +21,9 @@ INSTANCES_DIR="${BASE_DIR}/instances"
 
 # Direct CLI commands (non-interactive shortcuts)
 if [ "$1" == "update" ] || [ "$1" == "up" ] || [ "$1" == "-u" ]; then
+  cd "${BASE_DIR}"
+  git fetch origin main 2>/dev/null || true
+  git reset --hard origin/main 2>/dev/null || true
   exec bash "${BASE_DIR}/update.sh"
 fi
 
@@ -248,6 +251,10 @@ while true; do
       ;;
     [uU])
       show_banner
+      echo -e "${YELLOW}Syncing and updating XMessenger to latest version...${NC}\n"
+      cd "${BASE_DIR}"
+      git fetch origin main 2>/dev/null || true
+      git reset --hard origin/main 2>/dev/null || true
       bash "${BASE_DIR}/update.sh"
       read -p "Press Enter to continue..." dummy
       ;;
