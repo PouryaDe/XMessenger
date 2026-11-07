@@ -9,7 +9,8 @@ import {
   Users, 
   Search, 
   Sliders, 
-  LogOut
+  LogOut,
+  X
 } from 'lucide-react';
 
 interface Props {
@@ -72,8 +73,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
         </div>
       </div>
 
-      {/* Pill Search Input */}
-      <div className="p-4 pb-2">
+      {/* Modern Search & Segmented Filter Bar */}
+      <div className="px-4 pt-3 pb-3 space-y-2.5 border-b border-black/[0.04] dark:border-white/5">
+        {/* Search Bar with Quick Clear Button */}
         <div className="relative flex items-center">
           <Search className="w-4 h-4 text-slate-400 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
@@ -81,61 +83,70 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchUsers')}
-            className="w-full ps-10 pe-4 h-10 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white shadow-none dark:shadow-soft border border-black/[0.05] dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
+            className="w-full h-10 ps-10 pe-9 rounded-2xl bg-black/[0.035] dark:bg-slate-800/60 hover:bg-black/[0.05] dark:hover:bg-slate-800 focus:bg-white dark:focus:bg-slate-800 text-xs text-slate-900 dark:text-white border border-black/[0.05] dark:border-white/5 focus:border-stone-400 dark:focus:border-slate-500 focus:outline-none transition-all placeholder:text-slate-400 font-sans shadow-none"
           />
-        </div>
-      </div>
-
-      {/* Filter Tabs Pills */}
-      <div className="flex items-center gap-1.5 px-4 pb-3 border-b border-black/[0.05] dark:border-white/10 overflow-x-auto">
-        <button
-          onClick={() => setFilterTab('all')}
-          className={`inline-flex items-center justify-center h-7 px-3.5 rounded-full text-xs font-semibold leading-normal transition-all shrink-0 ${
-            filterTab === 'all'
-              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-              : 'bg-white/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-white'
-          }`}
-        >
-          {t('allUsers')} ({adminUsers.length})
-        </button>
-
-        <button
-          onClick={() => setFilterTab('pending')}
-          className={`inline-flex items-center justify-center gap-1.5 h-7 px-3.5 rounded-full text-xs font-semibold leading-normal transition-all shrink-0 ${
-            filterTab === 'pending'
-              ? 'bg-amber-500 text-white shadow-xs'
-              : 'bg-white/80 dark:bg-slate-800 text-slate-600 hover:text-amber-600 dark:text-slate-400'
-          }`}
-        >
-          <span>{t('pendingUsers')}</span>
-          {pendingCount > 0 && (
-            <span className="inline-flex items-center justify-center px-1.5 h-4 rounded-full bg-white text-amber-600 text-[10px] font-bold font-mono leading-none">
-              {pendingCount}
-            </span>
+          {searchTerm && (
+            <button
+              onClick={() => setSearchTerm('')}
+              className="w-6 h-6 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 absolute end-2 top-1/2 -translate-y-1/2 transition-colors"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
           )}
-        </button>
+        </div>
 
-        <button
-          onClick={() => setFilterTab('active')}
-          className={`inline-flex items-center justify-center h-7 px-3.5 rounded-full text-xs font-semibold leading-normal transition-all shrink-0 ${
-            filterTab === 'active'
-              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-              : 'bg-white/80 dark:bg-slate-800 text-slate-600 hover:text-emerald-600 dark:text-slate-400'
-          }`}
-        >
-          {t('activeUsers')}
-        </button>
+        {/* Modern iOS / Telegram Segmented Control */}
+        <div className="grid grid-cols-4 p-1 rounded-2xl bg-black/[0.035] dark:bg-black/25 border border-black/[0.04] dark:border-white/5 select-none">
+          <button
+            onClick={() => setFilterTab('all')}
+            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+              filterTab === 'all'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-soft font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
+            }`}
+          >
+            <span>{t('allUsers')}</span>
+            <span className="text-[10px] font-mono opacity-60">({adminUsers.length})</span>
+          </button>
 
-        <button
-          onClick={() => setFilterTab('banned')}
-          className={`inline-flex items-center justify-center h-7 px-3.5 rounded-full text-xs font-semibold leading-normal transition-all shrink-0 ${
-            filterTab === 'banned'
-              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
-              : 'bg-white/80 dark:bg-slate-800 text-slate-600 hover:text-red-600 dark:text-slate-400'
-          }`}
-        >
-          {t('bannedUsers')}
-        </button>
+          <button
+            onClick={() => setFilterTab('pending')}
+            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+              filterTab === 'pending'
+                ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-soft font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
+            }`}
+          >
+            <span>{t('pendingUsers')}</span>
+            {pendingCount > 0 && (
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-bold font-mono">
+                {pendingCount}
+              </span>
+            )}
+          </button>
+
+          <button
+            onClick={() => setFilterTab('active')}
+            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+              filterTab === 'active'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-soft font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
+            }`}
+          >
+            <span>{t('activeUsers')}</span>
+          </button>
+
+          <button
+            onClick={() => setFilterTab('banned')}
+            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+              filterTab === 'banned'
+                ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-soft font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'
+            }`}
+          >
+            <span>{t('bannedUsers')}</span>
+          </button>
+        </div>
       </div>
 
       {/* Users List */}
