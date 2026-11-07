@@ -93,6 +93,68 @@ if ! docker info &> /dev/null; then
   systemctl start docker || service docker start || true
 fi
 
+# Configure Docker Registry Mirrors to bypass Docker Hub 403 sanction blocks (Iran & restricted regions)
+echo -e "${BLUE}Configuring Docker registry mirrors (anti-sanction)...${NC}"
+mkdir -p /etc/docker
+cat <<'EOF' > /etc/docker/daemon.json
+{
+  "registry-mirrors": [
+    "https://docker.arvancloud.ir",
+    "https://docker.iranserver.com",
+    "https://fdocker.ir",
+    "https://docker.mcr.ir",
+    "https://registry.docker.ir"
+  ]
+}
+EOF
+systemctl daemon-reload 2>/dev/null || true
+systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
+sleep 3
+
+# Helper function to pull images through Docker daemon mirrors with direct fallback
+pull_docker_image() {
+  local img="$1"
+  echo -e "${CYAN}Checking / pulling image ${BOLD}${img}${NC}...${NC}"
+  if docker pull "${img}"; then
+    return 0
+  fi
+
+  echo -e "${YELLOW}Standard pull returned 403 or error. Retrying ${img} through direct Iranian mirror proxies...${NC}"
+  local mirrors=("docker.arvancloud.ir" "docker.iranserver.com" "fdocker.ir" "docker.mcr.ir")
+  for mirror in "${mirrors[@]}"; do
+    echo -e "${YELLOW}Attempting to pull from ${mirror}/${img}...${NC}"
+    if docker pull "${mirror}/${img}" 2>/dev/null; then
+      docker tag "${mirror}/${img}" "${img}"
+      echo -e "${GREEN}Successfully pulled and tagged ${img} from ${mirror}!${NC}"
+      return 0
+    fi
+    # If official library image without slash (like nginx:alpine or node:22-alpine), try library/ prefix
+    if [[ "${img}" != *"/"* ]]; then
+      if docker pull "${mirror}/library/${img}" 2>/dev/null; then
+        docker tag "${mirror}/library/${img}" "${img}"
+        echo -e "${GREEN}Successfully pulled and tagged ${img} from ${mirror}/library!${NC}"
+        return 0
+      fi
+    fi
+  done
+
+  echo -e "${RED}[WARNING] Could not pull ${img} through mirrors. Docker will try during run/build.${NC}"
+  return 1
+}
+
+# Pre-fetch required base images so build and run won't fail with 403 CloudFront blocks
+echo -e "\n${BLUE}Pre-fetching core Docker images (anti-block)...${NC}"
+pull_docker_image "nginx:alpine"
+pull_docker_image "certbot/certbot"
+pull_docker_image "node:22-alpine"
+
+# Check if host web server (apache2, host nginx) is occupying port 80 or 443
+if lsof -i :80 2>/dev/null | grep -qv docker || netstat -tulpn 2>/dev/null | grep -E ':80\s' | grep -qv docker; then
+  echo -e "${YELLOW}[Notice] Port 80 seems occupied by a host service. Stopping host web servers...${NC}"
+  systemctl stop apache2 2>/dev/null || true
+  systemctl stop nginx 2>/dev/null || true
+fi
+
 # 3. Interactive Configuration (Multi-Domain Aware)
 echo -e "\n${BLUE}[2/6] Configuring Domain & Instance...${NC}"
 
@@ -137,8 +199,29 @@ mkdir -p "${SHARED_DIR}/certbot/conf"
 mkdir -p "${SHARED_DIR}/certbot/www"
 mkdir -p "${INSTANCES_DIR}/${DOMAIN}"
 
+# Setup default HTTP server for shared Nginx gateway (handles ACME challenges and fallback)
+if [ ! -f "${SHARED_DIR}/nginx/conf.d/00-default.conf" ]; then
+  cat <<'EOF' > "${SHARED_DIR}/nginx/conf.d/00-default.conf"
+server {
+    listen 80 default_server;
+    server_name _;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 200 "XMessenger Gateway is running.\n";
+    }
+}
+EOF
+fi
+
 # Create shared docker network if not exists
 docker network create xmessenger-net 2>/dev/null || true
+
+# Clean up any leftover temporary bootstrap containers
+docker rm -f xmessenger-acme 2>/dev/null || true
 
 # 5. Build or Update XMessenger Core Docker Image
 echo -e "\n${BLUE}[4/6] Building / updating XMessenger core Docker image...${NC}"
