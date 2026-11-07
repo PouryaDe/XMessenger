@@ -68,7 +68,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       {/* Drawer content */}
       <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/10 shadow-2xl flex flex-col z-10 animate-message font-sans">
         {/* Header */}
-        <div className="p-6 border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-6 pt-safe border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10 text-sm font-mono uppercase">
               {user?.username.substring(0, 2)}
@@ -139,7 +139,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer Logout */}
-        <div className="p-5 border-t border-stone-200/50 dark:border-slate-800">
+        <div className="p-5 pb-safe border-t border-stone-200/50 dark:border-slate-800">
           <button
             onClick={logout}
             className="w-full py-3 px-4 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold transition-all shadow-md hover:scale-102 active:scale-98 flex items-center justify-center gap-2"

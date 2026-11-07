@@ -42,7 +42,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
   return (
     <aside className="w-full sm:w-80 md:w-96 h-full bg-white/65 dark:bg-slate-900/75 backdrop-blur-2xl border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/10 shadow-[6px_0_30px_-6px_rgba(0,0,0,0.04)] rtl:shadow-[-6px_0_30px_-6px_rgba(0,0,0,0.04)] flex flex-col shrink-0 font-sans z-20">
       {/* Top Header */}
-      <div className="p-5 border-b border-black/[0.05] dark:border-white/10 flex items-center justify-between">
+      <div className="p-5 pt-safe border-b border-black/[0.05] dark:border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-slate-800 text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10 shrink-0">
             <Users className="w-5 h-5" />

@@ -139,7 +139,7 @@ export const UserChatView: React.FC = () => {
     <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-slate-800 shadow-2xl overflow-hidden font-sans">
       
       {/* Top Header */}
-      <header className="px-5 py-3.5 flex items-center justify-between shrink-0 bg-white/45 dark:bg-slate-900/45 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/10 z-10">
+      <header className="px-5 py-3.5 pt-safe flex items-center justify-between shrink-0 bg-white/45 dark:bg-slate-900/45 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/10 z-10">
         {/* Admin Avatar & Live Status */}
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -213,7 +213,7 @@ export const UserChatView: React.FC = () => {
       </main>
 
       {/* Floating Pill Input Bar with Telegram Send Button INSIDE the Pill */}
-      <footer className="p-4 shrink-0">
+      <footer className="p-4 pb-safe shrink-0">
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
           <div
             data-input-pill

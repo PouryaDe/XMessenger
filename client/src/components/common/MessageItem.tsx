@@ -88,6 +88,15 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
     setShowMenu(true);
   };
 
+  const handleBubbleClick = () => {
+    // If text was selected or highlighted, don't open/close the context menu
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0) {
+      return;
+    }
+    setShowMenu((prev) => !prev);
+  };
+
   const formattedTime = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit'
@@ -103,7 +112,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
         {/* Message Bubble Card */}
         <div
           onContextMenu={handleContextMenu}
-          onClick={() => setShowMenu((prev) => !prev)}
+          onClick={handleBubbleClick}
           className={`relative px-4 py-2.5 rounded-[22px] transition-all cursor-pointer text-sm leading-relaxed border ${
             isOwn
               ? 'bg-slate-900 text-white dark:bg-gradient-to-tr dark:from-amber-600/35 dark:to-amber-500/25 dark:text-amber-50 border-black/10 dark:border-amber-500/40 rounded-br-xs shadow-soft'

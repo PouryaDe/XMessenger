@@ -231,7 +231,7 @@ export const AdminDashboard: React.FC = () => {
         {activeUser ? (
           <>
             {/* Top Chat Header */}
-            <header className="px-6 py-4 flex items-center justify-between shrink-0 bg-white/35 dark:bg-slate-900/35 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/10">
+            <header className="px-6 py-4 pt-safe flex items-center justify-between shrink-0 bg-white/35 dark:bg-slate-900/35 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/10">
               <div className="flex items-center gap-3">
                 {/* Back button for mobile */}
                 <button
@@ -357,7 +357,7 @@ export const AdminDashboard: React.FC = () => {
             </main>
 
             {/* Bottom Floating Pill Input Area */}
-            <footer className="p-4 shrink-0">
+            <footer className="p-4 pb-safe shrink-0">
               <form
                 onSubmit={handleSend}
                 className="max-w-3xl mx-auto"
