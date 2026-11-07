@@ -44,17 +44,12 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
       {/* Top Header */}
       <div className="p-5 border-b border-black/[0.05] dark:border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-slate-800 text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10">
+          <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-slate-800 text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10 shrink-0">
             <Users className="w-5 h-5" />
           </div>
-          <div>
-            <h2 className="font-extrabold text-sm text-slate-900 dark:text-white">
-              {t('adminPanel')}
-            </h2>
-            <p className="text-[11px] text-slate-400">
-              {t('adminSubHeader')}
-            </p>
-          </div>
+          <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
+            {t('adminPanel')}
+          </h2>
         </div>
 
         <div className="flex items-center gap-2">
@@ -158,10 +153,10 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
               <div
                 key={u.id}
                 onClick={() => onSelectUser(u)}
-                className={`p-3.5 rounded-[22px] cursor-pointer transition-all flex items-center justify-between gap-3 shadow-soft ${
+                className={`p-3.5 rounded-[22px] cursor-pointer transition-all flex items-center justify-between gap-3 ${
                   isSelected
-                    ? 'bg-white dark:bg-slate-800 border-2 border-amber-400 shadow-floating scale-[1.01]'
-                    : 'bg-white dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 border border-black/5 dark:border-white/5'
+                    ? 'bg-white dark:bg-slate-800 border border-black/10 dark:border-white/20 shadow-floating scale-[1.01]'
+                    : 'bg-white/90 dark:bg-slate-800/80 hover:bg-white dark:hover:bg-slate-800 border border-black/5 dark:border-white/5 shadow-soft'
                 }`}
               >
                 <div className="flex items-center gap-3 overflow-hidden">
