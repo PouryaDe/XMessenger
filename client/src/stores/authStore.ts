@@ -26,8 +26,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   login: (token, user) => {
     localStorage.setItem('xmessenger_token', token);
-    set({ token, user, isLoading: false });
     initSocket(token);
+    set({ token, user, isLoading: false });
   },
 
   logout: () => {
@@ -48,8 +48,8 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     try {
       set({ isLoading: true });
       const data = await api.getMe();
-      set({ user: data.user, adminInfo: data.adminInfo, token, isLoading: false });
       initSocket(token);
+      set({ user: data.user, adminInfo: data.adminInfo, token, isLoading: false });
     } catch (err) {
       console.error('Session expired or invalid:', err);
       localStorage.removeItem('xmessenger_token');

@@ -141,6 +141,7 @@ export function createMessagesRouter(io?: Server) {
       // Emit to sockets
       if (io) {
         io.to(`user:${recipientId}`).emit('message:new', messagePayload);
+        io.to('room:admin').emit('message:new', messagePayload);
         io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
       }
 

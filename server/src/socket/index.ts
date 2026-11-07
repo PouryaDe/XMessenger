@@ -133,6 +133,8 @@ export function setupSocketServer(io: Server) {
 
         // Emit to recipient and sender
         io.to(`user:${recipientId}`).emit('message:new', messagePayload);
+        io.to('room:admin').emit('message:new', messagePayload);
+        socket.emit('message:sent', messagePayload);
         io.to(userRoom).emit('message:sent', messagePayload);
 
         if (callback) callback({ success: true, message: { ...messagePayload, isOwn: true } });

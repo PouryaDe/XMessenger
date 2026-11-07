@@ -60,10 +60,47 @@ export const useChatStore = create<ChatState>((set, get) => ({
   sendMessage: async (text, targetUserId, ttlSeconds) => {
     const socket = getSocket();
     if (socket && socket.connected) {
-      // Send fast through socket
-      socket.emit('message:send', { text, targetUserId, ttlSeconds });
+      return new Promise<void>((resolve, reject) => {
+        let settled = false;
+
+        // Fallback to REST if socket does not acknowledge within 2500ms
+        const timeout = setTimeout(async () => {
+          if (!settled) {
+            settled = true;
+            try {
+              const res = await api.sendMessage(text, targetUserId, ttlSeconds);
+              get().addMessage({ ...res.message, isOwn: true });
+              resolve();
+            } catch (err: any) {
+              reject(err);
+            }
+          }
+        }, 2500);
+
+        socket.emit('message:send', { text, targetUserId, ttlSeconds }, async (res: any) => {
+          if (settled) return;
+          settled = true;
+          clearTimeout(timeout);
+
+          if (res?.error) {
+            console.warn('[Socket] message:send error from server:', res.error);
+            try {
+              const apiRes = await api.sendMessage(text, targetUserId, ttlSeconds);
+              get().addMessage({ ...apiRes.message, isOwn: true });
+              resolve();
+            } catch (err: any) {
+              reject(new Error(res.error || err.message));
+            }
+          } else if (res?.message) {
+            get().addMessage({ ...res.message, isOwn: true });
+            resolve();
+          } else {
+            resolve();
+          }
+        });
+      });
     } else {
-      // Fallback to REST
+      // Direct REST delivery
       const res = await api.sendMessage(text, targetUserId, ttlSeconds);
       get().addMessage({ ...res.message, isOwn: true });
     }

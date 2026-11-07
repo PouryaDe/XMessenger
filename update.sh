@@ -54,6 +54,14 @@ if [ -d "${INSTANCES_DIR}" ]; then
 
       if [ -f "${ENV_FILE}" ]; then
         echo -e "${YELLOW}Updating instance: ${DOMAIN} (${CONTAINER})...${NC}"
+        
+        # Ensure Nginx WebSocket configuration supports both polling and upgrade
+        SHARED_DIR="${BASE_DIR}/shared"
+        NGINX_CONF="${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
+        if [ -f "${NGINX_CONF}" ]; then
+          sed -i 's/proxy_set_header Connection "upgrade";/proxy_set_header Connection $http_connection;/g' "${NGINX_CONF}" 2>/dev/null || true
+        fi
+
         docker rm -f "${CONTAINER}" 2>/dev/null || true
         docker run -d \
           --name "${CONTAINER}" \
