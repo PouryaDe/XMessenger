@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# XMessenger - Automated 1-Line Installer for Linux
-# Hub-and-Spoke Secure Web Messenger with Automated Docker, Nginx & SSL
+# XMessenger - Automated Multi-Domain & Multi-Instance Installer for Linux
+# Zero-conflict, Multi-tenant, Automated Docker, Nginx & SSL
 # ==============================================================================
 
 set -e
@@ -22,7 +22,7 @@ echo "     \  / /\_/ / _ \/ ___/ ___/ _ \/ __ \/ __ \/ _ \/ ___/    "
 echo "     / / /  / /  __(__  |__  )  __/ / / / /_/ /  __/ /        "
 echo "    /_/_/  /_/\___/____/____/\___/_/ /_/\__, /\___/_/         "
 echo "                                       /____/                 "
-echo "       Secure Hub-and-Spoke Messenger - Linux Installer       "
+echo "   XMessenger - Multi-Domain Secure Messenger Installer        "
 echo "=================================================================="
 echo -e "${NC}"
 
@@ -32,102 +32,91 @@ if [ "$EUID" -ne 0 ]; then
   exit 1
 fi
 
-# Detect execution context (piped curl vs cloned repo)
-if [ -f "deploy/docker-compose.yml" ]; then
-  SCRIPT_DIR="$(pwd)/deploy"
+BASE_DIR="/opt/xmessenger"
+SHARED_DIR="${BASE_DIR}/shared"
+INSTANCES_DIR="${BASE_DIR}/instances"
+
+# Detect if running from cloned repository or remote curl
+if [ -f "Dockerfile" ]; then
   PROJECT_ROOT="$(pwd)"
-elif [ -f "docker-compose.yml" ]; then
-  SCRIPT_DIR="$(pwd)"
+elif [ -f "../Dockerfile" ]; then
   PROJECT_ROOT="$(cd .. && pwd)"
+elif [ -f "${BASE_DIR}/Dockerfile" ]; then
+  PROJECT_ROOT="${BASE_DIR}"
 else
-  # Running directly via curl -sSL ... | sudo bash
-  echo -e "${BLUE}Detected one-line remote execution. Setting up /opt/xmessenger...${NC}"
-  INSTALL_DIR="/opt/xmessenger"
+  # Remote curl execution: clone/update to /opt/xmessenger
+  echo -e "${BLUE}Setting up repository at ${BASE_DIR}...${NC}"
+  rm -f /etc/apt/sources.list.d/docker.list 2>/dev/null || true
   if ! command -v git &> /dev/null; then
     apt-get update -y && apt-get install -y git curl openssl
   fi
-  if [ -d "$INSTALL_DIR/.git" ]; then
-    echo -e "${YELLOW}Existing repository found in $INSTALL_DIR. Pulling latest changes...${NC}"
-    cd "$INSTALL_DIR"
+
+  if [ -d "${BASE_DIR}/.git" ]; then
+    cd "${BASE_DIR}"
     git pull origin main || true
   else
-    rm -rf "$INSTALL_DIR"
+    rm -rf "${BASE_DIR}"
     if [ -n "$GITHUB_TOKEN" ]; then
-      git clone "https://${GITHUB_TOKEN}@github.com/PouryaDe/XMessenger.git" "$INSTALL_DIR"
+      git clone "https://${GITHUB_TOKEN}@github.com/PouryaDe/XMessenger.git" "${BASE_DIR}"
     else
-      git clone "https://github.com/PouryaDe/XMessenger.git" "$INSTALL_DIR"
+      git clone "https://github.com/PouryaDe/XMessenger.git" "${BASE_DIR}"
     fi
-    cd "$INSTALL_DIR"
+    cd "${BASE_DIR}"
   fi
-  SCRIPT_DIR="$INSTALL_DIR/deploy"
-  PROJECT_ROOT="$INSTALL_DIR"
+  PROJECT_ROOT="${BASE_DIR}"
 fi
 
-# 2. Check & Install Dependencies (curl, openssl, git, docker)
-echo -e "${BLUE}[1/6] Checking system packages & dependencies...${NC}"
+# 2. Check and Install Docker (Native docker.io avoids 403 sanction blocks on IR IPs)
+echo -e "${BLUE}[1/6] Checking system packages and Docker engine...${NC}"
+
+# Clean up broken repositories if any
+rm -f /etc/apt/sources.list.d/docker.list 2>/dev/null || true
 
 if ! command -v curl &> /dev/null || ! command -v openssl &> /dev/null; then
-  echo -e "${YELLOW}Installing curl and openssl...${NC}"
+  echo -e "${YELLOW}Installing base system utilities...${NC}"
   apt-get update -y && apt-get install -y curl openssl git
 fi
 
-# Install Docker if not present (Handles sanction/403 blocks on download.docker.com)
 if ! command -v docker &> /dev/null; then
-  echo -e "${YELLOW}Docker not found. Installing Docker engine...${NC}"
-  # Try official script first; if it fails (e.g. 403 Forbidden on IR IP), fallback to native docker.io
-  if ! (curl -fsSL https://get.docker.com | sh); then
-    echo -e "${YELLOW}[Notice] Official docker repository returned error (sanction/403 block).${NC}"
-    echo -e "${YELLOW}Switching to native system packages (docker.io & docker-compose)...${NC}"
-    rm -f /etc/apt/sources.list.d/docker.list 2>/dev/null || true
-    apt-get update -y
-    apt-get install -y docker.io docker-compose
-  fi
-  systemctl enable --now docker || true
+  echo -e "${YELLOW}Docker not found. Installing Docker engine from system repositories...${NC}"
+  apt-get update -y
+  apt-get install -y docker.io docker-compose
+  systemctl enable --now docker || service docker start || true
   echo -e "${GREEN}Docker installed successfully.${NC}"
 else
   echo -e "${GREEN}Docker is already installed.${NC}"
+  systemctl enable --now docker 2>/dev/null || service docker start 2>/dev/null || true
 fi
 
-# Ensure Docker Compose works (v2 plugin or standalone v1)
-if ! docker compose version &> /dev/null; then
-  if ! command -v docker-compose &> /dev/null; then
-    echo -e "${YELLOW}Installing docker-compose...${NC}"
-    apt-get update -y && apt-get install -y docker-compose-plugin 2>/dev/null || apt-get install -y docker-compose || true
-  fi
+# Ensure docker daemon is alive
+if ! docker info &> /dev/null; then
+  systemctl start docker || service docker start || true
 fi
 
-# Define helper to seamlessly support both 'docker compose' and 'docker-compose'
-docker_compose_cmd() {
-  if docker compose version &> /dev/null; then
-    docker compose "$@"
-  elif command -v docker-compose &> /dev/null; then
-    docker-compose "$@"
-  else
-    docker compose "$@"
-  fi
-}
-
-# 3. Interactive Configuration (Supports piped curl with /dev/tty fallback)
-echo -e "\n${BLUE}[2/6] Configuring Domain and Security...${NC}"
+# 3. Interactive Configuration (Multi-Domain Aware)
+echo -e "\n${BLUE}[2/6] Configuring Domain & Instance...${NC}"
 
 if [ -z "$DOMAIN" ]; then
   if [ -t 0 ]; then
-    read -p "Enter your domain or subdomain (e.g., chat.example.com): " DOMAIN
+    read -p "Enter your domain for this messenger instance (e.g., chat.example.com): " DOMAIN
   elif [ -e /dev/tty ]; then
-    read -p "Enter your domain or subdomain (e.g., chat.example.com): " DOMAIN < /dev/tty
+    read -p "Enter your domain for this messenger instance (e.g., chat.example.com): " DOMAIN < /dev/tty
   fi
 fi
 
 if [ -z "$DOMAIN" ]; then
-  echo -e "${RED}[ERROR] Domain name cannot be empty. Please set DOMAIN=yourdomain.com before running.${NC}"
+  echo -e "${RED}[ERROR] Domain cannot be empty.${NC}"
   exit 1
 fi
 
+# Sanitize domain to container/slug identifier (e.g. chat-example-com)
+SLUG=$(echo "$DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+
 if [ -z "$EMAIL" ]; then
   if [ -t 0 ]; then
-    read -p "Enter your email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL
+    read -p "Enter email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL
   elif [ -e /dev/tty ]; then
-    read -p "Enter your email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL < /dev/tty
+    read -p "Enter email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL < /dev/tty
   fi
 fi
 
@@ -136,41 +125,86 @@ if [ -z "$EMAIL" ]; then
 fi
 
 if [ -z "$ADMIN_PASSWORD" ]; then
-  # Generate a 16-character secure random password
   ADMIN_PASSWORD=$(openssl rand -base64 12)
   echo -e "${YELLOW}Generated secure Admin password:${NC} ${BOLD}${ADMIN_PASSWORD}${NC}"
 fi
 
-# 4. Generate Secrets & Environment Configuration
-echo -e "\n${BLUE}[3/6] Generating cryptographic keys (AES-256 & JWT)...${NC}"
-JWT_SECRET=$(openssl rand -hex 32)
-ENCRYPTION_KEY=$(openssl rand -hex 32)
+# 4. Prepare Shared Network and Folders
+echo -e "\n${BLUE}[3/6] Initializing shared multi-domain infrastructure...${NC}"
 
-mkdir -p "${SCRIPT_DIR}/nginx/conf.d"
-mkdir -p "${SCRIPT_DIR}/certbot/conf"
-mkdir -p "${SCRIPT_DIR}/certbot/www"
+mkdir -p "${SHARED_DIR}/nginx/conf.d"
+mkdir -p "${SHARED_DIR}/certbot/conf"
+mkdir -p "${SHARED_DIR}/certbot/www"
+mkdir -p "${INSTANCES_DIR}/${DOMAIN}"
 
-# Create .env file for docker compose
-cat <<EOF > "${SCRIPT_DIR}/.env"
-DOMAIN=${DOMAIN}
-EMAIL=${EMAIL}
-JWT_SECRET=${JWT_SECRET}
-ENCRYPTION_KEY=${ENCRYPTION_KEY}
-ADMIN_USERNAME=admin
-ADMIN_PASSWORD=${ADMIN_PASSWORD}
-DEFAULT_TTL_SECONDS=86400
-EOF
+# Create shared docker network if not exists
+docker network create xmessenger-net 2>/dev/null || true
 
-echo -e "${GREEN}Secrets generated and written to deploy/.env${NC}"
+# 5. Build or Update XMessenger Core Docker Image
+echo -e "\n${BLUE}[4/6] Building / updating XMessenger core Docker image...${NC}"
+cd "${PROJECT_ROOT}"
+docker build -t xmessenger-core:latest -f Dockerfile .
 
-# 5. Acquire Let's Encrypt SSL Certificate
-echo -e "\n${BLUE}[4/6] Setting up Let's Encrypt SSL Certificate for ${DOMAIN}...${NC}"
+# 6. Ensure Shared Nginx Gateway is Running on Ports 80 & 443
+if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
+  echo -e "${YELLOW}Starting shared Nginx Gateway on ports 80/443...${NC}"
+  docker rm -f xmessenger-nginx 2>/dev/null || true
+  docker run -d \
+    --name xmessenger-nginx \
+    --restart always \
+    --network xmessenger-net \
+    -p 80:80 \
+    -p 443:443 \
+    -v "${SHARED_DIR}/nginx/conf.d:/etc/nginx/conf.d" \
+    -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+    -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+    nginx:alpine
+fi
 
-# Write temporary ACME-only Nginx configuration
-cat <<EOF > "${SCRIPT_DIR}/nginx/conf.d/default.conf"
+# 7. Obtain or Verify SSL Certificate for this Domain
+echo -e "\n${BLUE}[5/6] Setting up Let's Encrypt SSL for ${DOMAIN}...${NC}"
+
+if [ ! -f "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" ]; then
+  # Temporary challenge routing for this domain
+  cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
 server {
     listen 80;
-    listen [::]:80;
+    server_name ${DOMAIN};
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+    location / {
+        return 200 "XMessenger SSL bootstrapping for ${DOMAIN}...";
+    }
+}
+EOF
+  docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
+
+  echo -e "${YELLOW}Requesting SSL certificate from Let's Encrypt...${NC}"
+  docker run --rm \
+    --network xmessenger-net \
+    -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+    -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+    certbot/certbot certonly --webroot -w /var/www/certbot \
+    --email "${EMAIL}" \
+    -d "${DOMAIN}" \
+    --agree-tos \
+    --non-interactive \
+    --keep-until-expiring || {
+      echo -e "${YELLOW}[Notice] Let's Encrypt verification timed out or DNS not propagated.${NC}"
+      echo -e "${YELLOW}Creating fallback self-signed SSL certificate so ${DOMAIN} can start immediately...${NC}"
+      mkdir -p "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" \
+        -out "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" \
+        -subj "/CN=${DOMAIN}"
+  }
+fi
+
+# 8. Deploy Production Nginx Reverse Proxy Route for this Domain
+cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
+server {
+    listen 80;
     server_name ${DOMAIN};
 
     location /.well-known/acme-challenge/ {
@@ -178,72 +212,106 @@ server {
     }
 
     location / {
-        return 200 "XMessenger SSL bootstrapping in progress...";
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl http2;
+    server_name ${DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${DOMAIN}/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    # Security Headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    location /socket.io/ {
+        proxy_pass http://xmessenger-${SLUG}:3001/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection "upgrade";
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400;
+    }
+
+    location / {
+        proxy_pass http://xmessenger-${SLUG}:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
 EOF
 
-# Start temporary Nginx to serve ACME challenge
-echo -e "${YELLOW}Starting temporary web server for ACME verification...${NC}"
-docker run --rm -d \
-  --name xmessenger-ssl-helper \
-  -p 80:80 \
-  -v "${SCRIPT_DIR}/nginx/conf.d:/etc/nginx/conf.d:ro" \
-  -v "${SCRIPT_DIR}/certbot/www:/var/www/certbot:ro" \
-  nginx:alpine
+# Reload Nginx gateway to activate this domain route
+docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
 
-# Run Certbot to acquire certificate
-echo -e "${YELLOW}Requesting SSL certificate from Let's Encrypt...${NC}"
-docker run --rm \
-  -v "${SCRIPT_DIR}/certbot/conf:/etc/letsencrypt" \
-  -v "${SCRIPT_DIR}/certbot/www:/var/www/certbot" \
-  certbot/certbot certonly --webroot -w /var/www/certbot \
-  --email "${EMAIL}" \
-  -d "${DOMAIN}" \
-  --agree-tos \
-  --non-interactive \
-  --keep-until-expiring || {
-    echo -e "${YELLOW}[WARNING] Automated Let's Encrypt verification failed or timed out.${NC}"
-    echo -e "${YELLOW}Creating fallback self-signed SSL certificate so the service can boot safely...${NC}"
-    mkdir -p "${SCRIPT_DIR}/certbot/conf/live/${DOMAIN}"
-    openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-      -keyout "${SCRIPT_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" \
-      -out "${SCRIPT_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" \
-      -subj "/CN=${DOMAIN}"
-}
+# 9. Launch Isolated Backend Container for this Domain
+echo -e "\n${BLUE}[6/6] Launching isolated backend for ${DOMAIN}...${NC}"
 
-# Stop temporary helper
-docker stop xmessenger-ssl-helper 2>/dev/null || true
+JWT_SECRET=$(openssl rand -hex 32)
+ENCRYPTION_KEY=$(openssl rand -hex 32)
 
-# 6. Apply Full HTTPS + WebSocket Nginx Configuration
-echo -e "\n${BLUE}[5/6] Applying Production Nginx Reverse Proxy with WebSockets...${NC}"
-sed "s|\${DOMAIN}|${DOMAIN}|g" "${SCRIPT_DIR}/nginx/nginx.conf.template" > "${SCRIPT_DIR}/nginx/conf.d/default.conf"
+cat <<EOF > "${INSTANCES_DIR}/${DOMAIN}/.env"
+DOMAIN=${DOMAIN}
+EMAIL=${EMAIL}
+JWT_SECRET=${JWT_SECRET}
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+ADMIN_USERNAME=admin
+ADMIN_PASSWORD=${ADMIN_PASSWORD}
+DEFAULT_TTL_SECONDS=86400
+SLUG=${SLUG}
+EOF
 
-# 7. Build and Launch Containers
-echo -e "\n${BLUE}[6/6] Building and starting XMessenger containers...${NC}"
-cd "${SCRIPT_DIR}"
-docker_compose_cmd down 2>/dev/null || true
-docker_compose_cmd up -d --build
+# Stop old instance container if exists
+docker rm -f "xmessenger-${SLUG}" 2>/dev/null || true
 
-# 8. Setup Global CLI Command (xmessenger)
-chmod +x "${SCRIPT_DIR}/xmessenger.sh" 2>/dev/null || true
-cp -f "${SCRIPT_DIR}/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
+# Run dedicated app container for this domain
+docker run -d \
+  --name "xmessenger-${SLUG}" \
+  --restart always \
+  --network xmessenger-net \
+  --env-file "${INSTANCES_DIR}/${DOMAIN}/.env" \
+  -v "xmessenger-data-${SLUG}:/app/data" \
+  xmessenger-core:latest
+
+# Ensure Certbot renewer container is running
+if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-certbot$'; then
+  docker run -d \
+    --name xmessenger-certbot \
+    --restart unless-stopped \
+    --network xmessenger-net \
+    -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+    -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+    certbot/certbot \
+    sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done;'
+fi
+
+# 10. Install Global Multi-Domain CLI Management Tool (xmessenger)
+cp -f "${PROJECT_ROOT}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || cp -f "deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 chmod +x /usr/local/bin/xmessenger 2>/dev/null || true
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
-echo -e "${GREEN}${BOLD}🎉 XMessenger successfully deployed!${NC}"
+echo -e "${GREEN}${BOLD}🎉 XMessenger for ${DOMAIN} successfully deployed!${NC}"
 echo -e "${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${CYAN}🌐 Web Address:${NC}       https://${DOMAIN}"
 echo -e "${CYAN}👤 Admin Username:${NC}   admin"
 echo -e "${CYAN}🔑 Admin Password:${NC}   ${ADMIN_PASSWORD}"
+echo -e "${CYAN}📦 Container Name:${NC}   xmessenger-${SLUG}"
+echo -e "${CYAN}💾 Database Volume:${NC}  xmessenger-data-${SLUG} (Isolated)"
 echo -e "${CYAN}🔒 Storage Encryption:${NC} AES-256-GCM (Active)"
 echo -e "${CYAN}⏱️ Ephemeral TTL:${NC}     24 Hours (Configurable in Admin Panel)"
 echo -e "${GREEN}${BOLD}==================================================================${NC}"
-echo -e "${YELLOW}${BOLD}💡 دستور پنل مدیریت سرور:${NC}"
-echo -e "   کافیست در هر زمان در ترمینال سرور دستور ${CYAN}${BOLD}xmessenger${NC} را تایپ کنید تا وارد منوی مدیریت شوید."
-echo -e "${GREEN}${BOLD}==================================================================${NC}"
-echo -e "مدیریت دستی از طریق پوشه: ${SCRIPT_DIR}"
-echo -e "  - View logs:        docker compose logs -f"
-echo -e "  - Stop messenger:   docker compose down"
-echo -e "  - Restart:          docker compose restart"
-echo -e "${GREEN}Installation complete!${NC}\n"
+echo -e "${YELLOW}${BOLD}💡 پنل مدیریت چنددامنه‌ای سرور:${NC}"
+echo -e "   کافیست در ترمینال سرور دستور ${CYAN}${BOLD}xmessenger${NC} را تایپ کنید تا لیست تمام مسنجرهای نصب‌شده را ببینید و مدیریت کنید."
+echo -e "${GREEN}${BOLD}==================================================================${NC}\n"

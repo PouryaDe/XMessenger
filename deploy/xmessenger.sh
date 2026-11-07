@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # ==============================================================================
-# XMessenger CLI Management Tool
-# Interactive Server Management Menu for XMessenger
+# XMessenger Multi-Domain CLI Management Tool
+# Manage all XMessenger instances installed on the server
 # ==============================================================================
 
 set -e
@@ -14,28 +14,9 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-# Detect Installation Directory
-if [ -d "/opt/xmessenger/deploy" ]; then
-  INSTALL_DIR="/opt/xmessenger"
-elif [ -f "$(pwd)/deploy/docker-compose.yml" ]; then
-  INSTALL_DIR="$(pwd)"
-elif [ -f "$(pwd)/docker-compose.yml" ]; then
-  INSTALL_DIR="$(cd .. && pwd)"
-else
-  INSTALL_DIR="/opt/xmessenger"
-fi
-
-DEPLOY_DIR="${INSTALL_DIR}/deploy"
-
-docker_compose_cmd() {
-  if docker compose version &> /dev/null; then
-    docker compose "$@"
-  elif command -v docker-compose &> /dev/null; then
-    docker-compose "$@"
-  else
-    docker compose "$@"
-  fi
-}
+BASE_DIR="/opt/xmessenger"
+SHARED_DIR="${BASE_DIR}/shared"
+INSTANCES_DIR="${BASE_DIR}/instances"
 
 show_banner() {
   clear
@@ -47,155 +28,217 @@ show_banner() {
   echo "     / / /  / /  __(__  |__  )  __/ / / / /_/ /  __/ /        "
   echo "    /_/_/  /_/\___/____/____/\___/_/ /_/\__, /\___/_/         "
   echo "                                       /____/                 "
-  echo "        XMessenger CLI Management Console (v1.0.0)             "
+  echo "     XMessenger Multi-Instance Console (Version 2.0.0)         "
   echo "=================================================================="
   echo -e "${NC}"
 }
 
-load_env() {
-  if [ -f "${DEPLOY_DIR}/.env" ]; then
-    export $(cat "${DEPLOY_DIR}/.env" | grep -v '^#' | xargs)
+# Get list of configured domains
+get_domains() {
+  if [ -d "${INSTANCES_DIR}" ]; then
+    find "${INSTANCES_DIR}" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null || true
   fi
 }
 
-show_status() {
-  show_banner
-  load_env
-  echo -e "${GREEN}${BOLD}📋 اطلاعات و وضعیت فعلی سیستم:${NC}\n"
-  echo -e "  ${CYAN}🌐 آدرس وب (Domain):${NC}        https://${DOMAIN:-نامشخص}"
-  echo -e "  ${CYAN}👤 نام کاربری ادمین:${NC}        ${ADMIN_USERNAME:-admin}"
-  echo -e "  ${CYAN}🔑 رمز عبور ادمین:${NC}          ${ADMIN_PASSWORD:-تنظیم شده در دیتابیس}"
-  echo -e "  ${CYAN}🔒 الگوریتم رمزنگاری:${NC}       AES-256-GCM (فعال)"
-  echo -e "  ${CYAN}⏱️ زمان پیش‌فرض پیام‌ها:${NC}     ${DEFAULT_TTL_SECONDS:-86400} ثانیه"
-  echo -e "  ${CYAN}📁 مسیر نصب سرور:${NC}           ${INSTALL_DIR}"
-  echo ""
-  echo -e "${BOLD}وضعیت کانتینرهای داکر:${NC}"
-  cd "${DEPLOY_DIR}" && docker_compose_cmd ps
-  echo ""
-  read -p "برای بازگشت به منو اینتر بزنید..." dummy
+manage_instance() {
+  local DOMAIN="$1"
+  local SLUG=$(echo "$DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+  local INSTANCE_DIR="${INSTANCES_DIR}/${DOMAIN}"
+  local CONTAINER="xmessenger-${SLUG}"
+
+  while true; do
+    show_banner
+    echo -e "${BOLD}🎯 در حال مدیریت پیام‌رسان دامنه:${NC} ${CYAN}${BOLD}https://${DOMAIN}${NC}\n"
+
+    # Load instance env
+    if [ -f "${INSTANCE_DIR}/.env" ]; then
+      export $(cat "${INSTANCE_DIR}/.env" | grep -v '^#' | xargs)
+    fi
+
+    # Container status
+    local STATUS="نامشخص"
+    if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+      STATUS="${GREEN}آنلاین (Running)${NC}"
+    else
+      STATUS="${RED}متوقف شده (Stopped)${NC}"
+    fi
+
+    echo -e "  ${CYAN}🌐 دامنه:${NC}              https://${DOMAIN}"
+    echo -e "  ${CYAN}📦 وضعیت کانتینر:${NC}      ${STATUS}"
+    echo -e "  ${CYAN}👤 نام کاربری ادمین:${NC}    ${ADMIN_USERNAME:-admin}"
+    echo -e "  ${CYAN}🔑 رمز عبور ادمین:${NC}      ${ADMIN_PASSWORD:-محفوظ در دیتابیس}"
+    echo -e "  ${CYAN}💾 حجم دیتابیس:${NC}       xmessenger-data-${SLUG}"
+    echo ""
+    echo -e " ${BOLD}گزینه‌های مدیریت این دامنه:${NC}"
+    echo -e "  ${GREEN}1)${NC} 📜 مشاهده لاگ‌های زنده کانتینر (Live Logs)"
+    echo -e "  ${GREEN}2)${NC} 🔄 ری‌استارت پیام‌رسان (Restart)"
+    echo -e "  ${GREEN}3)${NC} ▶️  روشن کردن کانتینر (Start)"
+    echo -e "  ${GREEN}4)${NC} ⏹️  خاموش کردن کانتینر (Stop)"
+    echo -e "  ${GREEN}5)${NC} 🔑 تغییر رمز عبور ادمین"
+    echo -e "  ${GREEN}6)${NC} 🔒 تمدید مجدد گواهی SSL این دامنه"
+    echo -e "  ${RED}7)${NC} 🚨 پاکسازی اضطراری دیتابیس (Panic Wipe)"
+    echo -e "  ${RED}8)${NC} 🗑️  حذف کامل این پیام‌رسان و دامنه (Uninstall Domain)"
+    echo -e "  ${YELLOW}0)${NC} ↩️  بازگشت به لیست دامنه‌ها"
+    echo ""
+    read -p "یک گزینه را انتخاب کنید [0-8]: " subchoice
+
+    case "$subchoice" in
+      1)
+        show_banner
+        echo -e "${YELLOW}مشاهده لاگ‌های زنده ${CONTAINER} (برای خروج Ctrl+C بزنید)...${NC}\n"
+        docker logs -f --tail=100 "${CONTAINER}" || true
+        ;;
+      2)
+        echo -e "\n${YELLOW}در حال ری‌استارت ${CONTAINER}...${NC}"
+        docker restart "${CONTAINER}"
+        sleep 2
+        ;;
+      3)
+        echo -e "\n${YELLOW}در حال راه‌اندازی ${CONTAINER}...${NC}"
+        docker start "${CONTAINER}"
+        sleep 2
+        ;;
+      4)
+        echo -e "\n${YELLOW}در حال متوقف کردن ${CONTAINER}...${NC}"
+        docker stop "${CONTAINER}"
+        sleep 2
+        ;;
+      5)
+        show_banner
+        read -p "رمز عبور جدید ادمین برای ${DOMAIN} را وارد کنید: " NEW_PASS
+        if [ -n "$NEW_PASS" ] && [ ${#NEW_PASS} -ge 6 ]; then
+          sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env"
+          docker restart "${CONTAINER}"
+          echo -e "\n${GREEN}رمز عبور با موفقیت به‌روزرسانی شد.${NC}"
+          sleep 2
+        else
+          echo -e "${RED}رمز عبور باید حداقل ۶ کاراکتر باشد.${NC}"
+          sleep 2
+        fi
+        ;;
+      6)
+        show_banner
+        echo -e "${YELLOW}در حال تمدید گواهینامه SSL برای ${DOMAIN}...${NC}"
+        docker run --rm \
+          --network xmessenger-net \
+          -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+          -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+          certbot/certbot certonly --webroot -w /var/www/certbot -d "${DOMAIN}" --force-renewal
+        docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
+        echo -e "\n${GREEN}گواهی SSL مجدداً صادر و بارگذاری شد.${NC}"
+        sleep 2
+        ;;
+      7)
+        show_banner
+        echo -e "${RED}${BOLD}⚠️ اخطار: تمام پیام‌ها و دیتابیس ${DOMAIN} به طور کامل نابود خواهد شد!${NC}"
+        read -p "برای تایید قطعی عبارت DELETE را تایپ کنید: " CONFIRM
+        if [ "$CONFIRM" == "DELETE" ]; then
+          docker rm -f "${CONTAINER}" 2>/dev/null || true
+          docker volume rm -f "xmessenger-data-${SLUG}" 2>/dev/null || true
+          docker run -d \
+            --name "${CONTAINER}" \
+            --restart always \
+            --network xmessenger-net \
+            --env-file "${INSTANCE_DIR}/.env" \
+            -v "xmessenger-data-${SLUG}:/app/data" \
+            xmessenger-core:latest
+          echo -e "\n${GREEN}دیتابیس امحا و پیام‌رسان با دیتابیس خام بازسازی شد.${NC}"
+          sleep 2
+        fi
+        ;;
+      8)
+        show_banner
+        echo -e "${RED}${BOLD}⚠️ آیا مطمئنید می‌خواهید دامنه ${DOMAIN} را به طور کامل از این سرور حذف کنید؟${NC}"
+        read -p "عبارت UNINSTALL را تایپ کنید: " CONFIRM
+        if [ "$CONFIRM" == "UNINSTALL" ]; then
+          docker rm -f "${CONTAINER}" 2>/dev/null || true
+          docker volume rm -f "xmessenger-data-${SLUG}" 2>/dev/null || true
+          rm -rf "${INSTANCE_DIR}"
+          rm -f "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
+          docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
+          echo -e "\n${GREEN}پیام‌رسان ${DOMAIN} با موفقیت حذف شد.${NC}"
+          sleep 2
+          return
+        fi
+        ;;
+      0)
+        return
+        ;;
+    esac
+  done
 }
 
-show_logs() {
-  show_banner
-  echo -e "${YELLOW}مشاهده لاگ‌های زنده سرور (برای خروج Ctrl+C بزنید)...${NC}\n"
-  cd "${DEPLOY_DIR}" && docker_compose_cmd logs -f --tail=100
-}
-
-restart_services() {
-  show_banner
-  echo -e "${YELLOW}در حال ری‌استارت سرویس‌های XMessenger...${NC}"
-  cd "${DEPLOY_DIR}" && docker_compose_cmd restart
-  echo -e "\n${GREEN}سرویس‌ها با موفقیت ری‌استارت شدند.${NC}"
-  sleep 2
-}
-
-start_services() {
-  show_banner
-  echo -e "${YELLOW}در حال راه‌اندازی کانتینرهای XMessenger...${NC}"
-  cd "${DEPLOY_DIR}" && docker_compose_cmd up -d
-  echo -e "\n${GREEN}کانتینرها با موفقیت راه‌اندازی شدند.${NC}"
-  sleep 2
-}
-
-stop_services() {
-  show_banner
-  echo -e "${RED}در حال متوقف کردن سرویس‌های XMessenger...${NC}"
-  cd "${DEPLOY_DIR}" && docker_compose_cmd down
-  echo -e "\n${YELLOW}سرویس‌ها متوقف شدند.${NC}"
-  sleep 2
-}
-
-update_app() {
-  show_banner
-  echo -e "${BLUE}در حال دریافت آخرین نسخه از گیت‌هاب و بیلد مجدد...${NC}\n"
-  cd "${INSTALL_DIR}"
-  git pull origin main || true
-  cd "${DEPLOY_DIR}"
-  docker_compose_cmd down
-  docker_compose_cmd up -d --build
-  echo -e "\n${GREEN}به‌روزرسانی با موفقیت انجام شد!${NC}"
-  sleep 2
-}
-
-change_admin_password() {
-  show_banner
-  echo -e "${YELLOW}تغییر رمز عبور ادمین:${NC}\n"
-  read -p "رمز عبور جدید ادمین را وارد کنید: " NEW_PASS
-  if [ -z "$NEW_PASS" ] || [ ${#NEW_PASS} -lt 6 ]; then
-    echo -e "${RED}رمز عبور باید حداقل ۶ کاراکتر باشد.${NC}"
-    sleep 2
-    return
-  fi
-
-  # Update in .env
-  sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${DEPLOY_DIR}/.env"
-
-  echo -e "${YELLOW}در حال اعمال رمز عبور جدید در سرویس...${NC}"
-  cd "${DEPLOY_DIR}" && docker_compose_cmd restart xmessenger
-  echo -e "\n${GREEN}رمز عبور ادمین با موفقیت تغییر کرد!${NC}"
-  sleep 2
-}
-
-reissue_ssl() {
-  show_banner
-  load_env
-  echo -e "${YELLOW}تمدید یا صدور مجدد گواهینامه SSL برای ${DOMAIN}:${NC}\n"
-  cd "${DEPLOY_DIR}"
-  docker_compose_cmd run --rm certbot certonly --webroot -w /var/www/certbot -d "${DOMAIN}" --force-renewal
-  docker_compose_cmd restart nginx
-  echo -e "\n${GREEN}گواهی SSL با موفقیت بررسی و ری‌استارت شد.${NC}"
-  sleep 2
-}
-
-panic_wipe() {
-  show_banner
-  echo -e "${RED}${BOLD}⚠️ هشدار امنیتی بسیار جدی: پاکسازی اضطراری (Panic Wipe)${NC}"
-  echo -e "${RED}این عملیات تمام پیام‌ها، تاریخچه و دیتابیس را به طور قطعی پاک خواهد کرد!${NC}\n"
-  read -p "آیا کاملاً مطمئن هستید؟ (عبارت DELETE را تایپ کنید): " CONFIRM
-  if [ "$CONFIRM" == "DELETE" ]; then
-    echo -e "${YELLOW}در حال پاکسازی قطعی دیتابیس...${NC}"
-    cd "${DEPLOY_DIR}"
-    docker_compose_cmd down
-    docker volume rm -f deploy_xmessenger-data xmessenger_xmessenger-data xmessenger-data 2>/dev/null || true
-    docker_compose_cmd up -d
-    echo -e "\n${GREEN}تمام داده‌ها به طور کامل امحا و سیستم با دیتابیس نو راه‌اندازی شد.${NC}"
-  else
-    echo -e "\nعملیات لغو شد."
-  fi
-  sleep 3
-}
-
-# Main Interactive Menu Loop
+# Main Menu
 while true; do
   show_banner
-  echo -e " ${BOLD}لطفاً یک گزینه را انتخاب کنید:${NC}"
-  echo ""
-  echo -e "  ${GREEN}1)${NC} 📋 مشاهده وضعیت سرور و مشخصات ورود"
-  echo -e "  ${GREEN}2)${NC} 🔑 تغییر رمز عبور ادمین"
-  echo -e "  ${GREEN}3)${NC} 📜 مشاهده لاگ‌های زنده سرور"
-  echo -e "  ${GREEN}4)${NC} 🔄 ری‌استارت سرویس‌ها (Restart)"
-  echo -e "  ${GREEN}5)${NC} ▶️  شروع سرویس‌ها (Start)"
-  echo -e "  ${GREEN}6)${NC} ⏹️  توقف سرویس‌ها (Stop)"
-  echo -e "  ${GREEN}7)${NC} 🚀 آپدیت پیام‌رسان به آخرین نسخه گیت‌هاب"
-  echo -e "  ${GREEN}8)${NC} 🔒 تمدید یا صدور مجدد گواهی SSL Let's Encrypt"
-  echo -e "  ${GREEN}9)${NC} 🚨 پاکسازی کامل و اضطراری تمام پیام‌ها (Panic Wipe)"
+  DOMAINS=($(get_domains))
+
+  echo -e " ${BOLD}لیست پیام‌رسان‌های فعال روی این سرور:${NC}\n"
+
+  if [ ${#DOMAINS[@]} -eq 0 ]; then
+    echo -e "  ${YELLOW}هیچ پیام‌رسانی هنوز ثبت نشده است.${NC}\n"
+  else
+    for i in "${!DOMAINS[@]}"; do
+      D="${DOMAINS[$i]}"
+      S=$(echo "$D" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+      C="xmessenger-${S}"
+      if docker ps --format '{{.Names}}' | grep -q "^${C}$"; then
+        STATE="${GREEN}● آنلاین${NC}"
+      else
+        STATE="${RED}○ متوقف${NC}"
+      fi
+      echo -e "  ${GREEN}$((i+1)))${NC} ${BOLD}https://${D}${NC}  [${STATE}]"
+    done
+    echo ""
+  fi
+
+  echo -e " ${BOLD}عملیات‌های سراسری سرور:${NC}"
+  echo -e "  ${CYAN}A)${NC} ➕ افزودن دامنه جدید و نصب پیام‌رسان تازه"
+  echo -e "  ${CYAN}R)${NC} 🔄 ری‌استارت گیت‌وی Nginx سراسری"
+  echo -e "  ${CYAN}U)${NC} 🚀 آپدیت تمام پیام‌رسان‌ها به آخرین نسخه گیت‌هاب"
   echo -e "  ${RED}0)${NC} 🚪 خروج"
   echo ""
-  read -p "شماره گزینه را وارد کنید [0-9]: " choice
+  read -p "لطفاً شماره دامنه یا گزینه مورد نظر را وارد کنید: " choice
 
   case "$choice" in
-    1) show_status ;;
-    2) change_admin_password ;;
-    3) show_logs ;;
-    4) restart_services ;;
-    5) start_services ;;
-    6) stop_services ;;
-    7) update_app ;;
-    8) reissue_ssl ;;
-    9) panic_wipe ;;
-    0)
-      echo -e "\nخداحافظ!"
-      exit 0
+    [0-9]*)
+      if [ "$choice" -eq 0 ]; then
+        echo -e "\nخداحافظ!"
+        exit 0
+      fi
+      IDX=$((choice - 1))
+      if [ $IDX -ge 0 ] && [ $IDX -lt ${#DOMAINS[@]} ]; then
+        manage_instance "${DOMAINS[$IDX]}"
+      else
+        echo -e "${RED}شماره نامعتبر است!${NC}"
+        sleep 1
+      fi
+      ;;
+    [aA])
+      show_banner
+      echo -e "${YELLOW}در حال اجرای اسکریپت نصب برای دامنه جدید...${NC}\n"
+      bash "${BASE_DIR}/deploy/install.sh"
+      read -p "برای ادامه اینتر بزنید..." dummy
+      ;;
+    [rR])
+      echo -e "\n${YELLOW}در حال ری‌استارت وب‌سرور Nginx سراسری...${NC}"
+      docker restart xmessenger-nginx 2>/dev/null || true
+      echo -e "${GREEN}Nginx ری‌استارت شد.${NC}"
+      sleep 2
+      ;;
+    [uU])
+      show_banner
+      echo -e "${BLUE}در حال دریافت آخرین نسخه از گیت‌هاب و بیلد سراسری...${NC}\n"
+      cd "${BASE_DIR}"
+      git pull origin main || true
+      docker build -t xmessenger-core:latest -f Dockerfile .
+      # Restart all existing instance containers
+      for D in "${DOMAINS[@]}"; do
+        S=$(echo "$D" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+        docker restart "xmessenger-${S}" 2>/dev/null || true
+      done
+      echo -e "\n${GREEN}تمام پیام‌رسان‌ها با موفقیت آپدیت شدند!${NC}"
+      sleep 2
       ;;
     *)
       echo -e "${RED}گزینه نامعتبر است!${NC}"
