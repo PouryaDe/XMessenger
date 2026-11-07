@@ -6,6 +6,7 @@ const uuid_1 = require("uuid");
 const index_js_1 = require("../database/index.js");
 const crypto_js_1 = require("../utils/crypto.js");
 const auth_js_1 = require("../middleware/auth.js");
+const index_js_2 = require("../socket/index.js");
 exports.authRouter = (0, express_1.Router)();
 // Public app information and status
 exports.authRouter.get('/meta', (req, res) => {
@@ -117,7 +118,8 @@ exports.authRouter.get('/me', auth_js_1.authenticate, (req, res) => {
         adminInfo: user.role === 'user' && adminUser ? {
             id: adminUser.id,
             username: adminUser.username,
-            lastSeen: adminUser.last_seen
+            lastSeen: adminUser.last_seen,
+            isOnline: (0, index_js_2.isAnyAdminOnline)()
         } : null
     });
 });

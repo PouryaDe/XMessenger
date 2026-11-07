@@ -17,6 +17,7 @@ export interface User {
 
 export interface AdminUserItem extends User {
   unreadCount?: number;
+  isOnline?: boolean;
   lastMessage?: {
     id: string;
     text: string;
@@ -79,7 +80,7 @@ export const api = {
     return data;
   },
 
-  async getMe(): Promise<{ user: User; adminInfo: { id: string; username: string; lastSeen: string } | null }> {
+  async getMe(): Promise<{ user: User; adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean } | null }> {
     const res = await fetch(`${API_BASE}/auth/me`, {
       headers: { ...getAuthHeader() }
     });

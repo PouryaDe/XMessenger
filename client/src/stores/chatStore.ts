@@ -7,7 +7,9 @@ interface ChatState {
   activeUserId: string | null; // Selected user for Admin
   adminUsers: AdminUserItem[];
   isAdminOnline: boolean;
+  adminLastSeen: string | null;
   onlineUsers: Record<string, boolean>;
+  lastSeenUsers: Record<string, string>;
   typingUsers: Record<string, boolean>;
   isLoadingMessages: boolean;
 
@@ -15,13 +17,15 @@ interface ChatState {
   setActiveUserId: (id: string | null) => void;
   setAdminUsers: (users: AdminUserItem[]) => void;
   loadMessages: (targetUserId?: string) => Promise<void>;
+  syncMessages: () => Promise<void>;
   sendMessage: (text: string, targetUserId?: string, ttlSeconds?: number) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   addMessage: (msg: Message) => void;
   removeMessage: (messageId: string) => void;
   clearMessages: () => void;
-  setOnlineStatus: (userId: string, isOnline: boolean) => void;
+  setOnlineStatus: (userId: string, isOnline: boolean, lastSeen?: string) => void;
   setAdminOnline: (isOnline: boolean) => void;
+  setAdminLastSeen: (lastSeen: string) => void;
   setTyping: (userId: string, isTyping: boolean) => void;
   sendTyping: (isTyping: boolean, targetUserId?: string) => void;
 }
@@ -31,7 +35,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   activeUserId: null,
   adminUsers: [],
   isAdminOnline: false,
+  adminLastSeen: null,
   onlineUsers: {},
+  lastSeenUsers: {},
   typingUsers: {},
   isLoadingMessages: false,
 
@@ -44,7 +50,21 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  setAdminUsers: (users) => set({ adminUsers: users }),
+  setAdminUsers: (users) => {
+    const onlineMap: Record<string, boolean> = { ...get().onlineUsers };
+    const lastSeenMap: Record<string, string> = { ...get().lastSeenUsers };
+
+    users.forEach((u) => {
+      if (typeof u.isOnline === 'boolean') {
+        onlineMap[u.id] = u.isOnline;
+      }
+      if (u.last_seen) {
+        lastSeenMap[u.id] = u.last_seen;
+      }
+    });
+
+    set({ adminUsers: users, onlineUsers: onlineMap, lastSeenUsers: lastSeenMap });
+  },
 
   loadMessages: async (targetUserId) => {
     try {
@@ -54,6 +74,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
     } catch (err) {
       console.error('Failed to load messages:', err);
       set({ isLoadingMessages: false });
+    }
+  },
+
+  syncMessages: async () => {
+    const { activeUserId } = get();
+    try {
+      const data = await api.getMessages(activeUserId || undefined);
+      // Merge silently without flickering loading state
+      set({ messages: data.messages });
+    } catch (err) {
+      console.warn('Background sync failed:', err);
     }
   },
 
@@ -136,13 +167,16 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set({ messages: [] });
   },
 
-  setOnlineStatus: (userId, isOnline) => {
+  setOnlineStatus: (userId, isOnline, lastSeen) => {
     set((state) => ({
-      onlineUsers: { ...state.onlineUsers, [userId]: isOnline }
+      onlineUsers: { ...state.onlineUsers, [userId]: isOnline },
+      lastSeenUsers: lastSeen ? { ...state.lastSeenUsers, [userId]: lastSeen } : state.lastSeenUsers
     }));
   },
 
   setAdminOnline: (isOnline) => set({ isAdminOnline: isOnline }),
+
+  setAdminLastSeen: (lastSeen) => set({ adminLastSeen: lastSeen }),
 
   setTyping: (userId, isTyping) => {
     set((state) => ({

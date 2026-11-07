@@ -5,6 +5,7 @@ const express_1 = require("express");
 const index_js_1 = require("../database/index.js");
 const auth_js_1 = require("../middleware/auth.js");
 const crypto_js_1 = require("../utils/crypto.js");
+const index_js_2 = require("../socket/index.js");
 function createAdminRouter(io) {
     const router = (0, express_1.Router)();
     // All endpoints require admin authentication
@@ -47,6 +48,7 @@ function createAdminRouter(io) {
                 }
                 return {
                     ...user,
+                    isOnline: (0, index_js_2.isUserOnline)(user.id),
                     unreadCount: unreadCount ? unreadCount.count : 0,
                     lastMessage
                 };

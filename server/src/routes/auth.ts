@@ -3,6 +3,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { db, getSettingValue } from '../database/index.js';
 import { hashPassword, comparePassword } from '../utils/crypto.js';
 import { generateToken, authenticate, AuthenticatedRequest } from '../middleware/auth.js';
+import { isAnyAdminOnline } from '../socket/index.js';
 
 export const authRouter = Router();
 
@@ -148,7 +149,8 @@ authRouter.get('/me', authenticate, (req: AuthenticatedRequest, res) => {
     adminInfo: user.role === 'user' && adminUser ? {
       id: adminUser.id,
       username: adminUser.username,
-      lastSeen: adminUser.last_seen
+      lastSeen: adminUser.last_seen,
+      isOnline: isAnyAdminOnline()
     } : null
   });
 });

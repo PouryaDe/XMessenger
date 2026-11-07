@@ -2,6 +2,7 @@ import { Router } from 'express';
 import { db, getSettingValue, updateSettingValue } from '../database/index.js';
 import { authenticate, requireAdmin, AuthenticatedRequest } from '../middleware/auth.js';
 import { decryptMessage } from '../utils/crypto.js';
+import { isUserOnline } from '../socket/index.js';
 import { Server } from 'socket.io';
 
 export function createAdminRouter(io?: Server) {
@@ -68,6 +69,7 @@ export function createAdminRouter(io?: Server) {
 
         return {
           ...user,
+          isOnline: isUserOnline(user.id),
           unreadCount: unreadCount ? unreadCount.count : 0,
           lastMessage
         };

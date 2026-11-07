@@ -5,6 +5,7 @@ import { useChatStore } from '../../stores/chatStore.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { UserDrawer } from './UserDrawer.js';
 import { getSocket } from '../../services/socket.js';
+import { formatLastSeen } from '../../utils/date.js';
 import { 
   Send, 
   ArrowLeft, 
@@ -22,7 +23,7 @@ import {
 } from 'lucide-react';
 
 export const UserChatView: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, adminInfo } = useAuthStore();
   const { 
     messages, 
@@ -33,7 +34,10 @@ export const UserChatView: React.FC = () => {
     removeMessage,
     clearMessages,
     isAdminOnline,
+    adminLastSeen,
     setAdminOnline,
+    setAdminLastSeen,
+    syncMessages,
     typingUsers,
     setTyping,
     sendTyping
@@ -57,7 +61,7 @@ export const UserChatView: React.FC = () => {
     if (!socket) return;
 
     socket.on('message:new', (msg) => {
-      addMessage({ ...msg, isOwn: false });
+      addMessage({ ...msg, isOwn: msg.senderId === user?.id });
     });
 
     socket.on('message:sent', (msg) => {
@@ -72,8 +76,9 @@ export const UserChatView: React.FC = () => {
       clearMessages();
     });
 
-    socket.on('admin:online_status', ({ isOnline }) => {
+    socket.on('admin:online_status', ({ isOnline, lastSeen }) => {
       setAdminOnline(isOnline);
+      if (lastSeen) setAdminLastSeen(lastSeen);
     });
 
     socket.on('typing', ({ username, isTyping }) => {
@@ -90,7 +95,17 @@ export const UserChatView: React.FC = () => {
       socket.off('admin:online_status');
       socket.off('typing');
     };
-  }, [adminInfo]);
+  }, [adminInfo, user?.id]);
+
+  // Periodic heartbeat sync to ensure zero missed messages
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncMessages();
+      }
+    }, 6000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Auto scroll
   useEffect(() => {
@@ -358,7 +373,7 @@ export const UserChatView: React.FC = () => {
                 ) : isAdminOnline ? (
                   <span className="text-emerald-500 font-medium">{t('online')}</span>
                 ) : (
-                  <span>{t('offline')}</span>
+                  <span>{formatLastSeen(adminLastSeen || adminInfo?.lastSeen, isAdminOnline, i18n.language || 'fa')}</span>
                 )}
               </p>
             </div>
@@ -398,7 +413,7 @@ export const UserChatView: React.FC = () => {
                 <MessageItem
                   key={msg.id}
                   message={msg}
-                  isOwn={msg.isOwn ?? (msg.senderId === user?.id)}
+                  isOwn={msg.senderId === user?.id || msg.isOwn === true}
                   onDelete={deleteMessage}
                 />
               ))

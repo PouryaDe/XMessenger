@@ -7,6 +7,7 @@ import { AdminSidebar } from './AdminSidebar.js';
 import { AdminSettingsModal } from './AdminSettingsModal.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { getSocket } from '../../services/socket.js';
+import { formatLastSeen } from '../../utils/date.js';
 import { 
   Send, 
   CheckCircle, 
@@ -18,7 +19,7 @@ import {
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { 
     messages, 
@@ -32,10 +33,12 @@ export const AdminDashboard: React.FC = () => {
     removeMessage, 
     clearMessages, 
     onlineUsers, 
+    lastSeenUsers,
     setOnlineStatus,
     typingUsers,
     setTyping,
-    sendTyping
+    sendTyping,
+    syncMessages
   } = useChatStore();
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -65,7 +68,7 @@ export const AdminDashboard: React.FC = () => {
 
     socket.on('message:new', (msg) => {
       if (activeUserId && (msg.senderId === activeUserId || msg.recipientId === activeUserId)) {
-        addMessage({ ...msg, isOwn: false });
+        addMessage({ ...msg, isOwn: msg.senderId === user?.id });
       }
       refreshUsers();
     });
@@ -89,8 +92,12 @@ export const AdminDashboard: React.FC = () => {
       refreshUsers();
     });
 
-    socket.on('user:online_status', ({ userId, isOnline }) => {
-      setOnlineStatus(userId, isOnline);
+    socket.on('presence:init', ({ onlineUserIds }: { onlineUserIds: string[] }) => {
+      onlineUserIds.forEach((id) => setOnlineStatus(id, true));
+    });
+
+    socket.on('user:online_status', ({ userId, isOnline, lastSeen }) => {
+      setOnlineStatus(userId, isOnline, lastSeen);
     });
 
     socket.on('typing', ({ userId, isTyping }) => {
@@ -102,9 +109,21 @@ export const AdminDashboard: React.FC = () => {
       socket.off('message:sent');
       socket.off('message:deleted');
       socket.off('conversation:cleared');
+      socket.off('presence:init');
       socket.off('user:online_status');
       socket.off('typing');
     };
+  }, [activeUserId, user?.id]);
+
+  // Periodic heartbeat message sync to guarantee zero missed messages
+  useEffect(() => {
+    if (!activeUserId) return;
+    const interval = setInterval(() => {
+      if (typeof document !== 'undefined' && document.visibilityState === 'visible') {
+        syncMessages();
+      }
+    }, 6000);
+    return () => clearInterval(interval);
   }, [activeUserId]);
 
   // Auto-scroll
@@ -251,7 +270,13 @@ export const AdminDashboard: React.FC = () => {
                     ) : onlineUsers[activeUser.id] ? (
                       <span className="text-emerald-500 font-medium">{t('online')}</span>
                     ) : (
-                      <span>{t('offline')}</span>
+                      <span>
+                        {formatLastSeen(
+                          lastSeenUsers[activeUser.id] || activeUser.last_seen,
+                          Boolean(onlineUsers[activeUser.id]),
+                          i18n.language || 'fa'
+                        )}
+                      </span>
                     )}
                   </p>
                 </div>
@@ -319,7 +344,7 @@ export const AdminDashboard: React.FC = () => {
                   <MessageItem
                     key={msg.id}
                     message={msg}
-                    isOwn={msg.isOwn ?? (msg.senderId === user?.id)}
+                    isOwn={msg.senderId === user?.id || msg.isOwn === true}
                     onDelete={deleteMessage}
                   />
                 ))
