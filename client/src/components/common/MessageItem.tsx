@@ -83,7 +83,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
             {/* Ephemeral Flame Tag */}
             <span
               className="flex items-center gap-1 px-1.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-medium"
-              title={`زمان انقضا: ${new Date(message.expiresAt).toLocaleTimeString()}`}
+              title={`${t('expiresAt')}${new Date(message.expiresAt).toLocaleTimeString()}`}
             >
               <Flame className="w-2.5 h-2.5 text-amber-500 animate-pulse" />
               <span>{timeLeft}</span>
@@ -122,7 +122,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
         <button
           onClick={handleCopy}
           className="p-1 hover:text-slate-700 dark:hover:text-slate-200 transition-colors"
-          title={copied ? t('copied') : 'کپی متن'}
+          title={copied ? t('copied') : t('copyText')}
         >
           <Copy className="w-3.5 h-3.5" />
         </button>
@@ -130,7 +130,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
         <button
           onClick={() => setLiked(!liked)}
           className={`p-1 transition-colors ${liked ? 'text-primary-500' : 'hover:text-slate-700 dark:hover:text-slate-200'}`}
-          title="پسندیدن"
+          title={t('like')}
         >
           <ThumbsUp className="w-3.5 h-3.5" />
         </button>

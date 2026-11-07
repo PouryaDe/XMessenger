@@ -52,7 +52,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
               {t('adminPanel')}
             </h2>
             <p className="text-[11px] text-slate-400">
-              مدیریت و پیام‌رسانی
+              {t('adminSubHeader')}
             </p>
           </div>
         </div>
@@ -185,18 +185,18 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                       </span>
                       {u.status === 'pending' && (
                         <span className="text-[9px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
-                          در انتظار تایید
+                          {t('statusPending')}
                         </span>
                       )}
                       {u.status === 'banned' && (
                         <span className="text-[9px] px-2 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">
-                          مسدود
+                          {t('bannedUsers')}
                         </span>
                       )}
                     </div>
 
                     <p className="text-[11px] text-slate-400 truncate mt-0.5 max-w-[160px]">
-                      {u.lastMessage ? u.lastMessage.text : 'بدون پیام قبلی'}
+                      {u.lastMessage ? u.lastMessage.text : t('noPreviousMessage')}
                     </p>
                   </div>
                 </div>

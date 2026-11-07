@@ -23,7 +23,7 @@ export const App: React.FC = () => {
           <Shield className="w-8 h-8" />
         </div>
         <p className="text-sm font-medium tracking-wide text-slate-300">
-          در حال بارگذاری ایمن...
+          {t('loadingSecure')}
         </p>
       </div>
     );
@@ -43,10 +43,10 @@ export const App: React.FC = () => {
             <ShieldAlert className="w-7 h-7" />
           </div>
           <h2 className="text-lg font-bold text-red-400 mb-2">
-            دسترسی شما مسدود شده است
+            {t('accessBlocked')}
           </h2>
           <p className="text-xs text-slate-400 mb-6 leading-relaxed">
-            حساب کاربری شما توسط مدیر سیستم به حالت تعلیق درآمده است.
+            {t('bannedDesc')}
           </p>
           <button
             onClick={logout}

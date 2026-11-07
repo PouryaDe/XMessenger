@@ -48,12 +48,12 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
     setPwdMsg(null);
     try {
       await api.changePassword(currentPassword, newPassword);
-      setPwdMsg({ type: 'success', text: 'رمز عبور با موفقیت تغییر یافت' });
+      setPwdMsg({ type: 'success', text: t('pwdChangedSuccess') });
       setCurrentPassword('');
       setNewPassword('');
       setTimeout(() => setShowPasswordModal(false), 1500);
     } catch (err: any) {
-      setPwdMsg({ type: 'error', text: err.message || 'خطا در تغییر رمز' });
+      setPwdMsg({ type: 'error', text: err.message || t('pwdChangeError') });
     }
   };
 

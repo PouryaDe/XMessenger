@@ -27,13 +27,13 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
     setMsg(null);
     try {
       await api.updateAdminSettings(settings);
-      setMsg('تنظیمات با موفقیت ذخیره شد');
+      setMsg(t('settingsSaved'));
       setTimeout(() => {
         setMsg(null);
         onClose();
       }, 1200);
     } catch (err: any) {
-      setMsg('خطا در ذخیره تنظیمات: ' + err.message);
+      setMsg(t('pwdChangeError') + ': ' + err.message);
     } finally {
       setLoading(false);
     }
@@ -53,7 +53,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 {t('settings')} - {t('adminPanel')}
               </h3>
               <p className="text-[11px] text-slate-400">
-                پیکربندی امنیت، عضویت و حذف خودکار پیام‌ها
+                {t('settingsSubtitle')}
               </p>
             </div>
           </div>
@@ -116,7 +116,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <span>{t('defaultTtl')}</span>
             </label>
             <p className="text-[11px] text-slate-400 mb-2">
-              مدت زمان باقی‌ماندن پیام‌ها قبل از پاکسازی قطعی از دیتابیس
+              {t('ttlSubtitle')}
             </p>
             <select
               value={settings.defaultTtlSeconds}
@@ -146,7 +146,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             disabled={loading}
             className="px-6 py-2.5 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md hover:scale-102 active:scale-98 disabled:opacity-40 transition-all"
           >
-            {loading ? 'در حال ذخیره...' : t('save')}
+            {loading ? t('saving') : t('save')}
           </button>
         </div>
       </div>

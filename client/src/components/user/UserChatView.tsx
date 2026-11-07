@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { MessageItem } from '../common/MessageItem.js';
@@ -21,6 +22,7 @@ import {
 } from 'lucide-react';
 
 export const UserChatView: React.FC = () => {
+  const { t } = useTranslation();
   const { user, adminInfo } = useAuthStore();
   const { 
     messages, 
@@ -150,7 +152,7 @@ export const UserChatView: React.FC = () => {
                 {user?.username.substring(0, 2)}
               </div>
               <div>
-                <p className="text-[11px] text-slate-400 font-medium">خوش آمدید</p>
+                <p className="text-[11px] text-slate-400 font-medium">{t('welcome')}</p>
                 <h3 className="text-xs font-bold text-slate-900 dark:text-white leading-tight">{user?.username}</h3>
               </div>
             </div>
@@ -160,7 +162,7 @@ export const UserChatView: React.FC = () => {
               <button 
                 onClick={() => setDrawerOpen(true)}
                 className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-                title="اعلان‌ها و وضعیت"
+                title={t('notificationsAndStatus')}
               >
                 <Bell className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </button>
@@ -168,7 +170,7 @@ export const UserChatView: React.FC = () => {
               <button
                 onClick={() => setDrawerOpen(true)}
                 className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-                title="منوی اصلی و تنظیمات"
+                title={t('menuAndSettings')}
               >
                 <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-slate-300" />
               </button>
@@ -180,8 +182,7 @@ export const UserChatView: React.FC = () => {
             {/* Editorial Heading */}
             <div className="pt-2">
               <h1 className="text-3xl font-extrabold tracking-tight text-slate-900 dark:text-white leading-tight">
-                ارتباط امن<br />
-                <span className="text-slate-600 dark:text-slate-300">با مدیریت سیستم</span>
+                {t('secureCommsWithAdmin')}
               </h1>
             </div>
 
@@ -192,7 +193,7 @@ export const UserChatView: React.FC = () => {
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="جستجو در پیام‌ها یا سوابق..."
+                placeholder={t('searchMessages')}
                 className="w-full pl-11 pr-11 py-3 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 font-sans"
               />
             </div>
@@ -209,10 +210,10 @@ export const UserChatView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">
-                    گفتگوی آنلاین
+                    {t('onlineChat')}
                   </h3>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-[11px] text-slate-400">ورود به چت</span>
+                    <span className="text-[11px] text-slate-400">{t('enterChat')}</span>
                     <span className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-colors">
                       <ChevronRight className="w-4 h-4 rtl:rotate-180" />
                     </span>
@@ -230,10 +231,10 @@ export const UserChatView: React.FC = () => {
                 </div>
                 <div>
                   <h3 className="font-bold text-sm text-slate-900 dark:text-white mb-1">
-                    پیام‌های گذرا
+                    {t('disappearingMessages')}
                   </h3>
                   <div className="flex items-center justify-between mt-2">
-                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">حذف ۲۴ ساعته</span>
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium">{t('delete24h')}</span>
                     <span className="w-7 h-7 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 group-hover:bg-slate-900 group-hover:text-white dark:group-hover:bg-white dark:group-hover:text-slate-900 transition-colors">
                       <ChevronRight className="w-4 h-4 rtl:rotate-180" />
                     </span>
@@ -246,13 +247,13 @@ export const UserChatView: React.FC = () => {
             <div>
               <div className="flex items-center justify-between mb-3 px-1">
                 <h4 className="font-bold text-xs text-slate-800 dark:text-slate-200">
-                  فعالیت‌های اخیر
+                  {t('recentActivities')}
                 </h4>
                 <button 
                   onClick={() => setViewMode('chat')}
                   className="text-[11px] font-medium text-slate-400 hover:text-slate-700 dark:hover:text-white transition-colors"
                 >
-                  مشاهده همه
+                  {t('seeAll')}
                 </button>
               </div>
 
@@ -268,10 +269,10 @@ export const UserChatView: React.FC = () => {
                     </div>
                     <div className="overflow-hidden">
                       <h5 className="font-bold text-xs text-slate-900 dark:text-white truncate">
-                        گفتگو با مدیریت سیستم
+                        {t('chatWithAdminFull')}
                       </h5>
                       <p className="text-[11px] text-slate-400 truncate mt-0.5">
-                        {lastMessage ? lastMessage.text : 'پیامی ارسال نشده است'}
+                        {lastMessage ? lastMessage.text : t('noMessagesYet')}
                       </p>
                     </div>
                   </div>
@@ -289,10 +290,10 @@ export const UserChatView: React.FC = () => {
                     </div>
                     <div className="overflow-hidden">
                       <h5 className="font-bold text-xs text-slate-900 dark:text-white">
-                        امنیت رمزنگاری AES-256
+                        {t('aesSecurityTitle')}
                       </h5>
                       <p className="text-[11px] text-emerald-600 dark:text-emerald-400 mt-0.5">
-                        محافظت کامل داده‌ها در دیتابیس
+                        {t('aesSecurityDesc')}
                       </p>
                     </div>
                   </div>
@@ -311,7 +312,7 @@ export const UserChatView: React.FC = () => {
                   type="text"
                   value={inputText}
                   onChange={handleInputChange}
-                  placeholder="پیام سریع خود را بنویسید..."
+                  placeholder={t('typeQuickMessage')}
                   className="flex-1 bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans"
                 />
               </div>
@@ -321,7 +322,7 @@ export const UserChatView: React.FC = () => {
                 type="submit"
                 disabled={!inputText.trim()}
                 className="w-12 h-12 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
-                title="ارسال پیام"
+                title={t('sendMessage')}
               >
                 <Send className="w-4 h-4 rtl:rotate-180" />
               </button>
@@ -341,7 +342,7 @@ export const UserChatView: React.FC = () => {
             <button
               onClick={() => setViewMode('home')}
               className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-              title="بازگشت به صفحه اصلی"
+              title={t('backToHome')}
             >
               <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
             </button>
@@ -349,15 +350,15 @@ export const UserChatView: React.FC = () => {
             {/* Centered Chat Title & Status */}
             <div className="text-center">
               <h2 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
-                گفتگو با مدیریت
+                {t('chatWithAdmin')}
               </h2>
               <p className="text-[10px] text-slate-400 flex items-center justify-center gap-1 mt-0.5">
                 {isOpponentTyping ? (
-                  <span className="text-amber-500 font-medium animate-pulse">در حال نوشتن...</span>
+                  <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
                 ) : isAdminOnline ? (
-                  <span className="text-emerald-500 font-medium">آنلاین</span>
+                  <span className="text-emerald-500 font-medium">{t('online')}</span>
                 ) : (
-                  <span>آفلاین</span>
+                  <span>{t('offline')}</span>
                 )}
               </p>
             </div>
@@ -366,7 +367,7 @@ export const UserChatView: React.FC = () => {
             <button
               onClick={() => setDrawerOpen(true)}
               className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
-              title="تنظیمات گفتگو"
+              title={t('chatSettings')}
             >
               <MoreHorizontal className="w-5 h-5" />
             </button>
@@ -375,7 +376,7 @@ export const UserChatView: React.FC = () => {
           {/* Ephemeral Flame Tag Indicator */}
           <div className="px-5 py-1 flex items-center justify-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-400 shrink-0">
             <Flame className="w-3.5 h-3.5 text-amber-500 animate-pulse" />
-            <span className="font-sans">پیام‌ها پس از ۲۴ ساعت به طور خودکار دوطرفه حذف می‌شوند.</span>
+            <span className="font-sans">{t('chatTtlBanner')}</span>
           </div>
 
           {/* Messages Stream */}
@@ -386,10 +387,10 @@ export const UserChatView: React.FC = () => {
                   <Lock className="w-7 h-7" />
                 </div>
                 <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                  گفتگوی کاملاً امن و محرمانه
+                  {t('secureChatNoticeTitle')}
                 </h4>
                 <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
-                  پیام شما مستقیماً برای مدیر سیستم ارسال شده و در دیتابیس با کلید رمزنگاری AES-256 ذخیره می‌گردد.
+                  {t('secureChatNoticeDesc')}
                 </p>
               </div>
             ) : (
@@ -412,9 +413,8 @@ export const UserChatView: React.FC = () => {
               <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-floating border border-black/5 dark:border-white/5">
                 <button
                   type="button"
-                  onClick={() => alert('رمزنگاری فایل‌های ارسالی فعال است.')}
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
-                  title="ضمیمه کردن"
+                  title={t('attachFile')}
                 >
                   <Paperclip className="w-4 h-4" />
                 </button>
@@ -423,7 +423,7 @@ export const UserChatView: React.FC = () => {
                   type="text"
                   value={inputText}
                   onChange={handleInputChange}
-                  placeholder="پیام خود را بنویسید..."
+                  placeholder={t('typeMessage')}
                   className="flex-1 bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans"
                 />
 
@@ -441,7 +441,7 @@ export const UserChatView: React.FC = () => {
                 type="submit"
                 disabled={!inputText.trim()}
                 className="w-12 h-12 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 flex items-center justify-center shadow-lg hover:scale-105 active:scale-95 disabled:opacity-40 disabled:cursor-not-allowed transition-all shrink-0"
-                title="ارسال"
+                title={t('send')}
               >
                 <Send className="w-4 h-4 rtl:rotate-180" />
               </button>

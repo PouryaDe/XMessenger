@@ -180,7 +180,7 @@ export const AdminDashboard: React.FC = () => {
 
   const handleDeleteUser = async () => {
     if (!activeUserId) return;
-    if (window.confirm('آیا از حذف این کاربر و تمام سوابق آن اطمینان دارید؟')) {
+    if (window.confirm(t('confirmDeleteUser'))) {
       try {
         await api.deleteUser(activeUserId);
         setActiveUserId(null);
@@ -236,12 +236,12 @@ export const AdminDashboard: React.FC = () => {
                     </h3>
                     {activeUser.status === 'pending' && (
                       <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
-                        در انتظار تایید
+                        {t('statusPending')}
                       </span>
                     )}
                     {activeUser.status === 'banned' && (
                       <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">
-                        مسدود شده
+                        {t('statusBanned')}
                       </span>
                     )}
                   </div>
@@ -308,10 +308,10 @@ export const AdminDashboard: React.FC = () => {
                     <MessageSquare className="w-7 h-7" />
                   </div>
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    هیچ پیامی در این گفتگو وجود ندارد
+                    {t('noMessagesInChat')}
                   </p>
                   <p className="text-xs max-w-xs mt-1 text-slate-400">
-                    پیام‌ها پس از ارسال بر اساس زمان انقضا به طور خودکار از هر دو طرف پاک می‌شوند.
+                    {t('messagesTtlNotice')}
                   </p>
                 </div>
               ) : (
@@ -336,14 +336,14 @@ export const AdminDashboard: React.FC = () => {
                     value={selectedTtl || ''}
                     onChange={(e) => setSelectedTtl(e.target.value ? parseInt(e.target.value, 10) : undefined)}
                     className="py-1.5 rounded-full bg-stone-100 dark:bg-slate-700 text-[11px] text-slate-700 dark:text-slate-300 focus:outline-none cursor-pointer"
-                    title="تایمر انقضای این پیام"
+                    title={t('ttlTimerTitle')}
                   >
-                    <option value="">پیش‌فرض</option>
-                    <option value="900">۱۵ دقیقه</option>
-                    <option value="3600">۱ ساعت</option>
-                    <option value="21600">۶ ساعت</option>
-                    <option value="86400">۲۴ ساعت</option>
-                    <option value="172800">۲ روز</option>
+                    <option value="">{t('defaultOption')}</option>
+                    <option value="900">{t('ttl15m')}</option>
+                    <option value="3600">{t('ttl1h')}</option>
+                    <option value="21600">{t('ttl6h')}</option>
+                    <option value="86400">{t('ttl24h')}</option>
+                    <option value="172800">{t('ttl2d')}</option>
                   </select>
 
                   <input
@@ -372,10 +372,10 @@ export const AdminDashboard: React.FC = () => {
               <MessageSquare className="w-9 h-9" />
             </div>
             <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200">
-              یک گفتگو را انتخاب کنید
+              {t('selectConversation')}
             </h3>
             <p className="text-xs text-slate-400 max-w-xs mt-1">
-              از نوار کناری کاربری را انتخاب کنید تا تاریخچه پیام‌ها بارگذاری شده و بتوانید پاسخ دهید.
+              {t('selectConversationDesc')}
             </p>
           </div>
         )}
