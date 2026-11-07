@@ -71,21 +71,41 @@ if ! command -v curl &> /dev/null || ! command -v openssl &> /dev/null; then
   apt-get update -y && apt-get install -y curl openssl git
 fi
 
-# Install Docker if not present
+# Install Docker if not present (Handles sanction/403 blocks on download.docker.com)
 if ! command -v docker &> /dev/null; then
-  echo -e "${YELLOW}Docker not found. Installing Docker engine automatically...${NC}"
-  curl -fsSL https://get.docker.com | sh
-  systemctl enable --now docker
+  echo -e "${YELLOW}Docker not found. Installing Docker engine...${NC}"
+  # Try official script first; if it fails (e.g. 403 Forbidden on IR IP), fallback to native docker.io
+  if ! (curl -fsSL https://get.docker.com | sh); then
+    echo -e "${YELLOW}[Notice] Official docker repository returned error (sanction/403 block).${NC}"
+    echo -e "${YELLOW}Switching to native system packages (docker.io & docker-compose)...${NC}"
+    rm -f /etc/apt/sources.list.d/docker.list 2>/dev/null || true
+    apt-get update -y
+    apt-get install -y docker.io docker-compose
+  fi
+  systemctl enable --now docker || true
   echo -e "${GREEN}Docker installed successfully.${NC}"
 else
   echo -e "${GREEN}Docker is already installed.${NC}"
 fi
 
-# Check Docker Compose (Plugin or standalone)
+# Ensure Docker Compose works (v2 plugin or standalone v1)
 if ! docker compose version &> /dev/null; then
-  echo -e "${YELLOW}Installing docker-compose plugin...${NC}"
-  apt-get update -y && apt-get install -y docker-compose-plugin || true
+  if ! command -v docker-compose &> /dev/null; then
+    echo -e "${YELLOW}Installing docker-compose...${NC}"
+    apt-get update -y && apt-get install -y docker-compose-plugin 2>/dev/null || apt-get install -y docker-compose || true
+  fi
 fi
+
+# Define helper to seamlessly support both 'docker compose' and 'docker-compose'
+docker_compose_cmd() {
+  if docker compose version &> /dev/null; then
+    docker compose "$@"
+  elif command -v docker-compose &> /dev/null; then
+    docker-compose "$@"
+  else
+    docker compose "$@"
+  fi
+}
 
 # 3. Interactive Configuration (Supports piped curl with /dev/tty fallback)
 echo -e "\n${BLUE}[2/6] Configuring Domain and Security...${NC}"
@@ -202,8 +222,8 @@ sed "s|\${DOMAIN}|${DOMAIN}|g" "${SCRIPT_DIR}/nginx/nginx.conf.template" > "${SC
 # 7. Build and Launch Containers
 echo -e "\n${BLUE}[6/6] Building and starting XMessenger containers...${NC}"
 cd "${SCRIPT_DIR}"
-docker compose down 2>/dev/null || true
-docker compose up -d --build
+docker_compose_cmd down 2>/dev/null || true
+docker_compose_cmd up -d --build
 
 # 8. Setup Global CLI Command (xmessenger)
 chmod +x "${SCRIPT_DIR}/xmessenger.sh" 2>/dev/null || true

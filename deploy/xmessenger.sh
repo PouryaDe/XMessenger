@@ -27,6 +27,16 @@ fi
 
 DEPLOY_DIR="${INSTALL_DIR}/deploy"
 
+docker_compose_cmd() {
+  if docker compose version &> /dev/null; then
+    docker compose "$@"
+  elif command -v docker-compose &> /dev/null; then
+    docker-compose "$@"
+  else
+    docker compose "$@"
+  fi
+}
+
 show_banner() {
   clear
   echo -e "${CYAN}${BOLD}"
@@ -60,7 +70,7 @@ show_status() {
   echo -e "  ${CYAN}📁 مسیر نصب سرور:${NC}           ${INSTALL_DIR}"
   echo ""
   echo -e "${BOLD}وضعیت کانتینرهای داکر:${NC}"
-  cd "${DEPLOY_DIR}" && docker compose ps
+  cd "${DEPLOY_DIR}" && docker_compose_cmd ps
   echo ""
   read -p "برای بازگشت به منو اینتر بزنید..." dummy
 }
@@ -68,13 +78,13 @@ show_status() {
 show_logs() {
   show_banner
   echo -e "${YELLOW}مشاهده لاگ‌های زنده سرور (برای خروج Ctrl+C بزنید)...${NC}\n"
-  cd "${DEPLOY_DIR}" && docker compose logs -f --tail=100
+  cd "${DEPLOY_DIR}" && docker_compose_cmd logs -f --tail=100
 }
 
 restart_services() {
   show_banner
   echo -e "${YELLOW}در حال ری‌استارت سرویس‌های XMessenger...${NC}"
-  cd "${DEPLOY_DIR}" && docker compose restart
+  cd "${DEPLOY_DIR}" && docker_compose_cmd restart
   echo -e "\n${GREEN}سرویس‌ها با موفقیت ری‌استارت شدند.${NC}"
   sleep 2
 }
@@ -82,7 +92,7 @@ restart_services() {
 start_services() {
   show_banner
   echo -e "${YELLOW}در حال راه‌اندازی کانتینرهای XMessenger...${NC}"
-  cd "${DEPLOY_DIR}" && docker compose up -d
+  cd "${DEPLOY_DIR}" && docker_compose_cmd up -d
   echo -e "\n${GREEN}کانتینرها با موفقیت راه‌اندازی شدند.${NC}"
   sleep 2
 }
@@ -90,7 +100,7 @@ start_services() {
 stop_services() {
   show_banner
   echo -e "${RED}در حال متوقف کردن سرویس‌های XMessenger...${NC}"
-  cd "${DEPLOY_DIR}" && docker compose down
+  cd "${DEPLOY_DIR}" && docker_compose_cmd down
   echo -e "\n${YELLOW}سرویس‌ها متوقف شدند.${NC}"
   sleep 2
 }
@@ -101,8 +111,8 @@ update_app() {
   cd "${INSTALL_DIR}"
   git pull origin main || true
   cd "${DEPLOY_DIR}"
-  docker compose down
-  docker compose up -d --build
+  docker_compose_cmd down
+  docker_compose_cmd up -d --build
   echo -e "\n${GREEN}به‌روزرسانی با موفقیت انجام شد!${NC}"
   sleep 2
 }
@@ -121,7 +131,7 @@ change_admin_password() {
   sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${DEPLOY_DIR}/.env"
 
   echo -e "${YELLOW}در حال اعمال رمز عبور جدید در سرویس...${NC}"
-  cd "${DEPLOY_DIR}" && docker compose restart xmessenger
+  cd "${DEPLOY_DIR}" && docker_compose_cmd restart xmessenger
   echo -e "\n${GREEN}رمز عبور ادمین با موفقیت تغییر کرد!${NC}"
   sleep 2
 }
@@ -131,8 +141,8 @@ reissue_ssl() {
   load_env
   echo -e "${YELLOW}تمدید یا صدور مجدد گواهینامه SSL برای ${DOMAIN}:${NC}\n"
   cd "${DEPLOY_DIR}"
-  docker compose run --rm certbot certonly --webroot -w /var/www/certbot -d "${DOMAIN}" --force-renewal
-  docker compose restart nginx
+  docker_compose_cmd run --rm certbot certonly --webroot -w /var/www/certbot -d "${DOMAIN}" --force-renewal
+  docker_compose_cmd restart nginx
   echo -e "\n${GREEN}گواهی SSL با موفقیت بررسی و ری‌استارت شد.${NC}"
   sleep 2
 }
@@ -145,9 +155,9 @@ panic_wipe() {
   if [ "$CONFIRM" == "DELETE" ]; then
     echo -e "${YELLOW}در حال پاکسازی قطعی دیتابیس...${NC}"
     cd "${DEPLOY_DIR}"
-    docker compose down
+    docker_compose_cmd down
     docker volume rm -f deploy_xmessenger-data xmessenger_xmessenger-data xmessenger-data 2>/dev/null || true
-    docker compose up -d
+    docker_compose_cmd up -d
     echo -e "\n${GREEN}تمام داده‌ها به طور کامل امحا و سیستم با دیتابیس نو راه‌اندازی شد.${NC}"
   else
     echo -e "\nعملیات لغو شد."
@@ -183,7 +193,7 @@ while true; do
     7) update_app ;;
     8) reissue_ssl ;;
     9) panic_wipe ;;
-    0) 
+    0)
       echo -e "\nخداحافظ!"
       exit 0
       ;;
