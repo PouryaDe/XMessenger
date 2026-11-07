@@ -59,11 +59,28 @@ const staticDir = fs.existsSync(clientDistPath) ? clientDistPath : (fs.existsSyn
 
 if (staticDir) {
   console.log(`[Server] Serving static client from: ${staticDir}`);
-  app.use(express.static(staticDir));
+
+  // Serve static assets with caching, but index.html must NEVER be cached
+  app.use(express.static(staticDir, {
+    setHeaders: (res, filePath) => {
+      if (filePath.endsWith('.html')) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+        res.setHeader('Pragma', 'no-cache');
+        res.setHeader('Expires', '0');
+      } else {
+        // Hashed assets (JS/CSS) can be cached safely
+        res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
+      }
+    }
+  }));
+
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
       return next();
     }
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
     res.sendFile(path.join(staticDir, 'index.html'));
   });
 }
