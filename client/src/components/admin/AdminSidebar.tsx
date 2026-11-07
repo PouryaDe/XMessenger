@@ -57,19 +57,19 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           </div>
         </div>
 
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center gap-2">
           <button
             onClick={onOpenSettings}
-            className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
             title={t('settings')}
           >
             <Sliders className="w-4 h-4 text-amber-500" />
           </button>
-          <LanguageToggle className="p-1.5 rounded-full" />
-          <ThemeToggle className="p-1.5 rounded-full" />
+          <LanguageToggle />
+          <ThemeToggle />
           <button
             onClick={logout}
-            className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center transition-all"
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
             title={t('logout')}
           >
             <LogOut className="w-4 h-4" />

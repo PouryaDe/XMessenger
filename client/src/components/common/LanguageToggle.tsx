@@ -1,7 +1,6 @@
 import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { setAppLanguage } from '../../i18n/index.js';
-import { Globe } from 'lucide-react';
 
 export const LanguageToggle: React.FC<{ className?: string }> = ({ className = '' }) => {
   const { i18n } = useTranslation();
@@ -15,11 +14,9 @@ export const LanguageToggle: React.FC<{ className?: string }> = ({ className = '
   return (
     <button
       onClick={toggleLanguage}
-      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-sm font-medium transition-all duration-200
-        bg-gray-200/70 hover:bg-gray-300 dark:bg-slate-800 dark:hover:bg-slate-700 text-gray-700 dark:text-gray-200 border border-transparent dark:border-slate-700 ${className}`}
+      className={`w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all font-bold text-xs shrink-0 select-none ${className}`}
       title="تغییر زبان / Change Language"
     >
-      <Globe className="w-4 h-4 text-primary-500" />
       <span>{currentLang === 'fa' ? 'EN' : 'فا'}</span>
     </button>
   );
