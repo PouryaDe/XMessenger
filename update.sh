@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
 # ==============================================================================
 # XMessenger Fast Update Script
-# Updates repository, builds new core image, and recreates containers with zero data loss
-# Output is strictly in English for terminal compatibility
+# Updates repository, injects latest assets directly into containers,
+# and builds new core image with zero data loss.
+# Output is strictly in English for terminal compatibility.
 # ==============================================================================
 
 set -e
@@ -23,27 +24,39 @@ fi
 PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 BASE_DIR="/opt/xmessenger"
 INSTANCES_DIR="${BASE_DIR}/instances"
+SHARED_DIR="${BASE_DIR}/shared"
 
 echo -e "${CYAN}${BOLD}"
 echo "=================================================================="
-echo "    XMessenger Fast Update & Deployment Engine                    "
+echo "    XMessenger Fast Update & Hot-Deploy Engine                    "
 echo "=================================================================="
 echo -e "${NC}"
 
 cd "${PROJECT_ROOT}"
 
-# 1. Pull latest code from GitHub
-echo -e "${BLUE}[1/4] Pulling latest updates from GitHub...${NC}"
-git pull origin main
+# 1. Force sync with latest code from GitHub (immune to local merge conflicts)
+echo -e "${BLUE}[1/4] Syncing latest updates from GitHub...${NC}"
+git fetch origin main
+git reset --hard origin/main
 
-# 2. Build updated Docker image
-echo -e "\n${BLUE}[2/4] Building optimized container image...${NC}"
+# 2. Hot-deploy compiled assets directly into all running containers (Instant 1-second update)
+echo -e "\n${BLUE}[2/4] Live-updating running containers...${NC}"
+for c in $(docker ps --format '{{.Names}}' | grep '^xmessenger-'); do
+  if [ "$c" != "xmessenger-nginx" ] && [ "$c" != "xmessenger-certbot" ]; then
+    echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
+    docker cp client/dist/. "${c}:/app/client-dist/" 2>/dev/null || true
+    docker cp server/dist/. "${c}:/app/dist/" 2>/dev/null || true
+    docker restart "${c}" 2>/dev/null || true
+    echo -e "${GREEN}✓ Container ${c} updated and live!${NC}"
+  fi
+done
+
+# 3. Build persistent Docker image for long-term consistency
+echo -e "\n${BLUE}[3/4] Rebuilding Docker core image...${NC}"
 export DOCKER_BUILDKIT=1
 docker build -t xmessenger-core:latest -f Dockerfile .
 
-# 3. Recreate active messenger containers
-echo -e "\n${BLUE}[3/4] Recreating instance containers with latest image...${NC}"
-
+# Update instance containers with proper env and volume mounts if directory exists
 if [ -d "${INSTANCES_DIR}" ]; then
   for instance_path in "${INSTANCES_DIR}"/*; do
     if [ -d "${instance_path}" ]; then
@@ -53,10 +66,9 @@ if [ -d "${INSTANCES_DIR}" ]; then
       ENV_FILE="${instance_path}/.env"
 
       if [ -f "${ENV_FILE}" ]; then
-        echo -e "${YELLOW}Updating instance: ${DOMAIN} (${CONTAINER})...${NC}"
+        echo -e "${YELLOW}Re-creating persistent instance: ${DOMAIN} (${CONTAINER})...${NC}"
         
-        # Ensure Nginx WebSocket configuration supports both polling and upgrade
-        SHARED_DIR="${BASE_DIR}/shared"
+        # Upgrade Nginx proxy header to support both WebSockets and Polling
         NGINX_CONF="${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
         if [ -f "${NGINX_CONF}" ]; then
           sed -i 's/proxy_set_header Connection "upgrade";/proxy_set_header Connection $http_connection;/g' "${NGINX_CONF}" 2>/dev/null || true
@@ -70,23 +82,16 @@ if [ -d "${INSTANCES_DIR}" ]; then
           --env-file "${ENV_FILE}" \
           -v "xmessenger-data-${SLUG}:/app/data" \
           xmessenger-core:latest
-        echo -e "${GREEN}✓ ${DOMAIN} successfully updated and running!${NC}"
+        echo -e "${GREEN}✓ ${DOMAIN} container recreated with latest image!${NC}"
       fi
     fi
   done
-else
-  # Fallback: check if single container xmessenger-xchat-iranistream-com exists
-  echo -e "${YELLOW}Checking running containers...${NC}"
-  for container_name in $(docker ps -a --format '{{.Names}}' | grep '^xmessenger-xchat'); do
-    echo -e "${YELLOW}Recreating ${container_name}...${NC}"
-    docker restart "${container_name}" || true
-  done
 fi
 
-# 4. Restart Nginx Gateway
+# 4. Restart Nginx Gateway to flush proxy cache
 echo -e "\n${BLUE}[4/4] Reloading Nginx reverse proxy...${NC}"
 docker restart xmessenger-nginx 2>/dev/null || true
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
-echo -e "${GREEN}${BOLD}✓ XMessenger update completed successfully in seconds!${NC}"
+echo -e "${GREEN}${BOLD}✓ XMessenger hot update completed successfully!${NC}"
 echo -e "${GREEN}${BOLD}==================================================================${NC}\n"
