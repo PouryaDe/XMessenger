@@ -81,6 +81,31 @@ html, body, #root {
   -webkit-backdrop-filter: blur(16px);
 }
 
+/* Ambient luxury canvas: Yellow & Sky Blue ambient light theme, Deep Obsidian in Dark theme */
+.bg-ambient-canvas {
+  background-color: #F8F5EE;
+  background-image: 
+    radial-gradient(ellipse 70% 60% at 10% 12%, rgba(254, 218, 138, 0.78) 0%, transparent 65%),
+    radial-gradient(ellipse 70% 60% at 90% 16%, rgba(186, 222, 255, 0.85) 0%, transparent 65%),
+    radial-gradient(ellipse 75% 65% at 85% 85%, rgba(199, 228, 255, 0.80) 0%, transparent 70%),
+    radial-gradient(ellipse 70% 60% at 15% 88%, rgba(254, 230, 175, 0.70) 0%, transparent 65%);
+  background-repeat: no-repeat;
+  background-size: cover;
+}
+
+.dark .bg-ambient-canvas {
+  background-color: #0B0F17;
+  background-image: linear-gradient(to bottom, #020617, #0B1120, #020617);
+}
+
+/* Light theme: Absolutely no shadows on inputs or input containers */
+html:not(.dark) input,
+html:not(.dark) select,
+html:not(.dark) textarea,
+html:not(.dark) [data-input-pill] {
+  box-shadow: none !important;
+}
+
 /* Custom styled select dropdowns: Arrow never clips into rounded pill borders */
 select {
   appearance: none;

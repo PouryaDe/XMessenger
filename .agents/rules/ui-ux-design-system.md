@@ -6,10 +6,15 @@ This design system contract defines the visual identity, typography, spacing, co
 
 ## 1. Visual Theme & Color Palette
 
-### Light Mode (Warm Cream & Ambient Glow)
-- **Background**: Ambient radial/linear gradient from warm cream to soft vanilla sand:
-  - Gradient: `from-[#FAF6EE] via-[#F6EEDF] to-[#EFE4D2]`
-  - CSS/Tailwind: `bg-gradient-to-b from-amber-50/60 via-[#F7F1E5] to-[#EFE6D5]`
+### Light Mode (Dual Ambient Yellow & Sky Blue Glow)
+- **Background**: Multi-point ambient radial gradient combining warm golden amber sunshine on the top-left with fresh pastel sky blue / periwinkle on the right:
+  - Class: `.bg-ambient-canvas`
+  - Colors: Warm golden sunshine (`rgba(254, 218, 138, 0.78)` at top-left 10%), ethereal pastel sky blue (`rgba(186, 222, 255, 0.85)` at top-right 90%), soft periwinkle (`rgba(199, 228, 255, 0.80)` at bottom-right 85%), warm sand base (`#F8F5EE`).
+  - Never use plain yellow or uniform monochromatic cream backgrounds.
+- **Inputs & Search Bars (CRITICAL RULE - ZERO SHADOW)**:
+  - In light theme, **NEVER use shadows on inputs, textareas, search bars, or floating pill input containers**.
+  - Must use `shadow-none` (flat pure white `bg-white` with delicate hairline border `border border-black/[0.05]`).
+  - Shadows are strictly reserved for Dark Mode (`dark:shadow-soft`, `dark:shadow-floating`) or distinct primary action buttons.
 - **Card Surfaces**: Pure crisp white (`#FFFFFF`) with ultra-smooth rounded corners and subtle diffuse shadow (`shadow-[0_4px_20px_rgba(0,0,0,0.04)]`).
 - **Surface Borders**: Ultra-delicate border `border border-white/70` or `border-stone-200/50`.
 - **Primary Accent / Dark Accent**: Deep obsidian black / charcoal (`#111827`, `#0F172A`) for high-contrast primary circular buttons and bold typography.
@@ -114,6 +119,8 @@ This design system contract defines the visual identity, typography, spacing, co
 - **Zero Colored Focus Rings / Halos**:
   - Never use colored or orange focus rings (`focus:ring-2 focus:ring-amber-400`).
   - Inputs must use clean `focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500` without any thick colored outline.
+- **Zero Shadow in Light Mode (CRITICAL)**:
+  - In Light Theme, inputs, textareas, search inputs, and floating input pill containers must NEVER have drop shadows (`shadow-soft`, `shadow-floating`, `shadow-inner`). They must be crisp, flat white (`shadow-none` or `dark:shadow-*` only) with delicate hairline borders.
 - **Standardized Mobile Password Bullets**:
   - `input[type="password"]` must always use native system font (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) with `letter-spacing: 0.18em` to avoid oversized, clunky bullet characters on mobile browsers inheriting Arabic/Persian font glyphs.
 

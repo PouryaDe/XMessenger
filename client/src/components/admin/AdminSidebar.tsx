@@ -40,7 +40,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
   }, [adminUsers]);
 
   return (
-    <aside className="w-full sm:w-80 md:w-96 h-full bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-r rtl:border-r-0 rtl:border-l border-stone-200/60 dark:border-slate-800 flex flex-col shrink-0 font-sans">
+    <aside className="w-full sm:w-80 md:w-96 h-full bg-ambient-canvas border-r rtl:border-r-0 rtl:border-l border-stone-200/60 dark:border-slate-800 flex flex-col shrink-0 font-sans">
       {/* Top Header */}
       <div className="p-5 border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
         <div className="flex items-center gap-3">
@@ -86,7 +86,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchUsers')}
-            className="w-full ps-10 pe-4 py-2.5 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
+            className="w-full ps-10 pe-4 py-2.5 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white shadow-none dark:shadow-soft border border-black/[0.05] dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
           />
         </div>
       </div>

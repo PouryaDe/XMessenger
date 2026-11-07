@@ -66,7 +66,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer content */}
-      <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border-x border-stone-200/60 dark:border-slate-800 shadow-2xl flex flex-col z-10 animate-message font-sans">
+      <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-ambient-canvas border-x border-stone-200/60 dark:border-slate-800 shadow-2xl flex flex-col z-10 animate-message font-sans">
         {/* Header */}
         <div className="p-6 border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -174,7 +174,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
                   dir="ltr"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 transition-colors"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
                 />
               </div>
               <div>
@@ -185,7 +185,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   dir="ltr"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 transition-colors"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
                 />
               </div>
 

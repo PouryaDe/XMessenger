@@ -54,7 +54,7 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ambient-canvas font-sans">
       {/* Top action controls */}
       <div className="fixed top-5 right-5 rtl:right-auto rtl:left-5 flex items-center gap-2.5">
         <LanguageToggle />
@@ -103,7 +103,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete="username"
                 dir="ltr"
                 placeholder="e.g. user101"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 font-mono shadow-inner placeholder:text-slate-400 placeholder:text-left transition-colors"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 font-mono shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
               />
             </div>
           </div>
@@ -122,7 +122,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 dir="ltr"
                 placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-inner placeholder:text-slate-400 placeholder:text-left transition-colors"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
               />
             </div>
           </div>
@@ -142,7 +142,7 @@ export const AuthModal: React.FC = () => {
                   autoComplete="new-password"
                   dir="ltr"
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-inner placeholder:text-slate-400 placeholder:text-left transition-colors"
+                  className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
                 />
               </div>
             </div>

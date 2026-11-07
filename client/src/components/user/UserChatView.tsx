@@ -137,7 +137,7 @@ export const UserChatView: React.FC = () => {
     : messages;
 
   return (
-    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 sm:border-x border-stone-200/60 dark:border-slate-800 shadow-2xl overflow-hidden font-sans">
+    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-stone-200/60 dark:border-slate-800 shadow-2xl overflow-hidden font-sans">
       
       {/* =========================================================================
           VIEW MODE 1: HOME / DASHBOARD SCREEN (Screen 1 in Concept)
@@ -194,7 +194,7 @@ export const UserChatView: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchMessages')}
-                className="w-full ps-10 pe-4 py-2.5 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
+                className="w-full ps-10 pe-4 py-2.5 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-none dark:shadow-soft border border-black/[0.05] dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
               />
             </div>
 
@@ -306,7 +306,7 @@ export const UserChatView: React.FC = () => {
           {/* Floating Pill Input Bar on Home (Bottom as in concept) */}
           <footer className="p-4 shrink-0">
             <form onSubmit={handleSend} className="flex items-center gap-2.5">
-              <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-floating border border-black/5 dark:border-white/5">
+              <div data-input-pill className="flex-1 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.05] dark:border-white/5">
                 <span className="text-slate-400 text-sm font-light">+</span>
                 <input
                   type="text"
@@ -410,7 +410,7 @@ export const UserChatView: React.FC = () => {
           <footer className="p-4 shrink-0">
             <form onSubmit={handleSend} className="flex items-center gap-2.5">
               {/* Inner White Pill Input */}
-              <div className="flex-1 flex items-center gap-3 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-floating border border-black/5 dark:border-white/5">
+              <div data-input-pill className="flex-1 flex items-center gap-3 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.05] dark:border-white/5">
                 <button
                   type="button"
                   className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"

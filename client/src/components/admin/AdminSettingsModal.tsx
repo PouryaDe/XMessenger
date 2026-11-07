@@ -41,7 +41,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs font-sans">
-      <div className="w-full max-w-lg bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 border border-stone-200/60 dark:border-slate-800 rounded-[32px] p-6 sm:p-8 shadow-floating relative animate-message">
+      <div className="w-full max-w-lg bg-ambient-canvas border border-stone-200/60 dark:border-slate-800 rounded-[32px] p-6 sm:p-8 shadow-floating relative animate-message">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-stone-200/50 dark:border-slate-800 mb-5">
           <div className="flex items-center gap-3">
@@ -138,7 +138,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     defaultTtlSeconds: isNaN(val) ? 60 : Math.max(1, val) * 60
                   });
                 }}
-                className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-inner transition-colors"
+                className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
                 placeholder="1440"
               />
               <span className="absolute end-4 rtl:left-4 rtl:right-auto ltr:right-4 ltr:left-auto text-xs text-slate-400 font-semibold pointer-events-none">

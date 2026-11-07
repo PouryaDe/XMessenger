@@ -27,7 +27,7 @@ export const PendingApprovalScreen: React.FC = () => {
   }, [user, setUser]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 font-sans">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-ambient-canvas font-sans">
       <div className="fixed top-5 right-5 rtl:right-auto rtl:left-5 flex items-center gap-2.5">
         <LanguageToggle />
         <ThemeToggle />

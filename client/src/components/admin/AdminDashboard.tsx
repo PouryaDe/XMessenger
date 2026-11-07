@@ -194,7 +194,7 @@ export const AdminDashboard: React.FC = () => {
   const isUserTyping = activeUserId ? typingUsers[activeUserId] : false;
 
   return (
-    <div className="flex h-full w-full bg-gradient-to-b from-cream-50 via-cream-100 to-cream-200 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 overflow-hidden font-sans">
+    <div className="flex h-full w-full bg-ambient-canvas overflow-hidden font-sans">
       {/* Left/Right Sidebar (Responsive: full width on mobile when no user selected) */}
       <div className={`${activeUserId ? 'hidden sm:flex' : 'flex'} w-full sm:w-auto h-full`}>
         <AdminSidebar
@@ -330,7 +330,7 @@ export const AdminDashboard: React.FC = () => {
             {/* Bottom Floating Pill Input Area */}
             <footer className="p-4 shrink-0">
               <form onSubmit={handleSend} className="flex items-center gap-2.5 max-w-3xl mx-auto">
-                <div className="flex-1 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-floating border border-black/5 dark:border-white/5">
+                <div data-input-pill className="flex-1 flex items-center gap-2 px-4 py-3 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.05] dark:border-white/5">
                   {/* Fast TTL selector dropdown for Admin */}
                   <select
                     value={selectedTtl || ''}
