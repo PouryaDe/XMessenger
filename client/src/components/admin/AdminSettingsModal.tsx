@@ -41,7 +41,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-xs font-sans">
-      <div className="w-full max-w-lg bg-ambient-canvas border border-stone-200/60 dark:border-slate-800 rounded-[32px] p-6 sm:p-8 shadow-floating relative animate-message">
+      <div className="w-full max-w-lg bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/10 rounded-[32px] p-6 sm:p-8 shadow-floating relative animate-message">
         {/* Header */}
         <div className="flex items-center justify-between pb-4 border-b border-stone-200/50 dark:border-slate-800 mb-5">
           <div className="flex items-center gap-3">

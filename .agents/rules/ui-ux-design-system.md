@@ -134,3 +134,15 @@ This design system contract defines the visual identity, typography, spacing, co
   - Badges inside pills must also use `inline-flex items-center justify-center h-4 px-1.5 rounded-full leading-none` so badges and tab labels align along the identical optical center.
 - **Language-Responsive Typography**:
   - Switch root font variable automatically: `Inter` for `[dir="ltr"]` (English) and `Vazirmatn` for `[dir="rtl"]` (Persian) to prevent Latin ascender/descender metric distortions.
+
+### 4.3. Unified Ambient Canvas & Sidebar Demarcation (Permanent Standard)
+- **Single Root Ambient Canvas**:
+  - The `.bg-ambient-canvas` background (with `background-attachment: fixed`) MUST ONLY be declared on the top-level root viewport container (`<div className="... bg-ambient-canvas ...">`).
+  - Sub-views, nested containers, sidebars, modal dialogs, and panels must NEVER declare `bg-ambient-canvas`. Declaring multiple ambient canvases creates jarring, mismatched radial gradients that clash at component borders.
+- **Translucent Frosted Sidebar & Panel Demarcation**:
+  - Sidebars and navigation drawers must use translucent frosted glass: `bg-white/65 dark:bg-slate-900/75 backdrop-blur-2xl`.
+  - Demarcation Border: Ultra-clean hairline separator `border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/10`.
+  - Boundary Elevation: Soft vertical shadow along the demarcation seam (`shadow-[6px_0_30px_-6px_rgba(0,0,0,0.04)] rtl:shadow-[-6px_0_30px_-6px_rgba(0,0,0,0.04)]`) to establish a designated boundary for the sidebar while allowing the continuous ambient background glow to flow beneath it.
+  - Interior Dividers: Headers, search rows, and tab dividers within the frosted panel must use delicate `border-b border-black/[0.05] dark:border-white/10`.
+  - Child Cards: Items inside the frosted sidebar (such as user directory rows) must be crisp solid white cards (`bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/5 rounded-[22px]`), creating clear contrast against the translucent frosted panel background.
+  - Dialog / Modal Surfaces: Modals must use solid or near-solid elevated cards (`bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl rounded-[32px] border border-black/[0.06] dark:border-white/10 shadow-floating`) rather than duplicate gradient canvases.

@@ -208,7 +208,7 @@ export const AdminDashboard: React.FC = () => {
         {activeUser ? (
           <>
             {/* Top Chat Header */}
-            <header className="px-6 py-4 flex items-center justify-between shrink-0 bg-transparent z-10 border-b border-stone-200/40 dark:border-slate-800">
+            <header className="px-6 py-4 flex items-center justify-between shrink-0 bg-white/35 dark:bg-slate-900/35 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/10">
               <div className="flex items-center gap-3">
                 {/* Back button for mobile */}
                 <button

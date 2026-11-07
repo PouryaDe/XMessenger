@@ -66,7 +66,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer content */}
-      <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-ambient-canvas border-x border-stone-200/60 dark:border-slate-800 shadow-2xl flex flex-col z-10 animate-message font-sans">
+      <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/10 shadow-2xl flex flex-col z-10 animate-message font-sans">
         {/* Header */}
         <div className="p-6 border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
