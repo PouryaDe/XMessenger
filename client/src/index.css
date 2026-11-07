@@ -4,6 +4,25 @@
 
 :root {
   color-scheme: light dark;
+  --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+}
+
+[dir="ltr"],
+html[lang="en"],
+body[lang="en"] {
+  --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  font-family: var(--font-family) !important;
+}
+
+[dir="rtl"],
+html[lang="fa"],
+body[lang="fa"] {
+  --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  font-family: var(--font-family) !important;
+}
+
+body, button, input, select, textarea {
+  font-family: var(--font-family);
 }
 
 /* Custom scrollbars for chat */

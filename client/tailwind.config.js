@@ -9,7 +9,8 @@ export default {
     extend: {
       fontFamily: {
         vazir: ['Vazirmatn', 'sans-serif'],
-        sans: ['Vazirmatn', 'system-ui', '-apple-system', 'sans-serif'],
+        inter: ['Inter', 'sans-serif'],
+        sans: ['var(--font-family)', 'Inter', 'Vazirmatn', 'system-ui', '-apple-system', 'sans-serif'],
       },
       colors: {
         cream: {

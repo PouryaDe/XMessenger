@@ -79,25 +79,25 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
 
       {/* Pill Search Input */}
       <div className="p-4 pb-2">
-        <div className="relative">
-          <Search className="w-4 h-4 text-slate-400 absolute right-4 rtl:right-auto rtl:left-4 top-3.5" />
+        <div className="relative flex items-center">
+          <Search className="w-4 h-4 text-slate-400 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
           <input
             type="text"
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchUsers')}
-            className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
+            className="w-full ps-10 pe-4 py-2.5 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
           />
         </div>
       </div>
 
       {/* Filter Tabs Pills */}
-      <div className="flex items-center gap-1.5 px-4 pb-3 border-b border-stone-200/40 dark:border-slate-800 text-[11px] font-medium overflow-x-auto">
+      <div className="flex items-center gap-1.5 px-4 pb-3 border-b border-stone-200/40 dark:border-slate-800 overflow-x-auto">
         <button
           onClick={() => setFilterTab('all')}
-          className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
+          className={`inline-flex items-center justify-center h-7 px-3.5 rounded-full text-xs font-semibold leading-none transition-all shrink-0 ${
             filterTab === 'all'
-              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold shadow-xs'
+              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
               : 'bg-white/80 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-white'
           }`}
         >
@@ -106,15 +106,15 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
 
         <button
           onClick={() => setFilterTab('pending')}
-          className={`px-3 py-1.5 rounded-full transition-all flex items-center gap-1.5 shrink-0 ${
+          className={`inline-flex items-center justify-center gap-1.5 h-7 px-3.5 rounded-full text-xs font-semibold leading-none transition-all shrink-0 ${
             filterTab === 'pending'
-              ? 'bg-amber-500 text-white font-bold shadow-xs'
+              ? 'bg-amber-500 text-white shadow-xs'
               : 'bg-white/80 dark:bg-slate-800 text-slate-600 hover:text-amber-600 dark:text-slate-400'
           }`}
         >
           <span>{t('pendingUsers')}</span>
           {pendingCount > 0 && (
-            <span className="px-1.5 py-0.2 rounded-full bg-white text-amber-600 text-[9px] font-bold font-mono">
+            <span className="inline-flex items-center justify-center px-1.5 h-4 rounded-full bg-white text-amber-600 text-[10px] font-bold font-mono leading-none">
               {pendingCount}
             </span>
           )}
@@ -122,9 +122,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
 
         <button
           onClick={() => setFilterTab('active')}
-          className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
+          className={`inline-flex items-center justify-center h-7 px-3.5 rounded-full text-xs font-semibold leading-none transition-all shrink-0 ${
             filterTab === 'active'
-              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold shadow-xs'
+              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
               : 'bg-white/80 dark:bg-slate-800 text-slate-600 hover:text-emerald-600 dark:text-slate-400'
           }`}
         >
@@ -133,9 +133,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
 
         <button
           onClick={() => setFilterTab('banned')}
-          className={`px-3 py-1.5 rounded-full transition-all shrink-0 ${
+          className={`inline-flex items-center justify-center h-7 px-3.5 rounded-full text-xs font-semibold leading-none transition-all shrink-0 ${
             filterTab === 'banned'
-              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold shadow-xs'
+              ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs'
               : 'bg-white/80 dark:bg-slate-800 text-slate-600 hover:text-red-600 dark:text-slate-400'
           }`}
         >

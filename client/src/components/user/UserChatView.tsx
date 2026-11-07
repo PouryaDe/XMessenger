@@ -187,14 +187,14 @@ export const UserChatView: React.FC = () => {
             </div>
 
             {/* Pill Search Bar */}
-            <div className="relative">
-              <Search className="w-4 h-4 text-slate-400 absolute right-4 rtl:right-auto rtl:left-4 top-3.5" />
+            <div className="relative flex items-center">
+              <Search className="w-4 h-4 text-slate-400 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchMessages')}
-                className="w-full pl-11 pr-11 py-3 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
+                className="w-full ps-10 pe-4 py-2.5 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
               />
             </div>
 

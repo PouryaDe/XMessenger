@@ -116,3 +116,14 @@ This design system contract defines the visual identity, typography, spacing, co
   - Inputs must use clean `focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500` without any thick colored outline.
 - **Standardized Mobile Password Bullets**:
   - `input[type="password"]` must always use native system font (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) with `letter-spacing: 0.18em` to avoid oversized, clunky bullet characters on mobile browsers inheriting Arabic/Persian font glyphs.
+
+### 4.2. Search Inputs & Filter Tab Pills Centering (Permanent Standard)
+- **Search Icon Placement**:
+  - In LTR and RTL, always use logical positioning (`absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none`).
+  - Input padding must use logical properties: `ps-10 pe-4` (or `ps-11 pe-4`) so text never overlaps the icon and has consistent natural margins across both LTR and RTL.
+  - Never hardcode `top-*` (like `top-3.5`) for icons inside rounded inputs; ALWAYS use `top-1/2 -translate-y-1/2` for mathematical vertical centering.
+- **Filter Tabs & Pill Buttons**:
+  - All tab pills must have a shared explicit height: `inline-flex items-center justify-center h-7 px-3.5 rounded-full text-xs font-semibold leading-none`.
+  - Badges inside pills must also use `inline-flex items-center justify-center h-4 px-1.5 rounded-full leading-none` so badges and tab labels align along the identical optical center.
+- **Language-Responsive Typography**:
+  - Switch root font variable automatically: `Inter` for `[dir="ltr"]` (English) and `Vazirmatn` for `[dir="rtl"]` (Persian) to prevent Latin ascender/descender metric distortions.

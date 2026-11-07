@@ -94,7 +94,7 @@ export const AuthModal: React.FC = () => {
               {t('username')}
             </label>
             <div className="relative">
-              <UserIcon className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
+              <UserIcon className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={username}
@@ -113,7 +113,7 @@ export const AuthModal: React.FC = () => {
               {t('password')}
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
+              <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="password"
                 value={password}
@@ -133,7 +133,7 @@ export const AuthModal: React.FC = () => {
                 {t('confirmPassword')}
               </label>
               <div className="relative">
-                <CheckCircle2 className="w-4 h-4 text-slate-400 absolute left-4 top-3.5 pointer-events-none" />
+                <CheckCircle2 className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="password"
                   value={confirmPassword}
