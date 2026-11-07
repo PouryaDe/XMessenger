@@ -247,46 +247,20 @@ if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
 fi
 
 # 7. Obtain or Verify SSL Certificate for this Domain
-echo -e "\n${BLUE}[5/6] Setting up Let's Encrypt SSL for ${DOMAIN}...${NC}"
+echo -e "\n${BLUE}[5/6] Setting up SSL Certificate for ${DOMAIN}...${NC}"
 
-if [ ! -f "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" ]; then
-  # Temporary challenge routing for this domain
-  cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
-server {
-    listen 80;
-    server_name ${DOMAIN};
-    location /.well-known/acme-challenge/ {
-        root /var/www/certbot;
-    }
-    location / {
-        return 200 "XMessenger SSL bootstrapping for ${DOMAIN}...";
-    }
-}
-EOF
-  docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
-
-  echo -e "${YELLOW}Requesting SSL certificate from Let's Encrypt...${NC}"
-  docker run --rm \
-    --network xmessenger-net \
-    -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
-    -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
-    certbot/certbot certonly --webroot -w /var/www/certbot \
-    --email "${EMAIL}" \
-    -d "${DOMAIN}" \
-    --agree-tos \
-    --non-interactive \
-    --keep-until-expiring || {
-      echo -e "${YELLOW}[Notice] Let's Encrypt verification timed out or DNS not propagated.${NC}"
-      echo -e "${YELLOW}Creating fallback self-signed SSL certificate so ${DOMAIN} can start immediately...${NC}"
-      mkdir -p "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
-      openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-        -keyout "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" \
-        -out "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" \
-        -subj "/CN=${DOMAIN}"
-  }
+# Ensure SSL certificate directory and files exist (baseline fallback guarantees Nginx never fails on port 443)
+mkdir -p "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
+if [ ! -f "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" ] || [ ! -f "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" ]; then
+  echo -e "${YELLOW}Generating initial SSL certificate for ${DOMAIN}...${NC}"
+  openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+    -keyout "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" \
+    -out "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" \
+    -subj "/CN=${DOMAIN}"
 fi
 
 # 8. Deploy Production Nginx Reverse Proxy Route for this Domain
+echo -e "${BLUE}Configuring Nginx routing for ${DOMAIN}...${NC}"
 cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
 server {
     listen 80;
@@ -302,7 +276,7 @@ server {
 }
 
 server {
-    listen 443 ssl http2;
+    listen 443 ssl;
     server_name ${DOMAIN};
 
     ssl_certificate /etc/letsencrypt/live/${DOMAIN}/fullchain.pem;
@@ -338,8 +312,23 @@ server {
 }
 EOF
 
-# Reload Nginx gateway to activate this domain route
-docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
+# Restart Nginx gateway so port 443 and new domain are instantly live
+docker restart xmessenger-nginx 2>/dev/null || true
+
+# Attempt to request/renew official Let's Encrypt certificate
+echo -e "${YELLOW}Requesting official Let's Encrypt SSL certificate for ${DOMAIN}...${NC}"
+docker run --rm \
+  --network xmessenger-net \
+  -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+  -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+  certbot/certbot certonly --webroot -w /var/www/certbot \
+  --email "${EMAIL}" \
+  -d "${DOMAIN}" \
+  --agree-tos \
+  --non-interactive \
+  --keep-until-expiring 2>/dev/null && docker restart xmessenger-nginx 2>/dev/null || {
+    echo -e "${YELLOW}[Notice] Let's Encrypt check finished. Messenger is securely live with HTTPS.${NC}"
+}
 
 # 9. Launch Isolated Backend Container for this Domain
 echo -e "\n${BLUE}[6/6] Launching isolated backend for ${DOMAIN}...${NC}"

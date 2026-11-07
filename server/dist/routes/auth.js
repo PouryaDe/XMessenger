@@ -1,0 +1,143 @@
+"use strict";
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.authRouter = void 0;
+const express_1 = require("express");
+const uuid_1 = require("uuid");
+const index_js_1 = require("../database/index.js");
+const crypto_js_1 = require("../utils/crypto.js");
+const auth_js_1 = require("../middleware/auth.js");
+exports.authRouter = (0, express_1.Router)();
+// Public app information and status
+exports.authRouter.get('/meta', (req, res) => {
+    const regEnabled = (0, index_js_1.getSettingValue)('registration_enabled', 'true') === 'true';
+    const requireApproval = (0, index_js_1.getSettingValue)('require_approval', 'true') === 'true';
+    const defaultTtl = parseInt((0, index_js_1.getSettingValue)('default_ttl_seconds', '86400'), 10);
+    res.json({
+        registrationEnabled: regEnabled,
+        requireApproval,
+        defaultTtl
+    });
+});
+// Register new user
+exports.authRouter.post('/register', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
+            return res.status(400).json({ error: 'INVALID_INPUT', message: 'Username and password are required' });
+        }
+        const trimmedUsername = username.trim().toLowerCase();
+        if (trimmedUsername.length < 3 || trimmedUsername.length > 32) {
+            return res.status(400).json({ error: 'INVALID_USERNAME', message: 'Username must be between 3 and 32 characters' });
+        }
+        if (password.length < 6) {
+            return res.status(400).json({ error: 'WEAK_PASSWORD', message: 'Password must be at least 6 characters' });
+        }
+        // Check if registration is enabled by admin
+        const regEnabled = (0, index_js_1.getSettingValue)('registration_enabled', 'true') === 'true';
+        if (!regEnabled) {
+            return res.status(403).json({ error: 'REGISTRATION_DISABLED', message: 'Registration is currently disabled by administrator' });
+        }
+        // Check if username already exists
+        const existing = index_js_1.db.prepare('SELECT id FROM users WHERE username = ?').get(trimmedUsername);
+        if (existing) {
+            return res.status(409).json({ error: 'USERNAME_TAKEN', message: 'Username already in use' });
+        }
+        // Determine initial status based on admin approval policy
+        const requireApproval = (0, index_js_1.getSettingValue)('require_approval', 'true') === 'true';
+        const initialStatus = requireApproval ? 'pending' : 'active';
+        const userId = (0, uuid_1.v4)();
+        const passwordHash = await (0, crypto_js_1.hashPassword)(password);
+        const now = new Date().toISOString();
+        index_js_1.db.prepare(`
+      INSERT INTO users (id, username, password_hash, role, status, created_at, last_seen)
+      VALUES (?, ?, ?, 'user', ?, ?, ?)
+    `).run(userId, trimmedUsername, passwordHash, initialStatus, now, now);
+        const newUser = {
+            id: userId,
+            username: trimmedUsername,
+            role: 'user',
+            status: initialStatus
+        };
+        const token = (0, auth_js_1.generateToken)(newUser);
+        res.status(201).json({
+            token,
+            user: newUser,
+            message: initialStatus === 'pending'
+                ? 'Account registered and awaiting admin approval'
+                : 'Account created successfully'
+        });
+    }
+    catch (err) {
+        console.error('Registration error:', err);
+        res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to register account' });
+    }
+});
+// Login
+exports.authRouter.post('/login', async (req, res) => {
+    try {
+        const { username, password } = req.body;
+        if (!username || !password) {
+            return res.status(400).json({ error: 'INVALID_INPUT', message: 'Username and password are required' });
+        }
+        const trimmedUsername = username.trim().toLowerCase();
+        const user = index_js_1.db.prepare('SELECT id, username, password_hash, role, status FROM users WHERE username = ?').get(trimmedUsername);
+        if (!user) {
+            return res.status(401).json({ error: 'INVALID_CREDENTIALS', message: 'Invalid username or password' });
+        }
+        const passwordValid = await (0, crypto_js_1.comparePassword)(password, user.password_hash);
+        if (!passwordValid) {
+            return res.status(401).json({ error: 'INVALID_CREDENTIALS', message: 'Invalid username or password' });
+        }
+        // Update last seen
+        const now = new Date().toISOString();
+        index_js_1.db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(now, user.id);
+        const authUser = {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            status: user.status
+        };
+        const token = (0, auth_js_1.generateToken)(authUser);
+        res.json({
+            token,
+            user: authUser
+        });
+    }
+    catch (err) {
+        console.error('Login error:', err);
+        res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Login failed' });
+    }
+});
+// Get profile & live status
+exports.authRouter.get('/me', auth_js_1.authenticate, (req, res) => {
+    const user = req.user;
+    const adminUser = index_js_1.db.prepare("SELECT id, username, last_seen FROM users WHERE role = 'admin'").get();
+    res.json({
+        user,
+        adminInfo: user.role === 'user' && adminUser ? {
+            id: adminUser.id,
+            username: adminUser.username,
+            lastSeen: adminUser.last_seen
+        } : null
+    });
+});
+// Change Password
+exports.authRouter.post('/change-password', auth_js_1.authenticate, async (req, res) => {
+    try {
+        const { currentPassword, newPassword } = req.body;
+        if (!currentPassword || !newPassword || newPassword.length < 6) {
+            return res.status(400).json({ error: 'INVALID_INPUT', message: 'Valid new password is required (min 6 characters)' });
+        }
+        const row = index_js_1.db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
+        const valid = await (0, crypto_js_1.comparePassword)(currentPassword, row.password_hash);
+        if (!valid) {
+            return res.status(401).json({ error: 'INVALID_PASSWORD', message: 'Current password is incorrect' });
+        }
+        const newHash = await (0, crypto_js_1.hashPassword)(newPassword);
+        index_js_1.db.prepare('UPDATE users SET password_hash = ? WHERE id = ?').run(newHash, req.user.id);
+        res.json({ success: true, message: 'Password updated successfully' });
+    }
+    catch (err) {
+        res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to update password' });
+    }
+});

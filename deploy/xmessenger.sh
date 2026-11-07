@@ -125,7 +125,7 @@ manage_instance() {
           -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
           -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
           certbot/certbot certonly --webroot -w /var/www/certbot -d "${DOMAIN}" --force-renewal
-        docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
+        docker restart xmessenger-nginx 2>/dev/null || true
         echo -e "\n${GREEN}SSL certificate renewed and Nginx reloaded.${NC}"
         sleep 2
         ;;
@@ -156,7 +156,7 @@ manage_instance() {
           docker volume rm -f "xmessenger-data-${SLUG}" 2>/dev/null || true
           rm -rf "${INSTANCE_DIR}"
           rm -f "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
-          docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
+          docker restart xmessenger-nginx 2>/dev/null || true
           echo -e "\n${GREEN}Instance for ${DOMAIN} uninstalled successfully.${NC}"
           sleep 2
           return

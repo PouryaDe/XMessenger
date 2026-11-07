@@ -4,9 +4,13 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
-# Production builds
+# Production builds (pre-built bundles committed for lightning-fast 10-second deployment)
 dist/
 build/
+!client/dist/
+!client/dist/**
+!server/dist/
+!server/dist/**
 
 # Environment and secrets
 .env

@@ -1,0 +1,76 @@
+"use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.io = exports.server = exports.app = void 0;
+const express_1 = __importDefault(require("express"));
+const http_1 = __importDefault(require("http"));
+const cors_1 = __importDefault(require("cors"));
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
+const socket_io_1 = require("socket.io");
+const index_js_1 = require("./config/index.js");
+const index_js_2 = require("./database/index.js");
+const auth_js_1 = require("./routes/auth.js");
+const admin_js_1 = require("./routes/admin.js");
+const messages_js_1 = require("./routes/messages.js");
+const index_js_3 = require("./socket/index.js");
+const ttlCleaner_js_1 = require("./workers/ttlCleaner.js");
+// 1. Initialize SQLite Database
+(0, index_js_2.initDatabase)();
+// 2. Setup Express & HTTP Server
+const app = (0, express_1.default)();
+exports.app = app;
+const server = http_1.default.createServer(app);
+exports.server = server;
+// 3. Setup Socket.io
+const io = new socket_io_1.Server(server, {
+    cors: {
+        origin: '*',
+        methods: ['GET', 'POST']
+    }
+});
+exports.io = io;
+// Setup Socket server handlers
+(0, index_js_3.setupSocketServer)(io);
+// 4. Start Background TTL Worker
+(0, ttlCleaner_js_1.startTtlWorker)(io);
+// 5. Middlewares
+app.use((0, cors_1.default)());
+app.use(express_1.default.json({ limit: '5mb' }));
+// 6. API Routes
+app.use('/api/auth', auth_js_1.authRouter);
+app.use('/api/admin', (0, admin_js_1.createAdminRouter)(io));
+app.use('/api/messages', (0, messages_js_1.createMessagesRouter)(io));
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+    res.json({
+        status: 'ok',
+        timestamp: new Date().toISOString(),
+        service: 'XMessenger Core Engine'
+    });
+});
+// 7. Serve Static Frontend in production
+const clientDistPath = path_1.default.resolve(process.cwd(), '../client/dist');
+const localDistPath = path_1.default.resolve(process.cwd(), './client-dist');
+const staticDir = fs_1.default.existsSync(clientDistPath) ? clientDistPath : (fs_1.default.existsSync(localDistPath) ? localDistPath : null);
+if (staticDir) {
+    console.log(`[Server] Serving static client from: ${staticDir}`);
+    app.use(express_1.default.static(staticDir));
+    app.get('*', (req, res, next) => {
+        if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
+            return next();
+        }
+        res.sendFile(path_1.default.join(staticDir, 'index.html'));
+    });
+}
+// 8. Start Listening
+server.listen(index_js_1.config.port, '0.0.0.0', () => {
+    console.log(`===============================================`);
+    console.log(`🚀 XMessenger Server running on port ${index_js_1.config.port}`);
+    console.log(`🔒 Encryption: AES-256-GCM Enabled`);
+    console.log(`⏱️ Default Message TTL: ${index_js_1.config.defaultTtlSeconds}s`);
+    console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
+    console.log(`===============================================`);
+});
