@@ -1,9 +1,7 @@
-// XMessenger PWA Service Worker (v1.0.0)
-const CACHE_NAME = 'xmessenger-v1';
+// XMessenger PWA Service Worker (v2.0.0 - Fast Live Reload Standard)
+const CACHE_NAME = 'xmessenger-v2';
 
 const PRECACHE_ASSETS = [
-  '/',
-  '/index.html',
   '/manifest.json',
   '/shield.svg',
   '/icon-192.png',
@@ -28,12 +26,23 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
+            console.log('[SW] Purging old cache:', key);
             return caches.delete(key);
           }
         })
       );
     }).then(() => self.clients.claim())
   );
+});
+
+// Immediate skip waiting on message
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
+  if (event.data && event.data.type === 'PURGE_CACHE') {
+    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+  }
 });
 
 self.addEventListener('fetch', (event) => {
@@ -48,8 +57,8 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 2. Navigation / HTML Document requests: NETWORK-FIRST
-  // This guarantees fresh updates are never locked behind a stale HTML file
+  // 2. Navigation / HTML Document requests: STRICT NETWORK-FIRST
+  // HTML document is NEVER served stale when network is available
   if (event.request.mode === 'navigate' || event.request.destination === 'document') {
     event.respondWith(
       fetch(event.request)
@@ -65,7 +74,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Static Assets (Hashed JS, CSS, images): Cache-first with network fallback
+  // 3. Service worker itself & manifest must NEVER be read from cache
+  if (url.pathname === '/sw.js' || url.pathname === '/manifest.json') {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // 4. Static Assets (Hashed JS, CSS, images): Cache-first with network fallback
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

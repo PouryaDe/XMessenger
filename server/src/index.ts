@@ -140,19 +140,39 @@ const staticDir = fs.existsSync(clientDistPath) ? clientDistPath : (fs.existsSyn
 if (staticDir) {
   console.log(`[Server] Serving static client from: ${staticDir}`);
 
-  // Serve static assets with caching, but index.html must NEVER be cached
+  // Serve static assets with caching, but index.html, sw.js and manifest.json must NEVER be cached
   app.use(express.static(staticDir, {
     setHeaders: (res, filePath) => {
-      if (filePath.endsWith('.html')) {
-        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      const isUncached = 
+        filePath.endsWith('.html') || 
+        filePath.endsWith('sw.js') || 
+        filePath.endsWith('manifest.json') ||
+        !filePath.includes(path.sep + 'assets' + path.sep);
+
+      if (isUncached) {
+        res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
         res.setHeader('Pragma', 'no-cache');
         res.setHeader('Expires', '0');
       } else {
-        // Hashed assets (JS/CSS) can be cached safely
+        // Hashed assets (JS/CSS) in /assets/ can be cached safely
         res.setHeader('Cache-Control', 'public, max-age=31536000, immutable');
       }
     }
   }));
+
+  // Explicit route for sw.js so service worker updates can never be blocked by cache
+  app.get('/sw.js', (req, res) => {
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+    res.setHeader('Pragma', 'no-cache');
+    res.setHeader('Expires', '0');
+    res.setHeader('Content-Type', 'application/javascript; charset=utf-8');
+    const swPath = path.join(staticDir, 'sw.js');
+    if (fs.existsSync(swPath)) {
+      res.sendFile(swPath);
+    } else {
+      res.status(404).send('// Service worker not found');
+    }
+  });
 
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {

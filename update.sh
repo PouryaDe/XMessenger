@@ -99,12 +99,15 @@ if [ "$UPDATED_COUNT" -eq 0 ]; then
   echo -e "${YELLOW}No running instance containers detected.${NC}"
 fi
 
-# Ensure 100M client body limit in active Nginx configs for database backup/restore
+# Ensure 100M client body limit & anti-cache headers in active Nginx configs
 if [ -d "${BASE_DIR}/shared/nginx/conf.d" ]; then
   for cfg in "${BASE_DIR}/shared/nginx/conf.d"/*.conf; do
     [ -f "$cfg" ] || continue
     if ! grep -q "client_max_body_size" "$cfg"; then
       sed -i '/server {/a \    client_max_body_size 100M;' "$cfg" 2>/dev/null || true
+    fi
+    if ! grep -q "sw.js" "$cfg"; then
+      sed -i '/location \/ {/i \    location ~* \\.(html|json)$ {\n        proxy_pass http://xmessenger:3001;\n        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;\n    }\n    location = /sw.js {\n        proxy_pass http://xmessenger:3001/sw.js;\n        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;\n    }' "$cfg" 2>/dev/null || true
     fi
   done
 fi
@@ -119,11 +122,31 @@ echo -e "\n${BLUE}[4/4] Updating base Docker image (xmessenger-core:latest)...${
 docker build -t xmessenger-core:latest -f Dockerfile . >/dev/null 2>&1 &
 echo -e "${GREEN}✓ Base image update running in background.${NC}"
 
-# 5. Ensure global shortcuts exist in /usr/local/bin as live symlinks
+# 5. Install & Activate Continuous Auto-Update Daemon (Runs every 10s via systemd)
+echo -e "\n${BLUE}[5/5] Configuring automatic GitHub update service (xmessenger-autoupdate)...${NC}"
+chmod +x "${BASE_DIR}/deploy/autoupdate.sh" 2>/dev/null || true
+
+if [ -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" ] && [ -d /etc/systemd/system ]; then
+  cp -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" /etc/systemd/system/xmessenger-autoupdate.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl enable --now xmessenger-autoupdate 2>/dev/null || true
+  systemctl restart xmessenger-autoupdate 2>/dev/null || true
+  echo -e "${GREEN}✓ Auto-update systemd daemon is active! New GitHub commits deploy automatically every 10s.${NC}"
+fi
+
+# Fallback Cron job (in case systemd is unavailable in containerized or minimal environments)
+if [ -d /etc/cron.d ]; then
+  echo "* * * * * root /bin/bash ${BASE_DIR}/deploy/autoupdate.sh --once >/dev/null 2>&1" > /etc/cron.d/xmessenger-autoupdate 2>/dev/null || true
+  chmod 644 /etc/cron.d/xmessenger-autoupdate 2>/dev/null || true
+fi
+
+# 6. Ensure global shortcuts exist in /usr/local/bin as live symlinks
 ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
 chmod +x "${BASE_DIR}/update.sh" 2>/dev/null || true
 ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 chmod +x "${BASE_DIR}/deploy/xmessenger.sh" 2>/dev/null || true
+ln -sf "${BASE_DIR}/deploy/autoupdate.sh" /usr/local/bin/xautoupdate 2>/dev/null || true
+chmod +x "${BASE_DIR}/deploy/autoupdate.sh" 2>/dev/null || true
 
 # Also alias in root .bashrc for convenience
 if [ -f /root/.bashrc ]; then
@@ -132,6 +155,6 @@ fi
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${GREEN}${BOLD}✓ XMessenger hot update completed successfully!${NC}"
-echo -e "${GREEN}${BOLD}✓ All containers injected, caches purged, and services restarted.${NC}"
-echo -e "${GREEN}${BOLD}✓ You can now update anytime simply by typing: xupdate${NC}"
+echo -e "${GREEN}${BOLD}✓ Continuous auto-update daemon is now running in the background!${NC}"
+echo -e "${GREEN}${BOLD}✓ Future commits on main will now deploy AUTOMATICALLY within 10s.${NC}"
 echo -e "${GREEN}${BOLD}==================================================================${NC}\n"

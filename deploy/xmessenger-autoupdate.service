@@ -1,0 +1,17 @@
+[Unit]
+Description=XMessenger Git Auto-Updater Daemon
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/xmessenger
+ExecStart=/bin/bash /opt/xmessenger/deploy/autoupdate.sh
+Restart=always
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target
