@@ -303,14 +303,14 @@ export const AdminDashboard: React.FC = () => {
             {/* Messages Area */}
             <main className="flex-1 overflow-y-auto px-6 py-3 space-y-1">
               {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
-                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/5 flex items-center justify-center mb-3 text-amber-500">
+                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
+                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
                     <MessageSquare className="w-7 h-7" />
                   </div>
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
                     {t('noMessagesInChat')}
                   </p>
-                  <p className="text-xs max-w-xs mt-1 text-slate-400">
+                  <p className="text-xs max-w-[260px] mt-1.5 leading-relaxed text-slate-400">
                     {t('messagesTtlNotice')}
                   </p>
                 </div>
@@ -367,14 +367,14 @@ export const AdminDashboard: React.FC = () => {
             </footer>
           </>
         ) : (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400">
-            <div className="w-18 h-18 rounded-[28px] bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/5 text-amber-500 flex items-center justify-center mb-4">
-              <MessageSquare className="w-9 h-9" />
+          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
+            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/10 text-amber-500 flex items-center justify-center mb-4 transition-transform hover:scale-105">
+              <MessageSquare className="w-7 h-7" />
             </div>
-            <h3 className="text-base font-extrabold text-slate-800 dark:text-slate-200">
+            <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 tracking-tight">
               {t('selectConversation')}
             </h3>
-            <p className="text-xs text-slate-400 max-w-xs mt-1">
+            <p className="text-xs text-slate-400 max-w-[260px] mt-1.5 leading-relaxed">
               {t('selectConversationDesc')}
             </p>
           </div>
