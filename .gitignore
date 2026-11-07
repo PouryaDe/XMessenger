@@ -1,0 +1,42 @@
+# Dependencies
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Production builds
+dist/
+build/
+
+# Environment and secrets
+.env
+.env.*
+!.env.example
+
+# Database files
+data/
+*.db
+*.db-journal
+*.db-wal
+*.db-shm
+*.sqlite
+*.sqlite3
+
+# Uploads
+uploads/
+
+# Graphify temporary caches (keep report & graph if needed)
+graphify-out/.graphify_*
+graphify-out/*.json
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
+
+# Logs & temp
+logs/
+*.log
+.temp/
+.cache/
+
+# OS files
+.DS_Store
+Thumbs.db
