@@ -205,6 +205,11 @@ cd "${SCRIPT_DIR}"
 docker compose down 2>/dev/null || true
 docker compose up -d --build
 
+# 8. Setup Global CLI Command (xmessenger)
+chmod +x "${SCRIPT_DIR}/xmessenger.sh" 2>/dev/null || true
+cp -f "${SCRIPT_DIR}/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
+chmod +x /usr/local/bin/xmessenger 2>/dev/null || true
+
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${GREEN}${BOLD}🎉 XMessenger successfully deployed!${NC}"
 echo -e "${GREEN}${BOLD}==================================================================${NC}"
@@ -214,7 +219,10 @@ echo -e "${CYAN}🔑 Admin Password:${NC}   ${ADMIN_PASSWORD}"
 echo -e "${CYAN}🔒 Storage Encryption:${NC} AES-256-GCM (Active)"
 echo -e "${CYAN}⏱️ Ephemeral TTL:${NC}     24 Hours (Configurable in Admin Panel)"
 echo -e "${GREEN}${BOLD}==================================================================${NC}"
-echo -e "You can manage the server anytime inside: ${SCRIPT_DIR}"
+echo -e "${YELLOW}${BOLD}💡 دستور پنل مدیریت سرور:${NC}"
+echo -e "   کافیست در هر زمان در ترمینال سرور دستور ${CYAN}${BOLD}xmessenger${NC} را تایپ کنید تا وارد منوی مدیریت شوید."
+echo -e "${GREEN}${BOLD}==================================================================${NC}"
+echo -e "مدیریت دستی از طریق پوشه: ${SCRIPT_DIR}"
 echo -e "  - View logs:        docker compose logs -f"
 echo -e "  - Stop messenger:   docker compose down"
 echo -e "  - Restart:          docker compose restart"
