@@ -2,6 +2,7 @@
 # ==============================================================================
 # XMessenger Multi-Domain CLI Management Tool
 # Manage all XMessenger instances installed on the server
+# Strictly English console output for universal terminal compatibility
 # ==============================================================================
 
 set -e
@@ -48,7 +49,7 @@ manage_instance() {
 
   while true; do
     show_banner
-    echo -e "${BOLD}🎯 در حال مدیریت پیام‌رسان دامنه:${NC} ${CYAN}${BOLD}https://${DOMAIN}${NC}\n"
+    echo -e "${BOLD}Managing Messenger Instance:${NC} ${CYAN}${BOLD}https://${DOMAIN}${NC}\n"
 
     # Load instance env
     if [ -f "${INSTANCE_DIR}/.env" ]; then
@@ -56,82 +57,82 @@ manage_instance() {
     fi
 
     # Container status
-    local STATUS="نامشخص"
+    local STATUS="Unknown"
     if docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
-      STATUS="${GREEN}آنلاین (Running)${NC}"
+      STATUS="${GREEN}ONLINE (Running)${NC}"
     else
-      STATUS="${RED}متوقف شده (Stopped)${NC}"
+      STATUS="${RED}STOPPED${NC}"
     fi
 
-    echo -e "  ${CYAN}🌐 دامنه:${NC}              https://${DOMAIN}"
-    echo -e "  ${CYAN}📦 وضعیت کانتینر:${NC}      ${STATUS}"
-    echo -e "  ${CYAN}👤 نام کاربری ادمین:${NC}    ${ADMIN_USERNAME:-admin}"
-    echo -e "  ${CYAN}🔑 رمز عبور ادمین:${NC}      ${ADMIN_PASSWORD:-محفوظ در دیتابیس}"
-    echo -e "  ${CYAN}💾 حجم دیتابیس:${NC}       xmessenger-data-${SLUG}"
+    echo -e "  ${CYAN}Domain:${NC}              https://${DOMAIN}"
+    echo -e "  ${CYAN}Container Status:${NC}    ${STATUS}"
+    echo -e "  ${CYAN}Admin Username:${NC}      ${ADMIN_USERNAME:-admin}"
+    echo -e "  ${CYAN}Admin Password:${NC}      ${ADMIN_PASSWORD:-Stored in database}"
+    echo -e "  ${CYAN}Database Volume:${NC}     xmessenger-data-${SLUG}"
     echo ""
-    echo -e " ${BOLD}گزینه‌های مدیریت این دامنه:${NC}"
-    echo -e "  ${GREEN}1)${NC} 📜 مشاهده لاگ‌های زنده کانتینر (Live Logs)"
-    echo -e "  ${GREEN}2)${NC} 🔄 ری‌استارت پیام‌رسان (Restart)"
-    echo -e "  ${GREEN}3)${NC} ▶️  روشن کردن کانتینر (Start)"
-    echo -e "  ${GREEN}4)${NC} ⏹️  خاموش کردن کانتینر (Stop)"
-    echo -e "  ${GREEN}5)${NC} 🔑 تغییر رمز عبور ادمین"
-    echo -e "  ${GREEN}6)${NC} 🔒 تمدید مجدد گواهی SSL این دامنه"
-    echo -e "  ${RED}7)${NC} 🚨 پاکسازی اضطراری دیتابیس (Panic Wipe)"
-    echo -e "  ${RED}8)${NC} 🗑️  حذف کامل این پیام‌رسان و دامنه (Uninstall Domain)"
-    echo -e "  ${YELLOW}0)${NC} ↩️  بازگشت به لیست دامنه‌ها"
+    echo -e " ${BOLD}Instance Management Options:${NC}"
+    echo -e "  ${GREEN}1)${NC} View live container logs (Live Logs)"
+    echo -e "  ${GREEN}2)${NC} Restart messenger instance (Restart)"
+    echo -e "  ${GREEN}3)${NC} Start container (Start)"
+    echo -e "  ${GREEN}4)${NC} Stop container (Stop)"
+    echo -e "  ${GREEN}5)${NC} Change admin password"
+    echo -e "  ${GREEN}6)${NC} Force renew SSL certificate"
+    echo -e "  ${RED}7)${NC} Panic wipe database (Hard Reset)"
+    echo -e "  ${RED}8)${NC} Uninstall domain & messenger completely"
+    echo -e "  ${YELLOW}0)${NC} Back to domain list"
     echo ""
-    read -p "یک گزینه را انتخاب کنید [0-8]: " subchoice
+    read -p "Select an option [0-8]: " subchoice
 
     case "$subchoice" in
       1)
         show_banner
-        echo -e "${YELLOW}مشاهده لاگ‌های زنده ${CONTAINER} (برای خروج Ctrl+C بزنید)...${NC}\n"
+        echo -e "${YELLOW}Streaming live logs for ${CONTAINER} (Press Ctrl+C to exit)...${NC}\n"
         docker logs -f --tail=100 "${CONTAINER}" || true
         ;;
       2)
-        echo -e "\n${YELLOW}در حال ری‌استارت ${CONTAINER}...${NC}"
+        echo -e "\n${YELLOW}Restarting ${CONTAINER}...${NC}"
         docker restart "${CONTAINER}"
         sleep 2
         ;;
       3)
-        echo -e "\n${YELLOW}در حال راه‌اندازی ${CONTAINER}...${NC}"
+        echo -e "\n${YELLOW}Starting ${CONTAINER}...${NC}"
         docker start "${CONTAINER}"
         sleep 2
         ;;
       4)
-        echo -e "\n${YELLOW}در حال متوقف کردن ${CONTAINER}...${NC}"
+        echo -e "\n${YELLOW}Stopping ${CONTAINER}...${NC}"
         docker stop "${CONTAINER}"
         sleep 2
         ;;
       5)
         show_banner
-        read -p "رمز عبور جدید ادمین برای ${DOMAIN} را وارد کنید: " NEW_PASS
+        read -p "Enter new admin password for ${DOMAIN}: " NEW_PASS
         if [ -n "$NEW_PASS" ] && [ ${#NEW_PASS} -ge 6 ]; then
           sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env"
           docker restart "${CONTAINER}"
-          echo -e "\n${GREEN}رمز عبور با موفقیت به‌روزرسانی شد.${NC}"
+          echo -e "\n${GREEN}Admin password updated successfully.${NC}"
           sleep 2
         else
-          echo -e "${RED}رمز عبور باید حداقل ۶ کاراکتر باشد.${NC}"
+          echo -e "${RED}Password must be at least 6 characters long.${NC}"
           sleep 2
         fi
         ;;
       6)
         show_banner
-        echo -e "${YELLOW}در حال تمدید گواهینامه SSL برای ${DOMAIN}...${NC}"
+        echo -e "${YELLOW}Renewing SSL certificate for ${DOMAIN}...${NC}"
         docker run --rm \
           --network xmessenger-net \
           -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
           -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
           certbot/certbot certonly --webroot -w /var/www/certbot -d "${DOMAIN}" --force-renewal
         docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
-        echo -e "\n${GREEN}گواهی SSL مجدداً صادر و بارگذاری شد.${NC}"
+        echo -e "\n${GREEN}SSL certificate renewed and Nginx reloaded.${NC}"
         sleep 2
         ;;
       7)
         show_banner
-        echo -e "${RED}${BOLD}⚠️ اخطار: تمام پیام‌ها و دیتابیس ${DOMAIN} به طور کامل نابود خواهد شد!${NC}"
-        read -p "برای تایید قطعی عبارت DELETE را تایپ کنید: " CONFIRM
+        echo -e "${RED}${BOLD}WARNING: All messages and database data for ${DOMAIN} will be PERMANENTLY DESTROYED!${NC}"
+        read -p "Type DELETE to confirm: " CONFIRM
         if [ "$CONFIRM" == "DELETE" ]; then
           docker rm -f "${CONTAINER}" 2>/dev/null || true
           docker volume rm -f "xmessenger-data-${SLUG}" 2>/dev/null || true
@@ -142,21 +143,21 @@ manage_instance() {
             --env-file "${INSTANCE_DIR}/.env" \
             -v "xmessenger-data-${SLUG}:/app/data" \
             xmessenger-core:latest
-          echo -e "\n${GREEN}دیتابیس امحا و پیام‌رسان با دیتابیس خام بازسازی شد.${NC}"
+          echo -e "\n${GREEN}Database wiped. Fresh instance recreated successfully.${NC}"
           sleep 2
         fi
         ;;
       8)
         show_banner
-        echo -e "${RED}${BOLD}⚠️ آیا مطمئنید می‌خواهید دامنه ${DOMAIN} را به طور کامل از این سرور حذف کنید؟${NC}"
-        read -p "عبارت UNINSTALL را تایپ کنید: " CONFIRM
+        echo -e "${RED}${BOLD}WARNING: Are you sure you want to completely remove ${DOMAIN} from this server?${NC}"
+        read -p "Type UNINSTALL to confirm: " CONFIRM
         if [ "$CONFIRM" == "UNINSTALL" ]; then
           docker rm -f "${CONTAINER}" 2>/dev/null || true
           docker volume rm -f "xmessenger-data-${SLUG}" 2>/dev/null || true
           rm -rf "${INSTANCE_DIR}"
           rm -f "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
           docker exec xmessenger-nginx nginx -s reload 2>/dev/null || true
-          echo -e "\n${GREEN}پیام‌رسان ${DOMAIN} با موفقیت حذف شد.${NC}"
+          echo -e "\n${GREEN}Instance for ${DOMAIN} uninstalled successfully.${NC}"
           sleep 2
           return
         fi
@@ -173,62 +174,62 @@ while true; do
   show_banner
   DOMAINS=($(get_domains))
 
-  echo -e " ${BOLD}لیست پیام‌رسان‌های فعال روی این سرور:${NC}\n"
+  echo -e " ${BOLD}Active Messenger Instances on this server:${NC}\n"
 
   if [ ${#DOMAINS[@]} -eq 0 ]; then
-    echo -e "  ${YELLOW}هیچ پیام‌رسانی هنوز ثبت نشده است.${NC}\n"
+    echo -e "  ${YELLOW}No messenger instances configured yet.${NC}\n"
   else
     for i in "${!DOMAINS[@]}"; do
       D="${DOMAINS[$i]}"
       S=$(echo "$D" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
       C="xmessenger-${S}"
       if docker ps --format '{{.Names}}' | grep -q "^${C}$"; then
-        STATE="${GREEN}● آنلاین${NC}"
+        STATE="${GREEN}[ONLINE]${NC}"
       else
-        STATE="${RED}○ متوقف${NC}"
+        STATE="${RED}[STOPPED]${NC}"
       fi
-      echo -e "  ${GREEN}$((i+1)))${NC} ${BOLD}https://${D}${NC}  [${STATE}]"
+      echo -e "  ${GREEN}$((i+1)))${NC} ${BOLD}https://${D}${NC}  ${STATE}"
     done
     echo ""
   fi
 
-  echo -e " ${BOLD}عملیات‌های سراسری سرور:${NC}"
-  echo -e "  ${CYAN}A)${NC} ➕ افزودن دامنه جدید و نصب پیام‌رسان تازه"
-  echo -e "  ${CYAN}R)${NC} 🔄 ری‌استارت گیت‌وی Nginx سراسری"
-  echo -e "  ${CYAN}U)${NC} 🚀 آپدیت تمام پیام‌رسان‌ها به آخرین نسخه گیت‌هاب"
-  echo -e "  ${RED}0)${NC} 🚪 خروج"
+  echo -e " ${BOLD}Global Server Operations:${NC}"
+  echo -e "  ${CYAN}A)${NC} Add new domain & install new messenger"
+  echo -e "  ${CYAN}R)${NC} Reload / Restart shared Nginx Gateway"
+  echo -e "  ${CYAN}U)${NC} Update all messenger instances to latest GitHub version"
+  echo -e "  ${RED}0)${NC} Exit"
   echo ""
-  read -p "لطفاً شماره دامنه یا گزینه مورد نظر را وارد کنید: " choice
+  read -p "Enter domain number or option: " choice
 
   case "$choice" in
     [0-9]*)
       if [ "$choice" -eq 0 ]; then
-        echo -e "\nخداحافظ!"
+        echo -e "\nGoodbye!"
         exit 0
       fi
       IDX=$((choice - 1))
       if [ $IDX -ge 0 ] && [ $IDX -lt ${#DOMAINS[@]} ]; then
         manage_instance "${DOMAINS[$IDX]}"
       else
-        echo -e "${RED}شماره نامعتبر است!${NC}"
+        echo -e "${RED}Invalid selection!${NC}"
         sleep 1
       fi
       ;;
     [aA])
       show_banner
-      echo -e "${YELLOW}در حال اجرای اسکریپت نصب برای دامنه جدید...${NC}\n"
+      echo -e "${YELLOW}Running installation script for new domain...${NC}\n"
       bash "${BASE_DIR}/deploy/install.sh"
-      read -p "برای ادامه اینتر بزنید..." dummy
+      read -p "Press Enter to continue..." dummy
       ;;
     [rR])
-      echo -e "\n${YELLOW}در حال ری‌استارت وب‌سرور Nginx سراسری...${NC}"
+      echo -e "\n${YELLOW}Restarting shared Nginx Gateway...${NC}"
       docker restart xmessenger-nginx 2>/dev/null || true
-      echo -e "${GREEN}Nginx ری‌استارت شد.${NC}"
+      echo -e "${GREEN}Shared Nginx Gateway restarted successfully.${NC}"
       sleep 2
       ;;
     [uU])
       show_banner
-      echo -e "${BLUE}در حال دریافت آخرین نسخه از گیت‌هاب و بیلد سراسری...${NC}\n"
+      echo -e "${BLUE}Pulling latest version from GitHub and rebuilding image...${NC}\n"
       cd "${BASE_DIR}"
       git pull origin main || true
       docker build -t xmessenger-core:latest -f Dockerfile .
@@ -237,11 +238,11 @@ while true; do
         S=$(echo "$D" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
         docker restart "xmessenger-${S}" 2>/dev/null || true
       done
-      echo -e "\n${GREEN}تمام پیام‌رسان‌ها با موفقیت آپدیت شدند!${NC}"
+      echo -e "\n${GREEN}All messenger instances updated successfully!${NC}"
       sleep 2
       ;;
     *)
-      echo -e "${RED}گزینه نامعتبر است!${NC}"
+      echo -e "${RED}Invalid choice!${NC}"
       sleep 1
       ;;
   esac
