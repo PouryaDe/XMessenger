@@ -9,11 +9,25 @@ import { useTranslation } from 'react-i18next';
 
 export const App: React.FC = () => {
   const { t } = useTranslation();
-  const { user, token, isLoading, checkAuth, logout } = useAuthStore();
+  const { user, token, isLoading, checkAuth, logout, theme } = useAuthStore();
 
   useEffect(() => {
     checkAuth();
   }, []);
+
+  // Synchronize theme with DOM documentElement and PWA theme-color meta tag
+  useEffect(() => {
+    if (theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+
+    const metaTheme = document.querySelector('meta[name="theme-color"]');
+    if (metaTheme) {
+      metaTheme.setAttribute('content', theme === 'dark' ? '#0B0F17' : '#DFDDD6');
+    }
+  }, [theme]);
 
   // 1. Loading state
   if (isLoading) {

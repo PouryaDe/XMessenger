@@ -45,9 +45,9 @@ echo -e "\n${BLUE}[2/4] Live-updating all running messenger containers...${NC}"
 UPDATED_COUNT=0
 for c in $(docker ps -a --format '{{.Names}}' | grep '^xmessenger-' | grep -v 'nginx' | grep -v 'certbot'); do
   echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
-  docker cp client/dist/. "${c}:/app/client-dist/" 2>/dev/null || true
-  docker cp server/dist/. "${c}:/app/dist/" 2>/dev/null || true
-  docker restart "${c}" 2>/dev/null || true
+  docker cp client/dist/. "${c}:/app/client-dist/"
+  docker cp server/dist/. "${c}:/app/dist/"
+  docker restart "${c}"
   echo -e "${GREEN}✓ Container ${c} updated and restarted!${NC}"
   UPDATED_COUNT=$((UPDATED_COUNT + 1))
 done
@@ -58,7 +58,7 @@ fi
 
 # 3. Restart Nginx Gateway to flush proxy cache and buffers
 echo -e "\n${BLUE}[3/4] Purging Nginx proxy cache & restarting gateway...${NC}"
-docker restart xmessenger-nginx 2>/dev/null || true
+docker restart xmessenger-nginx
 echo -e "${GREEN}✓ Nginx gateway cache flushed!${NC}"
 
 # 4. Synchronize Docker image for any future new container creation (without killing running containers)
@@ -66,11 +66,11 @@ echo -e "\n${BLUE}[4/4] Updating base Docker image (xmessenger-core:latest)...${
 docker build -t xmessenger-core:latest -f Dockerfile . >/dev/null 2>&1 &
 echo -e "${GREEN}✓ Base image update running in background.${NC}"
 
-# 5. Ensure global shortcuts exist in /usr/local/bin
+# 5. Ensure global shortcuts exist in /usr/local/bin as live symlinks
 ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
-chmod +x /usr/local/bin/xupdate 2>/dev/null || true
-cp -f "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
-chmod +x /usr/local/bin/xmessenger 2>/dev/null || true
+chmod +x "${BASE_DIR}/update.sh" 2>/dev/null || true
+ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
+chmod +x "${BASE_DIR}/deploy/xmessenger.sh" 2>/dev/null || true
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${GREEN}${BOLD}✓ XMessenger hot update completed successfully!${NC}"

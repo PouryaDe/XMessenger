@@ -15,7 +15,15 @@ interface AuthState {
   toggleTheme: () => void;
 }
 
-const savedTheme = (localStorage.getItem('xmessenger_theme') as 'dark' | 'light') || 'dark';
+const savedTheme = (typeof window !== 'undefined' ? (localStorage.getItem('xmessenger_theme') as 'dark' | 'light') : null) || 'dark';
+
+if (typeof window !== 'undefined') {
+  if (savedTheme === 'dark') {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
 
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: localStorage.getItem('xmessenger_token'),

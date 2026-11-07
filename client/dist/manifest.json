@@ -3,16 +3,42 @@
   "short_name": "XMessenger",
   "description": "پیام‌رسان متمرکز امن یک‌طرفه با پیام‌های گذرا و رمزنگاری AES-256",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#FAF6EE",
-  "theme_color": "#FAF6EE",
   "orientation": "portrait-primary",
+  "background_color": "#DFDDD6",
+  "theme_color": "#DFDDD6",
+  "lang": "fa",
+  "dir": "rtl",
+  "categories": [
+    "social",
+    "utilities",
+    "productivity"
+  ],
   "icons": [
     {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-512-maskable.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
       "src": "/shield.svg",
-      "sizes": "192x192 512x512",
+      "sizes": "any",
       "type": "image/svg+xml",
-      "purpose": "any maskable"
+      "purpose": "any"
     }
   ]
 }
