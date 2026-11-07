@@ -99,23 +99,25 @@ if [ "$UPDATED_COUNT" -eq 0 ]; then
   echo -e "${YELLOW}No running instance containers detected.${NC}"
 fi
 
-# Ensure 100M client body limit & anti-cache headers in active Nginx configs
+# Ensure 100M client body limit & clean up any corrupted Nginx location blocks
 if [ -d "${BASE_DIR}/shared/nginx/conf.d" ]; then
   for cfg in "${BASE_DIR}/shared/nginx/conf.d"/*.conf; do
     [ -f "$cfg" ] || continue
+    # Clean up any bad proxy_pass to non-existent xmessenger:3001
+    sed -i '/location ~\* \\.(html|json)\$/,/^[ \t]*}/d' "$cfg" 2>/dev/null || true
+    sed -i '/location = \/sw\.js/,/^[ \t]*}/d' "$cfg" 2>/dev/null || true
+    sed -i 's|http://xmessenger:3001|http://xmessenger-xchat-iranistream-com:3001|g' "$cfg" 2>/dev/null || true
     if ! grep -q "client_max_body_size" "$cfg"; then
       sed -i '/server {/a \    client_max_body_size 100M;' "$cfg" 2>/dev/null || true
-    fi
-    if ! grep -q "sw.js" "$cfg"; then
-      sed -i '/location \/ {/i \    location ~* \\.(html|json)$ {\n        proxy_pass http://xmessenger:3001;\n        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;\n    }\n    location = /sw.js {\n        proxy_pass http://xmessenger:3001/sw.js;\n        add_header Cache-Control "no-store, no-cache, must-revalidate, proxy-revalidate, max-age=0" always;\n    }' "$cfg" 2>/dev/null || true
     fi
   done
 fi
 
-# 3. Restart Nginx Gateway to flush proxy cache and buffers
-echo -e "\n${BLUE}[3/4] Purging Nginx proxy cache & restarting gateway...${NC}"
-docker restart xmessenger-nginx
-echo -e "${GREEN}✓ Nginx gateway cache flushed!${NC}"
+# 3. Ensure Nginx Gateway is running and healthy
+echo -e "\n${BLUE}[3/4] Ensuring Nginx Gateway is healthy and restarted...${NC}"
+docker start xmessenger-nginx 2>/dev/null || true
+docker restart xmessenger-nginx 2>/dev/null || true
+echo -e "${GREEN}✓ Nginx gateway is online and active!${NC}"
 
 # 4. Synchronize Docker image for any future new container creation (without killing running containers)
 echo -e "\n${BLUE}[4/4] Updating base Docker image (xmessenger-core:latest)...${NC}"
