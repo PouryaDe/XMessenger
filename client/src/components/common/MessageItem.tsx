@@ -6,9 +6,7 @@ import {
   Check, 
   CheckCheck, 
   Flame, 
-  Copy, 
-  User as UserIcon,
-  Sparkles
+  Copy
 } from 'lucide-react';
 
 interface Props {
@@ -105,18 +103,18 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
   return (
     <div
       dir="ltr"
-      className={`w-full flex my-2 px-1 animate-message select-none ${isOwn ? 'justify-end' : 'justify-start'}`}
+      className={`w-full flex my-1.5 px-3 animate-message select-none ${isOwn ? 'justify-end' : 'justify-start'}`}
     >
-      <div className={`relative flex items-end gap-2.5 max-w-[85%] sm:max-w-md md:max-w-lg ${isOwn ? 'flex-row' : 'flex-row-reverse'}`}>
+      <div className="relative max-w-[85%] sm:max-w-md md:max-w-lg">
         
-        {/* Message Bubble Card */}
+        {/* Message Bubble Card with Telegram Curved Corner Tail */}
         <div
           onContextMenu={handleContextMenu}
           onClick={handleBubbleClick}
-          className={`relative px-4 py-2.5 rounded-[22px] transition-all cursor-pointer text-sm leading-relaxed border ${
+          className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-soft ${
             isOwn
-              ? 'bg-[#E3EDF7] text-slate-900 dark:bg-[#1E334D] dark:text-slate-100 border-[#CEE0EF] dark:border-white/10 rounded-br-xs shadow-soft'
-              : 'bg-white text-slate-900 dark:bg-slate-800/90 dark:text-slate-100 border-black/5 dark:border-white/10 rounded-bl-xs shadow-soft'
+              ? 'bg-[#E3EDF7] text-slate-900 dark:bg-[#1E334D] dark:text-slate-100 rounded-[18px] rounded-br-[3px]'
+              : 'bg-white text-slate-900 dark:bg-slate-800/90 dark:text-slate-100 rounded-[18px] rounded-bl-[3px]'
           }`}
         >
           {/* Message content (natural directionality for Persian/English) */}
@@ -160,6 +158,40 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
             )}
           </div>
 
+          {/* Telegram-style Curved Bubble Tail (Outgoing = bottom-right, Incoming = bottom-left) */}
+          {isOwn ? (
+            <svg
+              viewBox="0 0 11 20"
+              width="11"
+              height="20"
+              style={{ transform: 'scaleX(-1)' }}
+              className="absolute -bottom-[1px] -right-[9px] pointer-events-none fill-[#E3EDF7] dark:fill-[#1E334D]"
+              aria-hidden="true"
+            >
+              <g transform="translate(9 -14)" fill="inherit" fillRule="evenodd">
+                <path
+                  d="M-6 16h6v17c-.193-2.84-.876-5.767-2.05-8.782-.904-2.325-2.446-4.485-4.625-6.48A1 1 0 01-6 16z"
+                  transform="matrix(1 0 0 -1 0 49)"
+                />
+              </g>
+            </svg>
+          ) : (
+            <svg
+              viewBox="0 0 11 20"
+              width="11"
+              height="20"
+              className="absolute -bottom-[1px] -left-[9px] pointer-events-none fill-white dark:fill-slate-800"
+              aria-hidden="true"
+            >
+              <g transform="translate(9 -14)" fill="inherit" fillRule="evenodd">
+                <path
+                  d="M-6 16h6v17c-.193-2.84-.876-5.767-2.05-8.782-.904-2.325-2.446-4.485-4.625-6.48A1 1 0 01-6 16z"
+                  transform="matrix(1 0 0 -1 0 49)"
+                />
+              </g>
+            </svg>
+          )}
+
           {/* Feedback badge for Copied */}
           {copied && (
             <div className="absolute -top-7 start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-floating animate-message">
@@ -190,19 +222,6 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
                 <Trash2 className="w-4 h-4 shrink-0" />
                 <span>{t('deleteForEveryone') || 'حذف دوطرفه'}</span>
               </button>
-            </div>
-          )}
-        </div>
-
-        {/* Circular Avatar Beside Message */}
-        <div className="shrink-0 mb-0.5 select-none">
-          {isOwn ? (
-            <div className="w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-200 border border-black/5 dark:border-white/10 flex items-center justify-center font-bold text-xs uppercase shadow-xs">
-              <UserIcon className="w-4 h-4" />
-            </div>
-          ) : (
-            <div className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-black/5 dark:border-white/10 flex items-center justify-center font-bold text-xs uppercase font-mono shadow-xs">
-              <Sparkles className="w-4 h-4 text-slate-400 dark:text-slate-400" />
             </div>
           )}
         </div>
