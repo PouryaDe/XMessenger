@@ -289,6 +289,9 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
 
+    # Client body limit (Supports Database Restore & Media Uploads)
+    client_max_body_size 100M;
+
     location /socket.io/ {
         proxy_pass http://xmessenger-${SLUG}:3001/socket.io/;
         proxy_http_version 1.1;

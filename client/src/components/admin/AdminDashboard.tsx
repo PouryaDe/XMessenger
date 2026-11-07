@@ -242,8 +242,12 @@ export const AdminDashboard: React.FC = () => {
                 </button>
 
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold font-mono text-xs uppercase shadow-soft border border-white dark:border-slate-600">
-                    {activeUser.username.substring(0, 2)}
+                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold font-mono text-xs uppercase shadow-soft border border-white dark:border-slate-600 overflow-hidden">
+                    {activeUser.avatarUrl ? (
+                      <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
+                    ) : (
+                      <span>{activeUser.username.substring(0, 2)}</span>
+                    )}
                   </div>
                   <div
                     className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${

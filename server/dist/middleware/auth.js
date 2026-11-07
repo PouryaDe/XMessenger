@@ -27,14 +27,20 @@ function authenticate(req, res, next) {
     try {
         const decoded = jsonwebtoken_1.default.verify(token, index_js_1.config.jwtSecret);
         // Fetch live user status from database to prevent stale tokens after ban/approval changes
-        const user = index_js_2.db.prepare('SELECT id, username, role, status FROM users WHERE id = ?').get(decoded.id);
+        const user = index_js_2.db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(decoded.id);
         if (!user) {
             return res.status(401).json({ error: 'USER_NOT_FOUND', message: 'User no longer exists' });
         }
         if (user.status === 'banned') {
             return res.status(403).json({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
         }
-        req.user = user;
+        req.user = {
+            id: user.id,
+            username: user.username,
+            role: user.role,
+            status: user.status,
+            avatarUrl: user.avatar_url || undefined
+        };
         next();
     }
     catch (err) {

@@ -69,6 +69,13 @@ for c in $CONTAINERS; do
     echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
     docker cp client/dist/. "${c}:/app/client-dist/"
     docker cp server/dist/. "${c}:/app/dist/"
+
+    # Check and install multer if missing in container
+    if ! docker exec "${c}" node -e "require('multer')" >/dev/null 2>&1; then
+      echo -e "${YELLOW}Installing upload dependencies inside container ${c}...${NC}"
+      docker exec "${c}" npm install --no-audit --no-fund multer >/dev/null 2>&1 || true
+    fi
+
     docker restart "${c}"
     echo -e "${GREEN}✓ Container ${c} updated and restarted!${NC}"
     UPDATED_COUNT=$((UPDATED_COUNT + 1))
@@ -77,6 +84,16 @@ done
 
 if [ "$UPDATED_COUNT" -eq 0 ]; then
   echo -e "${YELLOW}No running instance containers detected.${NC}"
+fi
+
+# Ensure 100M client body limit in active Nginx configs for database backup/restore
+if [ -d "${BASE_DIR}/shared/nginx/conf.d" ]; then
+  for cfg in "${BASE_DIR}/shared/nginx/conf.d"/*.conf; do
+    [ -f "$cfg" ] || continue
+    if ! grep -q "client_max_body_size" "$cfg"; then
+      sed -i '/server {/a \    client_max_body_size 100M;' "$cfg" 2>/dev/null || true
+    fi
+  done
 fi
 
 # 3. Restart Nginx Gateway to flush proxy cache and buffers

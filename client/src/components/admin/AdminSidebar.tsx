@@ -173,8 +173,12 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                 <div className="flex items-center gap-3 overflow-hidden">
                   {/* Avatar with status indicator */}
                   <div className="relative shrink-0">
-                    <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-center font-bold text-xs uppercase font-mono shadow-xs border border-white dark:border-slate-600">
-                      {u.username.substring(0, 2)}
+                    <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-800 dark:text-slate-200 flex items-center justify-center font-bold text-xs uppercase font-mono shadow-xs border border-white dark:border-slate-600 overflow-hidden">
+                      {u.avatarUrl ? (
+                        <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
+                      ) : (
+                        <span>{u.username.substring(0, 2)}</span>
+                      )}
                     </div>
                     <div
                       className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-3 h-3 rounded-full border-2 border-white dark:border-slate-800 ${

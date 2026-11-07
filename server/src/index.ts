@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { Server } from 'socket.io';
 import { config } from './config/index.js';
-import { initDatabase } from './database/index.js';
+import { initDatabase, getSettingValue } from './database/index.js';
 import { authRouter } from './routes/auth.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createMessagesRouter } from './routes/messages.js';
@@ -51,7 +51,87 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-// 7. Serve Static Frontend in production
+// 7. Serve Uploaded User/Admin Content (Persistent Volume in data/uploads)
+const uploadsDir = path.join(config.dataDir, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+  fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir, {
+  maxAge: '7d'
+}));
+
+// 8. Serve Dynamic PWA Manifest (incorporates admin custom app name & icon)
+app.get('/manifest.json', (req, res) => {
+  const appName = getSettingValue('app_name', 'XMessenger - پیام‌رسان امن و خصوصی');
+  const pwaShortName = getSettingValue('pwa_short_name', 'XMessenger');
+  const customIcon = getSettingValue('pwa_icon_url', '');
+
+  const icons = customIcon ? [
+    {
+      src: customIcon,
+      sizes: "192x192",
+      type: "image/png",
+      purpose: "any"
+    },
+    {
+      src: customIcon,
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "any"
+    },
+    {
+      src: customIcon,
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "maskable"
+    }
+  ] : [
+    {
+      src: "/icon-192.png",
+      sizes: "192x192",
+      type: "image/png",
+      purpose: "any"
+    },
+    {
+      src: "/icon-512.png",
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "any"
+    },
+    {
+      src: "/icon-512-maskable.png",
+      sizes: "512x512",
+      type: "image/png",
+      purpose: "maskable"
+    },
+    {
+      src: "/shield.svg",
+      sizes: "any",
+      type: "image/svg+xml",
+      purpose: "any"
+    }
+  ];
+
+  res.setHeader('Content-Type', 'application/manifest+json');
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.json({
+    name: appName,
+    short_name: pwaShortName,
+    description: "پیام‌رسان متمرکز امن یک‌طرفه با پیام‌های گذرا و رمزنگاری AES-256",
+    start_url: "/",
+    scope: "/",
+    display: "standalone",
+    orientation: "portrait-primary",
+    background_color: "#DFDDD6",
+    theme_color: "#DFDDD6",
+    lang: "fa",
+    dir: "rtl",
+    categories: ["social", "utilities", "productivity"],
+    icons
+  });
+});
+
+// 9. Serve Static Frontend in production
 const clientDistPath = path.resolve(process.cwd(), '../client/dist');
 const localDistPath = path.resolve(process.cwd(), './client-dist');
 

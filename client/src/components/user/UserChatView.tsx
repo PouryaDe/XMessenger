@@ -143,8 +143,12 @@ export const UserChatView: React.FC = () => {
         {/* Admin Avatar & Live Status */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold shadow-soft">
-              <ShieldCheck className="w-5 h-5 text-amber-500" />
+            <div className="w-10 h-10 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold shadow-soft overflow-hidden">
+              {adminInfo?.avatarUrl ? (
+                <img src={adminInfo.avatarUrl} alt="Admin" className="w-full h-full object-cover" />
+              ) : (
+                <ShieldCheck className="w-5 h-5 text-amber-500" />
+              )}
             </div>
             <div
               className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 transition-colors ${

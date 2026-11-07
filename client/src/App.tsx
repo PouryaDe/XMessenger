@@ -1,5 +1,6 @@
 import React, { useEffect } from 'react';
 import { useAuthStore } from './stores/authStore.js';
+import { api } from './services/api.js';
 import { AuthModal } from './components/auth/AuthModal.js';
 import { PendingApprovalScreen } from './components/auth/PendingApprovalScreen.js';
 import { UserChatView } from './components/user/UserChatView.js';
@@ -13,6 +14,18 @@ export const App: React.FC = () => {
 
   useEffect(() => {
     checkAuth();
+    // Load app metadata (custom title & PWA icon)
+    api.getMeta().then((meta) => {
+      if (meta.appName) {
+        document.title = meta.appName;
+      }
+      if (meta.pwaIconUrl) {
+        const linkIcon = document.querySelector('link[rel="icon"]');
+        if (linkIcon) linkIcon.setAttribute('href', meta.pwaIconUrl);
+        const linkApple = document.querySelector('link[rel="apple-touch-icon"]');
+        if (linkApple) linkApple.setAttribute('href', meta.pwaIconUrl);
+      }
+    }).catch(console.error);
   }, []);
 
   // Synchronize theme with DOM documentElement and PWA theme-color meta tag

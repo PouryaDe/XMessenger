@@ -8,6 +8,7 @@ export interface AuthUser {
   username: string;
   role: 'admin' | 'user';
   status: 'active' | 'pending' | 'banned';
+  avatarUrl?: string;
 }
 
 export interface AuthenticatedRequest extends Request {
@@ -39,7 +40,13 @@ export function authenticate(req: AuthenticatedRequest, res: Response, next: Nex
     const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
 
     // Fetch live user status from database to prevent stale tokens after ban/approval changes
-    const user = db.prepare('SELECT id, username, role, status FROM users WHERE id = ?').get(decoded.id) as AuthUser | undefined;
+    const user = db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(decoded.id) as {
+      id: string;
+      username: string;
+      role: 'admin' | 'user';
+      status: 'active' | 'pending' | 'banned';
+      avatar_url?: string;
+    } | undefined;
 
     if (!user) {
       return res.status(401).json({ error: 'USER_NOT_FOUND', message: 'User no longer exists' });
@@ -49,7 +56,13 @@ export function authenticate(req: AuthenticatedRequest, res: Response, next: Nex
       return res.status(403).json({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
     }
 
-    req.user = user;
+    req.user = {
+      id: user.id,
+      username: user.username,
+      role: user.role,
+      status: user.status,
+      avatarUrl: user.avatar_url || undefined
+    };
     next();
   } catch (err) {
     return res.status(401).json({ error: 'INVALID_TOKEN', message: 'Invalid or expired token' });

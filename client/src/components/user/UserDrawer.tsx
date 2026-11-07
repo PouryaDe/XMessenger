@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
@@ -10,7 +10,8 @@ import {
   ShieldCheck, 
   KeyRound, 
   Trash2, 
-  LogOut
+  LogOut,
+  Camera
 } from 'lucide-react';
 
 interface Props {
@@ -20,8 +21,10 @@ interface Props {
 
 export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
-  const { user, logout } = useAuthStore();
+  const { user, logout, updateUserAvatar } = useAuthStore();
   const { clearMessages } = useChatStore();
+  const avatarInputRef = useRef<HTMLInputElement>(null);
+  const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
 
   const [showPasswordModal, setShowPasswordModal] = useState(false);
   const [currentPassword, setCurrentPassword] = useState('');
@@ -29,6 +32,22 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
   const [pwdMsg, setPwdMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
   if (!isOpen) return null;
+
+  const handleAvatarChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploadingAvatar(true);
+    try {
+      const res = await api.uploadAvatar(file);
+      updateUserAvatar(res.avatarUrl);
+    } catch (err: any) {
+      alert(err.message || 'Failed to upload photo');
+    } finally {
+      setIsUploadingAvatar(false);
+      if (avatarInputRef.current) avatarInputRef.current.value = '';
+    }
+  };
 
   const handleClearHistory = async () => {
     if (window.confirm(t('confirmClearChat'))) {
@@ -70,8 +89,32 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="p-6 pt-safe border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10 text-sm font-mono uppercase">
-              {user?.username.substring(0, 2)}
+            {/* Clickable Profile Avatar with Upload Camera */}
+            <div className="relative group">
+              <input
+                ref={avatarInputRef}
+                type="file"
+                accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                onChange={handleAvatarChange}
+                className="hidden"
+              />
+              <button
+                type="button"
+                onClick={() => avatarInputRef.current?.click()}
+                disabled={isUploadingAvatar}
+                className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10 text-sm font-mono uppercase overflow-hidden relative group/avatar focus:outline-none"
+                title={t('uploadAvatar')}
+              >
+                {user?.avatarUrl ? (
+                  <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
+                ) : (
+                  <span>{user?.username.substring(0, 2)}</span>
+                )}
+                {/* Camera Overlay on Hover */}
+                <div className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">
+                  <Camera className="w-4 h-4" />
+                </div>
+              </button>
             </div>
             <div>
               <h3 className="font-bold text-slate-900 dark:text-white text-sm">

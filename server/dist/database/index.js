@@ -29,9 +29,17 @@ function initDatabase() {
       role TEXT NOT NULL CHECK(role IN ('admin', 'user')),
       status TEXT NOT NULL CHECK(status IN ('active', 'pending', 'banned')),
       created_at TEXT NOT NULL,
-      last_seen TEXT NOT NULL
+      last_seen TEXT NOT NULL,
+      avatar_url TEXT
     );
   `);
+    // Ensure avatar_url column exists for existing databases
+    try {
+        exports.db.exec('ALTER TABLE users ADD COLUMN avatar_url TEXT;');
+    }
+    catch (_) {
+        // Column already exists
+    }
     // 2. Messages table
     exports.db.exec(`
     CREATE TABLE IF NOT EXISTS messages (
@@ -64,6 +72,10 @@ function initDatabase() {
     setSetting.run('registration_enabled', 'true');
     setSetting.run('require_approval', 'true'); // Default requirement from prompt: approval can be enabled
     setSetting.run('default_ttl_seconds', index_js_1.config.defaultTtlSeconds.toString());
+    setSetting.run('app_name', 'XMessenger');
+    setSetting.run('pwa_short_name', 'XMessenger');
+    setSetting.run('pwa_icon_url', '');
+    setSetting.run('admin_avatar_url', '');
     // Seed initial Admin if not exists
     const existingAdmin = exports.db.prepare("SELECT id, username FROM users WHERE role = 'admin'").get();
     if (!existingAdmin) {

@@ -5,12 +5,14 @@ import { initSocket, disconnectSocket } from '../services/socket.js';
 interface AuthState {
   token: string | null;
   user: User | null;
-  adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean } | null;
+  adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null;
   isLoading: boolean;
   theme: 'dark' | 'light';
   login: (token: string, user: User) => void;
   logout: () => void;
   setUser: (user: User) => void;
+  updateUserAvatar: (avatarUrl?: string) => void;
+  updateAdminAvatar: (avatarUrl?: string) => void;
   checkAuth: () => Promise<void>;
   toggleTheme: () => void;
 }
@@ -45,6 +47,20 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   },
 
   setUser: (user) => set({ user }),
+
+  updateUserAvatar: (avatarUrl?: string) => {
+    const current = get().user;
+    if (current) {
+      set({ user: { ...current, avatarUrl } });
+    }
+  },
+
+  updateAdminAvatar: (avatarUrl?: string) => {
+    const currentAdmin = get().adminInfo;
+    if (currentAdmin) {
+      set({ adminInfo: { ...currentAdmin, avatarUrl } });
+    }
+  },
 
   checkAuth: async () => {
     const token = localStorage.getItem('xmessenger_token');

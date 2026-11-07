@@ -1,22 +1,60 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { db, getSettingValue } from '../database/index.js';
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
+import { config } from '../config/index.js';
+import { db, getSettingValue, updateSettingValue } from '../database/index.js';
 import { hashPassword, comparePassword } from '../utils/crypto.js';
 import { generateToken, authenticate, AuthenticatedRequest } from '../middleware/auth.js';
 import { isAnyAdminOnline } from '../socket/index.js';
 
 export const authRouter = Router();
 
+// Setup Multer for User/Admin Avatar uploads
+const avatarsDir = path.join(config.dataDir, 'uploads', 'avatars');
+if (!fs.existsSync(avatarsDir)) {
+  fs.mkdirSync(avatarsDir, { recursive: true });
+}
+
+const avatarStorage = multer.diskStorage({
+  destination: (_req, _file, cb) => {
+    cb(null, avatarsDir);
+  },
+  filename: (req: AuthenticatedRequest, file, cb) => {
+    const ext = path.extname(file.originalname).toLowerCase() || '.png';
+    cb(null, `avatar-${req.user!.id}-${Date.now()}${ext}`);
+  }
+});
+
+const uploadAvatar = multer({
+  storage: avatarStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
+  fileFilter: (_req, file, cb) => {
+    if (file.mimetype.startsWith('image/')) {
+      cb(null, true);
+    } else {
+      cb(new Error('Only image files are allowed'));
+    }
+  }
+});
+
 // Public app information and status
 authRouter.get('/meta', (req, res) => {
   const regEnabled = getSettingValue('registration_enabled', 'true') === 'true';
   const requireApproval = getSettingValue('require_approval', 'true') === 'true';
   const defaultTtl = parseInt(getSettingValue('default_ttl_seconds', '86400'), 10);
+  const appName = getSettingValue('app_name', 'XMessenger');
+  const pwaShortName = getSettingValue('pwa_short_name', 'XMessenger');
+  const pwaIconUrl = getSettingValue('pwa_icon_url', '');
 
   res.json({
     registrationEnabled: regEnabled,
     requireApproval,
-    defaultTtl
+    defaultTtl,
+    appName,
+    pwaShortName,
+    pwaIconUrl
   });
 });
 
@@ -137,22 +175,101 @@ authRouter.post('/login', async (req, res) => {
 
 // Get profile & live status
 authRouter.get('/me', authenticate, (req: AuthenticatedRequest, res) => {
-  const user = req.user!;
-  const adminUser = db.prepare("SELECT id, username, last_seen FROM users WHERE role = 'admin'").get() as {
+  const userRow = db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(req.user!.id) as {
+    id: string;
+    username: string;
+    role: 'admin' | 'user';
+    status: 'active' | 'pending' | 'banned';
+    avatar_url?: string;
+  } | undefined;
+
+  const adminRow = db.prepare("SELECT id, username, last_seen, avatar_url FROM users WHERE role = 'admin'").get() as {
     id: string;
     username: string;
     last_seen: string;
+    avatar_url?: string;
   } | undefined;
 
+  const adminAvatarSetting = getSettingValue('admin_avatar_url', '');
+
   res.json({
-    user,
-    adminInfo: user.role === 'user' && adminUser ? {
-      id: adminUser.id,
-      username: adminUser.username,
-      lastSeen: adminUser.last_seen,
-      isOnline: isAnyAdminOnline()
+    user: userRow ? {
+      id: userRow.id,
+      username: userRow.username,
+      role: userRow.role,
+      status: userRow.status,
+      avatarUrl: userRow.avatar_url || undefined
+    } : req.user,
+    adminInfo: req.user!.role === 'user' && adminRow ? {
+      id: adminRow.id,
+      username: adminRow.username,
+      lastSeen: adminRow.last_seen,
+      isOnline: isAnyAdminOnline(),
+      avatarUrl: adminRow.avatar_url || adminAvatarSetting || undefined
     } : null
   });
+});
+
+// Upload User / Admin Profile Picture
+authRouter.post('/avatar', authenticate, uploadAvatar.single('avatar'), (req: AuthenticatedRequest, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'NO_FILE', message: 'No image file uploaded' });
+    }
+
+    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+    const userId = req.user!.id;
+
+    // Fetch previous avatar to delete file if it exists
+    const prev = db.prepare('SELECT avatar_url FROM users WHERE id = ?').get(userId) as { avatar_url?: string } | undefined;
+    if (prev?.avatar_url && prev.avatar_url.startsWith('/uploads/avatars/')) {
+      const oldPath = path.join(config.dataDir, prev.avatar_url);
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch (_) {}
+      }
+    }
+
+    // Save avatar URL in database
+    db.prepare('UPDATE users SET avatar_url = ? WHERE id = ?').run(avatarUrl, userId);
+
+    // If admin, synchronize with global admin avatar setting
+    if (req.user!.role === 'admin') {
+      updateSettingValue('admin_avatar_url', avatarUrl);
+    }
+
+    res.json({
+      success: true,
+      avatarUrl,
+      message: 'Avatar updated successfully'
+    });
+  } catch (err: any) {
+    console.error('Error uploading avatar:', err);
+    res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message || 'Failed to upload avatar' });
+  }
+});
+
+// Delete Profile Picture
+authRouter.delete('/avatar', authenticate, (req: AuthenticatedRequest, res) => {
+  try {
+    const userId = req.user!.id;
+    const prev = db.prepare('SELECT avatar_url FROM users WHERE id = ?').get(userId) as { avatar_url?: string } | undefined;
+    if (prev?.avatar_url && prev.avatar_url.startsWith('/uploads/avatars/')) {
+      const oldPath = path.join(config.dataDir, prev.avatar_url);
+      if (fs.existsSync(oldPath)) {
+        try { fs.unlinkSync(oldPath); } catch (_) {}
+      }
+    }
+
+    db.prepare('UPDATE users SET avatar_url = NULL WHERE id = ?').run(userId);
+
+    if (req.user!.role === 'admin') {
+      updateSettingValue('admin_avatar_url', '');
+    }
+
+    res.json({ success: true, message: 'Avatar removed' });
+  } catch (err: any) {
+    res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message || 'Failed to remove avatar' });
+  }
 });
 
 // Change Password

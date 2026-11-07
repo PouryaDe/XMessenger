@@ -51,7 +51,83 @@ app.get('/api/health', (req, res) => {
         service: 'XMessenger Core Engine'
     });
 });
-// 7. Serve Static Frontend in production
+// 7. Serve Uploaded User/Admin Content (Persistent Volume in data/uploads)
+const uploadsDir = path_1.default.join(index_js_1.config.dataDir, 'uploads');
+if (!fs_1.default.existsSync(uploadsDir)) {
+    fs_1.default.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express_1.default.static(uploadsDir, {
+    maxAge: '7d'
+}));
+// 8. Serve Dynamic PWA Manifest (incorporates admin custom app name & icon)
+app.get('/manifest.json', (req, res) => {
+    const appName = (0, index_js_2.getSettingValue)('app_name', 'XMessenger - پیام‌رسان امن و خصوصی');
+    const pwaShortName = (0, index_js_2.getSettingValue)('pwa_short_name', 'XMessenger');
+    const customIcon = (0, index_js_2.getSettingValue)('pwa_icon_url', '');
+    const icons = customIcon ? [
+        {
+            src: customIcon,
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any"
+        },
+        {
+            src: customIcon,
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any"
+        },
+        {
+            src: customIcon,
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
+        }
+    ] : [
+        {
+            src: "/icon-192.png",
+            sizes: "192x192",
+            type: "image/png",
+            purpose: "any"
+        },
+        {
+            src: "/icon-512.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any"
+        },
+        {
+            src: "/icon-512-maskable.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "maskable"
+        },
+        {
+            src: "/shield.svg",
+            sizes: "any",
+            type: "image/svg+xml",
+            purpose: "any"
+        }
+    ];
+    res.setHeader('Content-Type', 'application/manifest+json');
+    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+    res.json({
+        name: appName,
+        short_name: pwaShortName,
+        description: "پیام‌رسان متمرکز امن یک‌طرفه با پیام‌های گذرا و رمزنگاری AES-256",
+        start_url: "/",
+        scope: "/",
+        display: "standalone",
+        orientation: "portrait-primary",
+        background_color: "#DFDDD6",
+        theme_color: "#DFDDD6",
+        lang: "fa",
+        dir: "rtl",
+        categories: ["social", "utilities", "productivity"],
+        icons
+    });
+});
+// 9. Serve Static Frontend in production
 const clientDistPath = path_1.default.resolve(process.cwd(), '../client/dist');
 const localDistPath = path_1.default.resolve(process.cwd(), './client-dist');
 const staticDir = fs_1.default.existsSync(clientDistPath) ? clientDistPath : (fs_1.default.existsSync(localDistPath) ? localDistPath : null);

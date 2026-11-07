@@ -4,6 +4,9 @@ export interface AppMeta {
   registrationEnabled: boolean;
   requireApproval: boolean;
   defaultTtl: number;
+  appName?: string;
+  pwaShortName?: string;
+  pwaIconUrl?: string;
 }
 
 export interface User {
@@ -11,6 +14,7 @@ export interface User {
   username: string;
   role: 'admin' | 'user';
   status: 'active' | 'pending' | 'banned';
+  avatarUrl?: string;
   created_at?: string;
   last_seen?: string;
 }
@@ -42,6 +46,10 @@ export interface AdminSettings {
   registrationEnabled: boolean;
   requireApproval: boolean;
   defaultTtlSeconds: number;
+  appName?: string;
+  pwaShortName?: string;
+  pwaIconUrl?: string;
+  adminAvatarUrl?: string;
 }
 
 function getAuthHeader(): Record<string, string> {
@@ -80,12 +88,35 @@ export const api = {
     return data;
   },
 
-  async getMe(): Promise<{ user: User; adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean } | null }> {
+  async getMe(): Promise<{ user: User; adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null }> {
     const res = await fetch(`${API_BASE}/auth/me`, {
       headers: { ...getAuthHeader() }
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to fetch user');
+    return data;
+  },
+
+  async uploadAvatar(file: File): Promise<{ success: boolean; avatarUrl: string; message: string }> {
+    const formData = new FormData();
+    formData.append('avatar', file);
+    const res = await fetch(`${API_BASE}/auth/avatar`, {
+      method: 'POST',
+      headers: { ...getAuthHeader() },
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to upload avatar');
+    return data;
+  },
+
+  async deleteAvatar(): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_BASE}/auth/avatar`, {
+      method: 'DELETE',
+      headers: { ...getAuthHeader() }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to delete avatar');
     return data;
   },
 
@@ -200,6 +231,69 @@ export const api = {
     });
     const data = await res.json();
     if (!res.ok) throw new Error(data.message || 'Failed to clear conversation');
+    return data;
+  },
+
+  // PWA Custom Icon
+  async uploadPwaIcon(file: File): Promise<{ success: boolean; pwaIconUrl: string; message: string }> {
+    const formData = new FormData();
+    formData.append('icon', file);
+    const res = await fetch(`${API_BASE}/admin/pwa-icon`, {
+      method: 'POST',
+      headers: { ...getAuthHeader() },
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to upload PWA icon');
+    return data;
+  },
+
+  async deletePwaIcon(): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_BASE}/admin/pwa-icon`, {
+      method: 'DELETE',
+      headers: { ...getAuthHeader() }
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to reset PWA icon');
+    return data;
+  },
+
+  // Database Backup & Restore
+  async downloadBackup(): Promise<void> {
+    const res = await fetch(`${API_BASE}/admin/backup`, {
+      headers: { ...getAuthHeader() }
+    });
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      throw new Error(data.message || 'Failed to download database backup');
+    }
+    const blob = await res.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.style.display = 'none';
+    a.href = url;
+    const contentDisp = res.headers.get('content-disposition');
+    let filename = `xmessenger-backup-${new Date().toISOString().slice(0, 10)}.db`;
+    if (contentDisp && contentDisp.includes('filename=')) {
+      filename = contentDisp.split('filename=')[1].replace(/['"]/g, '').trim();
+    }
+    a.download = filename;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+
+  async restoreBackup(file: File): Promise<{ success: boolean; message: string }> {
+    const formData = new FormData();
+    formData.append('file', file);
+    const res = await fetch(`${API_BASE}/admin/restore`, {
+      method: 'POST',
+      headers: { ...getAuthHeader() },
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to restore database');
     return data;
   }
 };
