@@ -232,6 +232,7 @@ while true; do
       echo -e "${BLUE}Pulling latest version from GitHub and rebuilding image...${NC}\n"
       cd "${BASE_DIR}"
       git pull origin main || true
+      export DOCKER_BUILDKIT=1
       docker build -t xmessenger-core:latest -f Dockerfile .
       # Restart all existing instance containers
       for D in "${DOMAINS[@]}"; do

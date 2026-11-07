@@ -225,7 +225,9 @@ docker rm -f xmessenger-acme 2>/dev/null || true
 
 # 5. Build or Update XMessenger Core Docker Image
 echo -e "\n${BLUE}[4/6] Building / updating XMessenger core Docker image...${NC}"
+echo -e "${YELLOW}Building optimized container image. Please wait a moment...${NC}"
 cd "${PROJECT_ROOT}"
+export DOCKER_BUILDKIT=1
 docker build -t xmessenger-core:latest -f Dockerfile .
 
 # 6. Ensure Shared Nginx Gateway is Running on Ports 80 & 443
