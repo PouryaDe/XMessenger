@@ -53,7 +53,7 @@ export function playReceiveSound() {
     if (!ctx) return;
 
     const now = ctx.currentTime;
-    
+
     // Tone 1
     const osc1 = ctx.createOscillator();
     const gain1 = ctx.createGain();

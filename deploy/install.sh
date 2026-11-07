@@ -52,7 +52,11 @@ else
     git pull origin main || true
   else
     rm -rf "$INSTALL_DIR"
-    git clone https://github.com/PouryaDe/XMessenger.git "$INSTALL_DIR"
+    if [ -n "$GITHUB_TOKEN" ]; then
+      git clone "https://${GITHUB_TOKEN}@github.com/PouryaDe/XMessenger.git" "$INSTALL_DIR"
+    else
+      git clone "https://github.com/PouryaDe/XMessenger.git" "$INSTALL_DIR"
+    fi
     cd "$INSTALL_DIR"
   fi
   SCRIPT_DIR="$INSTALL_DIR/deploy"
