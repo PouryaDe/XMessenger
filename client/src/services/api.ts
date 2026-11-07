@@ -153,6 +153,26 @@ export const api = {
     return data;
   },
 
+  async uploadChatImage(file: File): Promise<{ success: boolean; url: string; filename: string; size: number }> {
+    const formData = new FormData();
+    formData.append('image', file);
+
+    const token = localStorage.getItem('token');
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const res = await fetch(`${API_BASE}/messages/upload`, {
+      method: 'POST',
+      headers,
+      body: formData
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.message || 'Failed to upload image');
+    return data;
+  },
+
   async deleteMessage(messageId: string): Promise<{ success: boolean }> {
     const res = await fetch(`${API_BASE}/messages/${messageId}`, {
       method: 'DELETE',

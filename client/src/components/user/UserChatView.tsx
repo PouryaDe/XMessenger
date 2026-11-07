@@ -6,12 +6,15 @@ import { MessageItem } from '../common/MessageItem.js';
 import { UserDrawer } from './UserDrawer.js';
 import { getSocket } from '../../services/socket.js';
 import { formatLastSeen } from '../../utils/date.js';
+import { api } from '../../services/api.js';
 import { 
   ShieldCheck, 
   Flame, 
   Paperclip, 
   LayoutGrid, 
-  Lock
+  Lock,
+  X,
+  Loader2
 } from 'lucide-react';
 
 export const UserChatView: React.FC = () => {
@@ -37,8 +40,48 @@ export const UserChatView: React.FC = () => {
 
   const [inputText, setInputText] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  const handleImageFile = (file: File) => {
+    if (!file.type.startsWith('image/')) {
+      return;
+    }
+    setSelectedImage(file);
+    const url = URL.createObjectURL(file);
+    setImagePreviewUrl(url);
+  };
+
+  const handleRemoveImage = () => {
+    setSelectedImage(null);
+    if (imagePreviewUrl) {
+      URL.revokeObjectURL(imagePreviewUrl);
+      setImagePreviewUrl(null);
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+  };
+
+  const handlePaste = (e: React.ClipboardEvent) => {
+    const items = e.clipboardData?.items;
+    if (items) {
+      for (let i = 0; i < items.length; i++) {
+        if (items[i].type.indexOf('image') !== -1) {
+          const file = items[i].getAsFile();
+          if (file) {
+            handleImageFile(file);
+            e.preventDefault();
+            break;
+          }
+        }
+      }
+    }
+  };
 
   // Dynamic text direction detection (RTL for Persian, LTR for English)
   const isInputRtl = !inputText.trim()
@@ -109,16 +152,29 @@ export const UserChatView: React.FC = () => {
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputText.trim()) return;
+    if (!inputText.trim() && !selectedImage) return;
 
-    const text = inputText;
+    const text = inputText.trim();
+    const currentImg = selectedImage;
+
     setInputText('');
+    handleRemoveImage();
     sendTyping(false);
 
     try {
-      await sendMessage(text);
+      if (currentImg) {
+        setIsUploading(true);
+        const uploadRes = await api.uploadChatImage(currentImg);
+        const finalMessage = `[image:${uploadRes.url}]${text ? '\n' + text : ''}`;
+        await sendMessage(finalMessage);
+      } else {
+        await sendMessage(text);
+      }
     } catch (err) {
       console.error('Failed to send:', err);
+      alert(t('imageUploadFailed') || 'خطا در ارسال تصویر');
+    } finally {
+      setIsUploading(false);
     }
   };
 
@@ -219,48 +275,90 @@ export const UserChatView: React.FC = () => {
       {/* Floating Pill Input Bar with Telegram Send Button INSIDE the Pill */}
       <footer className="p-4 pb-safe shrink-0">
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
+          {/* Selected Image Preview Chip */}
+          {imagePreviewUrl && (
+            <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-slate-800/95 border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 shadow-sm animate-message">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <img
+                  src={imagePreviewUrl}
+                  alt="preview"
+                  className="w-12 h-12 rounded-xl object-cover border border-black/5 dark:border-white/10 shrink-0"
+                />
+                <div className="text-xs text-slate-700 dark:text-slate-200 truncate">
+                  <p className="font-semibold truncate">{selectedImage?.name}</p>
+                  <p className="text-[10px] text-slate-400">
+                    {selectedImage ? `${(selectedImage.size / 1024).toFixed(0)} KB` : ''}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={handleRemoveImage}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
+                title={t('removeImage')}
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+          )}
+
+          {/* Hidden File Input */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0])}
+          />
+
           <div
             data-input-pill
             dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
-            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-slate-800 shadow-none dark:shadow-floating border border-black/[0.06] dark:border-white/10 transition-all focus-within:border-stone-400 dark:focus-within:border-slate-500"
+            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-slate-800 shadow-none border border-black/[0.06] dark:border-white/10"
           >
             {/* Attachment Button */}
             <button
               type="button"
+              onClick={() => fileInputRef.current?.click()}
               className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0 ms-1"
               title={t('attachFile')}
             >
               <Paperclip className="w-4 h-4" />
             </button>
 
-            {/* Input Field with Auto-Direction */}
+            {/* Input Field with Auto-Direction & Paste Support */}
             <input
               type="text"
               dir={isInputRtl ? 'rtl' : 'ltr'}
               value={inputText}
               onChange={handleInputChange}
-              placeholder={t('typeMessage')}
+              onPaste={handlePaste}
+              placeholder={selectedImage ? t('imageCaptionPlaceholder') : t('typeMessage')}
               className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans px-3 ${
                 isInputRtl ? 'text-right' : 'text-left'
               }`}
             />
 
-            {/* Direct Send Icon Button WITHOUT Background (matching Image 2) */}
+            {/* Direct Send Icon Button WITHOUT Background */}
             <button
               type="submit"
-              disabled={!inputText.trim()}
+              disabled={(!inputText.trim() && !selectedImage) || isUploading}
               className="w-9 h-9 flex items-center justify-center text-[#2AABEE] hover:text-[#1d98d6] transition-all hover:scale-110 active:scale-95 disabled:text-slate-300 dark:disabled:text-slate-600 disabled:scale-100 disabled:cursor-not-allowed shrink-0 mx-1 bg-transparent border-none outline-none"
               title={t('send')}
             >
-              <svg
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                className={`w-6 h-6 transition-transform ${
-                  i18n.language === 'fa' ? '-scale-x-100' : ''
-                }`}
-              >
-                <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
-              </svg>
+              {isUploading ? (
+                <Loader2 className="w-5 h-5 animate-spin text-[#2AABEE]" />
+              ) : (
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="currentColor"
+                  className={`w-6 h-6 transition-transform ${
+                    i18n.language === 'fa' ? '-scale-x-100' : ''
+                  }`}
+                >
+                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                </svg>
+              )}
             </button>
           </div>
         </form>

@@ -115,6 +115,15 @@ html:not(.dark) [data-input-pill] {
   box-shadow: none !important;
 }
 
+/* Input pill: Absolutely no outline, focus border changes, or hover flashes */
+[data-input-pill],
+[data-input-pill]:hover,
+[data-input-pill]:focus-within,
+[data-input-pill]:active {
+  outline: none !important;
+  box-shadow: none !important;
+}
+
 /* Custom styled select dropdowns: Arrow never clips into rounded pill borders */
 select {
   appearance: none;

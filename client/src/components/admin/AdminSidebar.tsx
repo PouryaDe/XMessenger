@@ -206,7 +206,18 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                     </div>
 
                     <p className="text-[11px] text-slate-400 truncate mt-0.5 max-w-[160px]">
-                      {u.lastMessage ? u.lastMessage.text : t('noPreviousMessage')}
+                      {u.lastMessage ? (
+                        (() => {
+                          const imgMatch = u.lastMessage.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
+                          if (imgMatch) {
+                            const cap = imgMatch[2] ? imgMatch[2].trim() : '';
+                            return `📷 ${t('photo') || 'عکس'}${cap ? `: ${cap}` : ''}`;
+                          }
+                          return u.lastMessage.text;
+                        })()
+                      ) : (
+                        t('noPreviousMessage')
+                      )}
                     </p>
                   </div>
                 </div>

@@ -6,7 +6,9 @@ import {
   Check, 
   CheckCheck, 
   Flame, 
-  Copy
+  Copy,
+  X,
+  Download
 } from 'lucide-react';
 
 interface Props {
@@ -20,7 +22,13 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+
+  // Parse potential image attachment [image:url]\ncaption
+  const imageMatch = message.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
+  const imageUrl = imageMatch ? imageMatch[1] : null;
+  const caption = imageMatch ? (imageMatch[2] || '').trim() : message.text;
 
   // Close context menu on click outside
   useEffect(() => {
@@ -67,7 +75,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
 
   const handleCopy = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    navigator.clipboard.writeText(message.text);
+    navigator.clipboard.writeText(caption || message.text);
     setCopied(true);
     setShowMenu(false);
     setTimeout(() => setCopied(false), 2000);
@@ -117,13 +125,31 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
               : 'bg-white text-slate-900 dark:bg-[#182533] dark:text-slate-100 rounded-[18px] rounded-bl-[2px]'
           }`}
         >
-          {/* Message content (natural directionality for Persian/English) */}
-          <p
-            dir="auto"
-            className="whitespace-pre-wrap select-text font-normal text-start"
-          >
-            {message.text}
-          </p>
+          {/* Image attachment if present */}
+          {imageUrl && (
+            <div className="relative mb-2 -mx-2 -mt-1 overflow-hidden rounded-2xl bg-black/5 dark:bg-black/20">
+              <img
+                src={imageUrl}
+                alt="attachment"
+                className="max-h-72 w-full object-cover cursor-pointer hover:opacity-95 transition-opacity rounded-2xl"
+                loading="lazy"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setLightboxOpen(true);
+                }}
+              />
+            </div>
+          )}
+
+          {/* Message content or caption (natural directionality for Persian/English) */}
+          {caption && (
+            <p
+              dir="auto"
+              className="whitespace-pre-wrap select-text font-normal text-start"
+            >
+              {caption}
+            </p>
+          )}
 
           {/* Footer inside bubble: Flame Tag + Time + Read status */}
           <div
@@ -226,6 +252,43 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           )}
         </div>
 
+        {/* Full-screen Lightbox Modal */}
+        {lightboxOpen && imageUrl && (
+          <div
+            className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-message select-none"
+            onClick={() => setLightboxOpen(false)}
+          >
+            <div
+              className="relative max-w-4xl max-h-[90vh] flex flex-col items-center"
+              onClick={(e) => e.stopPropagation()}
+            >
+              <img
+                src={imageUrl}
+                alt="attachment preview"
+                className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+              />
+              <div className="absolute top-3 end-3 flex items-center gap-2">
+                <a
+                  href={imageUrl}
+                  download
+                  target="_blank"
+                  rel="noreferrer"
+                  className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/85 transition-colors"
+                  title="Download"
+                >
+                  <Download className="w-5 h-5" />
+                </a>
+                <button
+                  onClick={() => setLightboxOpen(false)}
+                  className="w-10 h-10 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/85 transition-colors"
+                  title="Close"
+                >
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

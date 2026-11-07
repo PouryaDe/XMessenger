@@ -1,15 +1,69 @@
 "use strict";
+var __importDefault = (this && this.__importDefault) || function (mod) {
+    return (mod && mod.__esModule) ? mod : { "default": mod };
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.createMessagesRouter = createMessagesRouter;
 const express_1 = require("express");
 const uuid_1 = require("uuid");
+const path_1 = __importDefault(require("path"));
+const fs_1 = __importDefault(require("fs"));
+const multer_1 = __importDefault(require("multer"));
 const index_js_1 = require("../database/index.js");
 const auth_js_1 = require("../middleware/auth.js");
 const crypto_js_1 = require("../utils/crypto.js");
+const index_js_2 = require("../config/index.js");
 function createMessagesRouter(io) {
     const router = (0, express_1.Router)();
+    // Chat Image Upload Storage
+    const chatUploadDir = path_1.default.join(index_js_2.config.dataDir, 'uploads', 'chat');
+    if (!fs_1.default.existsSync(chatUploadDir)) {
+        fs_1.default.mkdirSync(chatUploadDir, { recursive: true });
+    }
+    const chatStorage = multer_1.default.diskStorage({
+        destination: (_req, _file, cb) => {
+            cb(null, chatUploadDir);
+        },
+        filename: (_req, file, cb) => {
+            const ext = path_1.default.extname(file.originalname).toLowerCase() || '.jpg';
+            const cleanExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
+            const uniqueName = `img-${Date.now()}-${(0, uuid_1.v4)().substring(0, 8)}${cleanExt}`;
+            cb(null, uniqueName);
+        }
+    });
+    const uploadChatImage = (0, multer_1.default)({
+        storage: chatStorage,
+        limits: { fileSize: 25 * 1024 * 1024 }, // 25MB max
+        fileFilter: (_req, file, cb) => {
+            if (file.mimetype.startsWith('image/')) {
+                cb(null, true);
+            }
+            else {
+                cb(new Error('ONLY_IMAGES_ALLOWED'));
+            }
+        }
+    });
     // Require active authentication
     router.use(auth_js_1.authenticate, auth_js_1.requireActive);
+    // 0. Upload Chat Image Endpoint
+    router.post('/upload', uploadChatImage.single('image'), (req, res) => {
+        try {
+            if (!req.file) {
+                return res.status(400).json({ error: 'NO_FILE', message: 'No image file uploaded' });
+            }
+            const imageUrl = `/uploads/chat/${req.file.filename}`;
+            res.status(201).json({
+                success: true,
+                url: imageUrl,
+                filename: req.file.filename,
+                size: req.file.size
+            });
+        }
+        catch (err) {
+            console.error('Error uploading chat image:', err);
+            res.status(500).json({ error: 'UPLOAD_FAILED', message: err.message || 'Image upload failed' });
+        }
+    });
     // 1. Get messages for a conversation
     // If user: gets messages between themselves and Admin
     // If admin: gets messages between Admin and specified :userId in query or param

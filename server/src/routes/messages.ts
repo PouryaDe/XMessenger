@@ -1,15 +1,69 @@
 import { Router } from 'express';
 import { v4 as uuidv4 } from 'uuid';
+import path from 'path';
+import fs from 'fs';
+import multer from 'multer';
 import { db, getSettingValue } from '../database/index.js';
 import { authenticate, requireActive, AuthenticatedRequest } from '../middleware/auth.js';
 import { encryptMessage, decryptMessage } from '../utils/crypto.js';
 import { Server } from 'socket.io';
+import { config } from '../config/index.js';
 
 export function createMessagesRouter(io?: Server) {
   const router = Router();
 
+  // Chat Image Upload Storage
+  const chatUploadDir = path.join(config.dataDir, 'uploads', 'chat');
+  if (!fs.existsSync(chatUploadDir)) {
+    fs.mkdirSync(chatUploadDir, { recursive: true });
+  }
+
+  const chatStorage = multer.diskStorage({
+    destination: (_req, _file, cb) => {
+      cb(null, chatUploadDir);
+    },
+    filename: (_req, file, cb) => {
+      const ext = path.extname(file.originalname).toLowerCase() || '.jpg';
+      const cleanExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
+      const uniqueName = `img-${Date.now()}-${uuidv4().substring(0, 8)}${cleanExt}`;
+      cb(null, uniqueName);
+    }
+  });
+
+  const uploadChatImage = multer({
+    storage: chatStorage,
+    limits: { fileSize: 25 * 1024 * 1024 }, // 25MB max
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype.startsWith('image/')) {
+        cb(null, true);
+      } else {
+        cb(new Error('ONLY_IMAGES_ALLOWED'));
+      }
+    }
+  });
+
   // Require active authentication
   router.use(authenticate, requireActive);
+
+  // 0. Upload Chat Image Endpoint
+  router.post('/upload', uploadChatImage.single('image'), (req: AuthenticatedRequest, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: 'NO_FILE', message: 'No image file uploaded' });
+      }
+
+      const imageUrl = `/uploads/chat/${req.file.filename}`;
+      res.status(201).json({
+        success: true,
+        url: imageUrl,
+        filename: req.file.filename,
+        size: req.file.size
+      });
+    } catch (err: any) {
+      console.error('Error uploading chat image:', err);
+      res.status(500).json({ error: 'UPLOAD_FAILED', message: err.message || 'Image upload failed' });
+    }
+  });
 
   // 1. Get messages for a conversation
   // If user: gets messages between themselves and Admin
