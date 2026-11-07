@@ -387,22 +387,21 @@ export const AdminDashboard: React.FC = () => {
                     }`}
                   />
 
-                  {/* Telegram-style Circular Send Button INSIDE the Pill */}
+                  {/* Direct Send Icon Button WITHOUT Background (matching Image 2) */}
                   <button
                     type="submit"
                     disabled={!inputText.trim()}
-                    className="w-9 h-9 rounded-full bg-[#2AABEE] hover:bg-[#229ED9] text-white shadow-soft flex items-center justify-center transition-all hover:scale-105 active:scale-95 disabled:opacity-35 disabled:scale-100 disabled:cursor-not-allowed shrink-0 mx-0.5"
+                    className="w-9 h-9 flex items-center justify-center text-[#2AABEE] hover:text-[#1d98d6] transition-all hover:scale-110 active:scale-95 disabled:text-slate-300 dark:disabled:text-slate-600 disabled:scale-100 disabled:cursor-not-allowed shrink-0 mx-1 bg-transparent border-none outline-none"
                     title={t('send')}
                   >
-                    {/* Authentic Telegram Paper Airplane Icon */}
                     <svg
-                      viewBox="0 0 32 32"
+                      viewBox="0 0 24 24"
                       fill="currentColor"
-                      className={`w-4 h-4 text-white transition-transform ${
-                        i18n.language === 'fa' ? '-scale-x-100 -translate-x-0.5' : 'translate-x-0.5'
+                      className={`w-6 h-6 transition-transform ${
+                        i18n.language === 'fa' ? '-scale-x-100' : ''
                       }`}
                     >
-                      <path d="M29.919 6.163l-4.225 19.925c-0.319 1.406-1.15 1.756-2.331 1.094l-6.438-4.744-3.106 2.988c-0.344 0.344-0.631 0.631-1.294 0.631l0.463-6.556 11.931-10.781c0.519-0.462-0.113-0.719-0.806-0.256l-14.75 9.288-6.35-1.988c-1.381-0.431-1.406-1.381 0.288-2.044l24.837-9.569c1.15-0.431 2.169 0.231 1.825 1.863z" />
+                      <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
                     </svg>
                   </button>
                 </div>
