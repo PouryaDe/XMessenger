@@ -113,28 +113,10 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           onClick={handleBubbleClick}
           className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-soft ${
             isOwn
-              ? 'bg-[#E3EDF7] text-slate-900 dark:bg-[#1E334D] dark:text-slate-100 rounded-[18px] rounded-br-[2px]'
-              : 'bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100 rounded-[18px] rounded-bl-[2px]'
+              ? 'bg-[#EFFDDE] text-slate-900 dark:bg-[#2B5278] dark:text-slate-100 rounded-[18px] rounded-br-[2px]'
+              : 'bg-white text-slate-900 dark:bg-[#182533] dark:text-slate-100 rounded-[18px] rounded-bl-[2px]'
           }`}
         >
-          {/* Telegram-style speech bubble corner tail */}
-          {isOwn ? (
-            <svg
-              className="absolute bottom-0 -right-[7px] w-[8px] h-[14px] text-[#E3EDF7] dark:text-[#1E334D] pointer-events-none"
-              viewBox="0 0 8 14"
-              fill="currentColor"
-            >
-              <path d="M0 0 C0 5 3 10 8 14 L0 14 Z" />
-            </svg>
-          ) : (
-            <svg
-              className="absolute bottom-0 -left-[7px] w-[8px] h-[14px] text-white dark:text-slate-800 pointer-events-none -scale-x-100"
-              viewBox="0 0 8 14"
-              fill="currentColor"
-            >
-              <path d="M0 0 C0 5 3 10 8 14 L0 14 Z" />
-            </svg>
-          )}
           {/* Message content (natural directionality for Persian/English) */}
           <p
             dir="auto"
@@ -147,19 +129,19 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           <div
             dir="ltr"
             className={`flex items-center gap-1.5 mt-1.5 text-[10px] font-sans justify-end ${
-              isOwn ? 'text-slate-500 dark:text-slate-400' : 'text-slate-400 dark:text-slate-400'
+              isOwn ? 'text-emerald-900/60 dark:text-slate-300' : 'text-slate-400 dark:text-slate-400'
             }`}
           >
             {/* Ephemeral Flame Tag - Subtle & Calm (No glaring amber) */}
             <span
               className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium ${
                 isOwn
-                  ? 'bg-black/[0.04] dark:bg-black/25 text-slate-500 dark:text-slate-400'
+                  ? 'bg-black/[0.04] dark:bg-black/25 text-emerald-950/70 dark:text-slate-300'
                   : 'bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-slate-400'
               }`}
               title={`${t('expiresAt')}${new Date(message.expiresAt).toLocaleTimeString()}`}
             >
-              <Flame className="w-2.5 h-2.5 text-slate-400 dark:text-slate-400" />
+              <Flame className="w-2.5 h-2.5 text-emerald-700/60 dark:text-slate-400" />
               <span>{timeLeft}</span>
             </span>
 
@@ -168,7 +150,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
             {isOwn && (
               <span>
                 {message.isRead ? (
-                  <CheckCheck className="w-3.5 h-3.5 text-[#2AABEE] dark:text-[#2AABEE] inline" />
+                  <CheckCheck className="w-3.5 h-3.5 text-[#4FAE4E] dark:text-[#64B5F6] inline" />
                 ) : (
                   <Check className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 inline" />
                 )}
@@ -183,7 +165,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
               width="11"
               height="20"
               style={{ transform: 'scaleX(-1)' }}
-              className="absolute -bottom-[1px] -right-[9px] pointer-events-none fill-[#E3EDF7] dark:fill-[#1E334D]"
+              className="absolute -bottom-[1px] -right-[9px] pointer-events-none fill-[#EFFDDE] dark:fill-[#2B5278]"
               aria-hidden="true"
             >
               <g transform="translate(9 -14)" fill="inherit" fillRule="evenodd">
@@ -198,7 +180,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
               viewBox="0 0 11 20"
               width="11"
               height="20"
-              className="absolute -bottom-[1px] -left-[9px] pointer-events-none fill-white dark:fill-slate-800"
+              className="absolute -bottom-[1px] -left-[9px] pointer-events-none fill-white dark:fill-[#182533]"
               aria-hidden="true"
             >
               <g transform="translate(9 -14)" fill="inherit" fillRule="evenodd">
