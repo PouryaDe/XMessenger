@@ -138,7 +138,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     defaultTtlSeconds: isNaN(val) ? 60 : Math.max(1, val) * 60
                   });
                 }}
-                className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner"
+                className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-inner transition-colors"
                 placeholder="1440"
               />
               <span className="absolute end-4 rtl:left-4 rtl:right-auto ltr:right-4 ltr:left-auto text-xs text-slate-400 font-semibold pointer-events-none">

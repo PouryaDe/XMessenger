@@ -103,7 +103,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete="username"
                 dir="ltr"
                 placeholder="e.g. user101"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-2 focus:ring-amber-400 font-mono shadow-inner placeholder:text-slate-400 placeholder:text-left"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 font-mono shadow-inner placeholder:text-slate-400 placeholder:text-left transition-colors"
               />
             </div>
           </div>
@@ -122,7 +122,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 dir="ltr"
                 placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner placeholder:text-slate-400 placeholder:text-left"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-inner placeholder:text-slate-400 placeholder:text-left transition-colors"
               />
             </div>
           </div>
@@ -142,7 +142,7 @@ export const AuthModal: React.FC = () => {
                   autoComplete="new-password"
                   dir="ltr"
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-2 focus:ring-amber-400 shadow-inner placeholder:text-slate-400 placeholder:text-left"
+                  className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50/70 dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-inner placeholder:text-slate-400 placeholder:text-left transition-colors"
                 />
               </div>
             </div>

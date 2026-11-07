@@ -173,7 +173,8 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   value={currentPassword}
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  dir="ltr"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 transition-colors"
                 />
               </div>
               <div>
@@ -183,7 +184,8 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   value={newPassword}
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs focus:outline-none focus:ring-2 focus:ring-amber-400"
+                  dir="ltr"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-stone-50 dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 transition-colors"
                 />
               </div>
 

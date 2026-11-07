@@ -111,3 +111,8 @@ This design system contract defines the visual identity, typography, spacing, co
 - **Auth Inputs (Username / Password)**:
   - Form inputs for usernames, passwords, tokens, or codes MUST ALWAYS be left-aligned (`dir="ltr" text-left`) in both Persian and English.
   - Field icons must have fixed positioning and the input must have generous padding (e.g. `pl-11`) so text never overlaps icons.
+- **Zero Colored Focus Rings / Halos**:
+  - Never use colored or orange focus rings (`focus:ring-2 focus:ring-amber-400`).
+  - Inputs must use clean `focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500` without any thick colored outline.
+- **Standardized Mobile Password Bullets**:
+  - `input[type="password"]` must always use native system font (`-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`) with `letter-spacing: 0.18em` to avoid oversized, clunky bullet characters on mobile browsers inheriting Arabic/Persian font glyphs.

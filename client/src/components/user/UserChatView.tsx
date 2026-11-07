@@ -194,7 +194,7 @@ export const UserChatView: React.FC = () => {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={t('searchMessages')}
-                className="w-full pl-11 pr-11 py-3 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 font-sans"
+                className="w-full pl-11 pr-11 py-3 rounded-full bg-white dark:bg-slate-800/90 text-xs text-slate-800 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
               />
             </div>
 

@@ -87,3 +87,29 @@ body[dir="ltr"] select {
   padding-right: 2.75rem !important;
   padding-left: 1.25rem !important;
 }
+
+/* Remove orange rings completely on focus */
+input, textarea, select, button {
+  outline: none !important;
+  -webkit-tap-highlight-color: transparent;
+}
+
+input:focus, textarea:focus, select:focus {
+  outline: none !important;
+  box-shadow: none !important;
+  --tw-ring-shadow: 0 0 #0000 !important;
+  --tw-ring-offset-shadow: 0 0 #0000 !important;
+}
+
+/* Standardize password mask dots on mobile and desktop */
+input[type="password"] {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
+  letter-spacing: 0.18em;
+  font-size: 13px !important;
+}
+
+input[type="password"]::placeholder {
+  font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif !important;
+  letter-spacing: normal !important;
+  font-size: 12px !important;
+}

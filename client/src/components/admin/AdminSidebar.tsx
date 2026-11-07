@@ -86,7 +86,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchUsers')}
-            className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-2 focus:ring-amber-400 placeholder:text-slate-400 font-sans"
+            className="w-full pl-10 pr-10 py-2.5 rounded-full bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white shadow-soft border border-black/5 dark:border-white/5 focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 placeholder:text-slate-400 font-sans transition-colors"
           />
         </div>
       </div>
