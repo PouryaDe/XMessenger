@@ -118,8 +118,13 @@ manage_instance() {
         docker logs -f --tail=100 "${CONTAINER}" || true
         ;;
       2)
-        echo -e "\n${YELLOW}Restarting ${CONTAINER}...${NC}"
+        echo -e "\n${YELLOW}Injecting latest build and restarting ${CONTAINER}...${NC}"
+        cd "${BASE_DIR}"
+        docker cp client/dist/. "${CONTAINER}:/app/client-dist/" 2>/dev/null || true
+        docker cp server/dist/. "${CONTAINER}:/app/dist/" 2>/dev/null || true
         docker restart "${CONTAINER}"
+        docker restart xmessenger-nginx 2>/dev/null || true
+        echo -e "${GREEN}✓ ${CONTAINER} updated and restarted successfully!${NC}"
         sleep 2
         ;;
       3)
@@ -262,6 +267,19 @@ while true; do
       git config --global --add safe.directory "${BASE_DIR}" 2>/dev/null || true
       git fetch origin main
       git reset --hard origin/main
+
+      # Live symlinks
+      ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
+      ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
+      chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" 2>/dev/null || true
+
+      # Explicit injection
+      echo -e "${BLUE}Copying client and server dist directly into containers...${NC}"
+      docker cp client/dist/. xmessenger-xchat-iranistream-com:/app/client-dist/ 2>/dev/null || true
+      docker cp server/dist/. xmessenger-xchat-iranistream-com:/app/dist/ 2>/dev/null || true
+      docker restart xmessenger-xchat-iranistream-com 2>/dev/null || true
+      docker restart xmessenger-nginx 2>/dev/null || true
+
       bash "${BASE_DIR}/update.sh"
       read -p "Press Enter to continue..." dummy
       ;;

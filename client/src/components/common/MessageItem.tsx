@@ -113,10 +113,28 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           onClick={handleBubbleClick}
           className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-soft ${
             isOwn
-              ? 'bg-[#E3EDF7] text-slate-900 dark:bg-[#1E334D] dark:text-slate-100 rounded-[18px] rounded-br-[3px]'
-              : 'bg-white text-slate-900 dark:bg-slate-800/90 dark:text-slate-100 rounded-[18px] rounded-bl-[3px]'
+              ? 'bg-[#E3EDF7] text-slate-900 dark:bg-[#1E334D] dark:text-slate-100 rounded-[18px] rounded-br-[2px]'
+              : 'bg-white text-slate-900 dark:bg-slate-800 dark:text-slate-100 rounded-[18px] rounded-bl-[2px]'
           }`}
         >
+          {/* Telegram-style speech bubble corner tail */}
+          {isOwn ? (
+            <svg
+              className="absolute bottom-0 -right-[7px] w-[8px] h-[14px] text-[#E3EDF7] dark:text-[#1E334D] pointer-events-none"
+              viewBox="0 0 8 14"
+              fill="currentColor"
+            >
+              <path d="M0 0 C0 5 3 10 8 14 L0 14 Z" />
+            </svg>
+          ) : (
+            <svg
+              className="absolute bottom-0 -left-[7px] w-[8px] h-[14px] text-white dark:text-slate-800 pointer-events-none -scale-x-100"
+              viewBox="0 0 8 14"
+              fill="currentColor"
+            >
+              <path d="M0 0 C0 5 3 10 8 14 L0 14 Z" />
+            </svg>
+          )}
           {/* Message content (natural directionality for Persian/English) */}
           <p
             dir="auto"
