@@ -192,14 +192,14 @@ export const UserChatView: React.FC = () => {
   const isOpponentTyping = adminInfo ? typingUsers[adminInfo.id] : false;
 
   return (
-    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-slate-800 shadow-2xl overflow-hidden font-sans">
+    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-slate-800 sm:shadow-floating shadow-none overflow-hidden font-sans">
       
       {/* Top Header */}
       <header className="px-5 py-3.5 pt-safe flex items-center justify-between shrink-0 bg-white/45 dark:bg-slate-900/45 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/10 z-10">
         {/* Admin Avatar & Live Status */}
         <div className="flex items-center gap-3">
           <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold shadow-soft overflow-hidden">
+            <div className="w-10 h-10 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold shadow-xs overflow-hidden">
               {adminInfo?.avatarUrl ? (
                 <img src={adminInfo.avatarUrl} alt="Admin" className="w-full h-full object-cover" />
               ) : (
@@ -232,7 +232,7 @@ export const UserChatView: React.FC = () => {
         {/* Circular Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+          className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           title={t('menuAndSettings')}
         >
           <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-slate-300" />
@@ -249,7 +249,7 @@ export const UserChatView: React.FC = () => {
       <main className="flex-1 overflow-y-auto px-5 py-2 space-y-1">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/5 flex items-center justify-center mb-3 text-amber-500">
+            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/5 flex items-center justify-center mb-3 text-amber-500">
               <Lock className="w-7 h-7" />
             </div>
             <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">

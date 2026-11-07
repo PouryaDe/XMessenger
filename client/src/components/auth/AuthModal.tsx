@@ -68,7 +68,7 @@ export const AuthModal: React.FC = () => {
 
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-7">
-          <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-slate-800 border border-stone-200/50 dark:border-slate-700 flex items-center justify-center mb-4 shadow-soft">
+          <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-slate-800 border border-stone-200/50 dark:border-slate-700 flex items-center justify-center mb-4 shadow-xs">
             <Shield className="w-8 h-8 text-slate-800 dark:text-amber-400" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -152,7 +152,7 @@ export const AuthModal: React.FC = () => {
           <button
             type="submit"
             disabled={Boolean(loading || (isRegister && appMeta && !appMeta.registrationEnabled))}
-            className="w-full py-3.5 px-5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-xs transition-all shadow-md hover:scale-102 active:scale-98 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed mt-3"
+            className="w-full py-3.5 px-5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-xs transition-all shadow-xs hover:scale-102 active:scale-98 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed mt-3"
           >
             {loading ? (
               <span className="w-4 h-4 border-2 border-white/40 border-t-white dark:border-slate-900/40 dark:border-t-slate-900 rounded-full animate-spin" />

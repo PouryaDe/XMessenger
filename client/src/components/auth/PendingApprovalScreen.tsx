@@ -34,7 +34,7 @@ export const PendingApprovalScreen: React.FC = () => {
       </div>
 
       <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-slate-900/95 border border-stone-200/60 dark:border-slate-800 rounded-[32px] p-8 text-center shadow-floating relative">
-        <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-slate-800 border border-stone-200/50 dark:border-slate-700 text-amber-500 mx-auto flex items-center justify-center mb-5 shadow-soft animate-pulse">
+        <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-slate-800 border border-stone-200/50 dark:border-slate-700 text-amber-500 mx-auto flex items-center justify-center mb-5 shadow-xs animate-pulse">
           <Clock className="w-8 h-8" />
         </div>
 
@@ -54,7 +54,7 @@ export const PendingApprovalScreen: React.FC = () => {
         <div className="flex flex-col gap-2.5">
           <button
             onClick={() => checkAuth()}
-            className="w-full py-3 px-4 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold transition-all shadow-md hover:scale-102 active:scale-98 flex items-center justify-center gap-2"
+            className="w-full py-3 px-4 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold transition-all shadow-xs hover:scale-102 active:scale-98 flex items-center justify-center gap-2"
           >
             <RefreshCw className="w-4 h-4" />
             <span>{t('refreshStatus')}</span>

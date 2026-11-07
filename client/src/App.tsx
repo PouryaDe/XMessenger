@@ -65,7 +65,7 @@ export const App: React.FC = () => {
   if (user.status === 'banned') {
     return (
       <div className="fixed inset-0 flex items-center justify-center p-4 bg-slate-950 text-white">
-        <div className="w-full max-w-sm bg-slate-900 border border-red-900/60 rounded-3xl p-6 text-center shadow-2xl">
+        <div className="w-full max-w-sm bg-slate-900 border border-red-900/60 rounded-3xl p-6 text-center shadow-floating">
           <div className="w-14 h-14 rounded-2xl bg-red-500/20 border border-red-500/40 text-red-500 mx-auto flex items-center justify-center mb-4">
             <ShieldAlert className="w-7 h-7" />
           </div>

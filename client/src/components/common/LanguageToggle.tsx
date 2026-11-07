@@ -14,7 +14,7 @@ export const LanguageToggle: React.FC<{ className?: string }> = ({ className = '
   return (
     <button
       onClick={toggleLanguage}
-      className={`w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all font-bold text-xs shrink-0 select-none ${className}`}
+      className={`w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all font-bold text-xs shrink-0 select-none ${className}`}
       title={t('changeLanguage')}
     >
       <span>{currentLang === 'fa' ? 'EN' : 'فا'}</span>

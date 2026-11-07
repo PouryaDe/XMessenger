@@ -291,13 +291,13 @@ export const AdminDashboard: React.FC = () => {
                 {/* Back button for mobile */}
                 <button
                   onClick={() => setActiveUserId(null)}
-                  className="sm:hidden w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+                  className="sm:hidden w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
                 >
                   <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
                 </button>
 
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold font-mono text-xs uppercase shadow-soft border border-white dark:border-slate-600 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold font-mono text-xs uppercase shadow-xs border border-white dark:border-slate-600 overflow-hidden">
                     {activeUser.avatarUrl ? (
                       <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
                     ) : (
@@ -349,7 +349,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeUser.status === 'pending' && (
                   <button
                     onClick={handleApproveUser}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-soft transition-all hover:scale-105 active:scale-95"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-all hover:scale-105 active:scale-95"
                     title={t('approve')}
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
@@ -359,7 +359,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleBanToggle}
-                  className={`w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
+                  className={`w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
                     activeUser.status === 'banned'
                       ? 'text-amber-600 bg-amber-50'
                       : 'text-slate-400 hover:text-amber-500'
@@ -371,7 +371,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleWipeChat}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/10 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                   title={t('clearChat')}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -379,7 +379,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleDeleteUser}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/10 text-slate-400 hover:text-red-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 text-slate-400 hover:text-red-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                   title={t('deleteUser')}
                 >
                   <UserX className="w-4 h-4" />
@@ -391,7 +391,7 @@ export const AdminDashboard: React.FC = () => {
             <main className="flex-1 overflow-y-auto px-6 py-3 space-y-1">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
+                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
                     <MessageSquare className="w-7 h-7" />
                   </div>
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -510,7 +510,7 @@ export const AdminDashboard: React.FC = () => {
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-soft border border-black/5 dark:border-white/10 text-amber-500 flex items-center justify-center mb-4 transition-transform hover:scale-105">
+            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 text-amber-500 flex items-center justify-center mb-4 transition-transform hover:scale-105">
               <MessageSquare className="w-7 h-7" />
             </div>
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 tracking-tight">

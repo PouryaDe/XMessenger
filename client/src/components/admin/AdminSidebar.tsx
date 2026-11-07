@@ -41,11 +41,11 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
   }, [adminUsers]);
 
   return (
-    <aside className="w-full sm:w-80 md:w-96 h-full bg-white/65 dark:bg-slate-900/75 backdrop-blur-2xl border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/10 shadow-[6px_0_30px_-6px_rgba(0,0,0,0.04)] rtl:shadow-[-6px_0_30px_-6px_rgba(0,0,0,0.04)] flex flex-col shrink-0 font-sans z-20">
+    <aside className="w-full sm:w-80 md:w-96 h-full bg-white/65 dark:bg-slate-900/75 backdrop-blur-2xl border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/10 shadow-[1px_0_3px_rgba(0,0,0,0.03)] rtl:shadow-[-1px_0_3px_rgba(0,0,0,0.03)] flex flex-col shrink-0 font-sans z-20">
       {/* Top Header */}
       <div className="p-5 pt-safe border-b border-black/[0.05] dark:border-white/10 flex items-center justify-between">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-slate-800 text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-soft border border-black/5 dark:border-white/10 shrink-0">
+          <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-slate-800 text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/10 shrink-0">
             <Users className="w-5 h-5" />
           </div>
           <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
@@ -56,7 +56,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
         <div className="flex items-center gap-2">
           <button
             onClick={onOpenSettings}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
             title={t('settings')}
           >
             <Sliders className="w-4 h-4 text-amber-500" />
@@ -65,7 +65,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           <ThemeToggle />
           <button
             onClick={logout}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
             title={t('logout')}
           >
             <LogOut className="w-4 h-4" />
@@ -101,7 +101,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             onClick={() => setFilterTab('all')}
             className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
               filterTab === 'all'
-                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-soft font-bold'
+                ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
             }`}
           >
@@ -113,7 +113,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             onClick={() => setFilterTab('pending')}
             className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
               filterTab === 'pending'
-                ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-soft font-bold'
+                ? 'bg-white dark:bg-slate-800 text-amber-600 dark:text-amber-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
             }`}
           >
@@ -129,7 +129,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             onClick={() => setFilterTab('active')}
             className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
               filterTab === 'active'
-                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-soft font-bold'
+                ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
             }`}
           >
@@ -140,7 +140,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             onClick={() => setFilterTab('banned')}
             className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
               filterTab === 'banned'
-                ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-soft font-bold'
+                ? 'bg-white dark:bg-slate-800 text-red-600 dark:text-red-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'
             }`}
           >

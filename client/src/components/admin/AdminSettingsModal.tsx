@@ -184,7 +184,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Header */}
         <div className="flex items-center justify-between pb-3 border-b border-stone-200/50 dark:border-slate-800">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-slate-800 text-amber-500 flex items-center justify-center shadow-soft border border-black/5 dark:border-white/10">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-slate-800 text-amber-500 flex items-center justify-center shadow-xs border border-black/5 dark:border-white/10">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
@@ -198,7 +198,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-soft border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -211,7 +211,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             onClick={() => setActiveTab('general')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'general'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-soft scale-101'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -224,7 +224,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             onClick={() => setActiveTab('branding')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'branding'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-soft scale-101'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -237,7 +237,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             onClick={() => setActiveTab('backup')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'backup'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-soft scale-101'
+                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -265,7 +265,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'general' && (
             <>
               {/* 1. Registration Switch */}
-              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5">
+              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
                 <div>
                   <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block">
                     {t('allowRegistration')}
@@ -283,7 +283,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* 2. Manual Approval Switch */}
-              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5">
+              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
                 <div>
                   <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block">
                     {t('registrationApproval')}
@@ -301,7 +301,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* 3. Disappearing TTL */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
                 <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between mb-1">
                   <span className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-500" />
@@ -372,7 +372,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'branding' && (
             <>
               {/* Application Name */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5 space-y-1.5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-1.5">
                 <label className="text-xs font-bold text-slate-900 dark:text-white block">
                   {t('appNameLabel')}
                 </label>
@@ -389,7 +389,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* PWA Short Name */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5 space-y-1.5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-1.5">
                 <label className="text-xs font-bold text-slate-900 dark:text-white block">
                   {t('pwaShortNameLabel')}
                 </label>
@@ -406,7 +406,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* PWA Icon Upload */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-900 dark:text-white block">
@@ -417,7 +417,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     </p>
                   </div>
                   {/* Current Icon Preview */}
-                  <div className="w-14 h-14 rounded-2xl bg-stone-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center shadow-soft">
+                  <div className="w-14 h-14 rounded-2xl bg-stone-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center shadow-xs">
                     {settings.pwaIconUrl ? (
                       <img src={settings.pwaIconUrl} alt="PWA Icon" className="w-full h-full object-cover" />
                     ) : (
@@ -459,7 +459,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Admin Profile Picture Upload */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-900 dark:text-white block">
@@ -470,7 +470,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     </p>
                   </div>
                   {/* Current Admin Avatar Preview */}
-                  <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-base shadow-soft">
+                  <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-base shadow-xs">
                     {settings.adminAvatarUrl ? (
                       <img src={settings.adminAvatarUrl} alt="Admin Avatar" className="w-full h-full object-cover" />
                     ) : (
@@ -517,7 +517,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'backup' && (
             <>
               {/* 1. Download Backup Card */}
-              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5 space-y-3">
+              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/10">
                     <Download className="w-5 h-5" />
@@ -553,7 +553,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* 2. Restore Backup Card */}
-              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-soft border border-black/5 dark:border-white/5 space-y-3">
+              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/10">
                     <Upload className="w-5 h-5" />
@@ -656,7 +656,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           <button
             onClick={handleSave}
             disabled={loading || isRestoring}
-            className="px-6 py-2.5 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-md hover:scale-102 active:scale-98 disabled:opacity-40 transition-all"
+            className="px-6 py-2.5 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs hover:scale-102 active:scale-98 disabled:opacity-40 transition-all"
           >
             {loading ? t('saving') : t('save')}
           </button>

@@ -97,3 +97,16 @@ This design system contract defines the visual identity, color harmony, typograp
   - Full standalone web app capability for iOS Safari and Android Chrome.
   - Dynamic PWA manifest generated via `/manifest.json`.
   - Service worker caching static assets with immediate activation.
+
+---
+
+## 6. Micro-Elevation & Crisp Shadow Standards (Eliminating Blurry Halos)
+
+- **Root Cause of "Blurry Fog"**:
+  - Wide Gaussian blur radii (15px to 50px) at low opacities act like a fuzzy smudge/halo radiating out in all directions around cards, buttons, and inputs, making them appear out-of-focus ("دورش رو انگار تار کرده").
+- **Strict Shadow Hierarchy**:
+  - **Buttons, Badges, Tabs & Avatars**: Always use `shadow-xs` (`0 1px 2px 0 rgba(0,0,0,0.04)`) or `shadow-none`. Never apply multi-pixel blur clouds on compact controls.
+  - **Message Bubbles**: Use crisp hairline depth `shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border border-black/[0.04] dark:border-white/[0.05]`.
+  - **Inputs & Search Bars**: `shadow-none` with hairline border `border border-black/[0.05] dark:border-white/5`.
+  - **Modals & Drawers**: Tight layered elevations (`shadow-floating` or `shadow-xl`) constrained to small blur radii (`0 4px 16px -2px rgba(0,0,0,0.08)`), anchored by clean 1px borders.
+

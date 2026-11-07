@@ -119,7 +119,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
         <div
           onContextMenu={handleContextMenu}
           onClick={handleBubbleClick}
-          className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-soft ${
+          className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border border-black/[0.04] dark:border-white/[0.05] ${
             isOwn
               ? 'bg-[#EFFDDE] text-slate-900 dark:bg-[#2B5278] dark:text-slate-100 rounded-[18px] rounded-br-[2px]'
               : 'bg-white text-slate-900 dark:bg-[#182533] dark:text-slate-100 rounded-[18px] rounded-bl-[2px]'
@@ -220,7 +220,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
 
           {/* Feedback badge for Copied */}
           {copied && (
-            <div className="absolute -top-7 start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-floating animate-message">
+            <div className="absolute -top-7 start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-xs animate-message">
               {t('copied')}
             </div>
           )}
@@ -265,7 +265,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
               <img
                 src={imageUrl}
                 alt="attachment preview"
-                className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-2xl"
+                className="max-w-full max-h-[85vh] rounded-2xl object-contain shadow-xl"
               />
               <div className="absolute top-3 end-3 flex items-center gap-2">
                 <a
