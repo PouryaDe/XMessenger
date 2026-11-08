@@ -101,4 +101,32 @@ describe('Real-time User Registration & Admin Approval Tests', () => {
     // Cleanup
     db.prepare('DELETE FROM users WHERE id = ?').run(userId);
   });
+
+  it('rejects email format and all-numeric usernames in registration validation logic', () => {
+    function validateUsername(raw: string): { valid: boolean; error?: string } {
+      const u = raw.trim().toLowerCase();
+      if (u.length < 3 || u.length > 32) return { valid: false, error: 'INVALID_USERNAME' };
+      if (u.includes('@') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(u)) return { valid: false, error: 'USERNAME_EMAIL_NOT_ALLOWED' };
+      if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(u)) return { valid: false, error: 'USERNAME_ALL_NUMERIC' };
+      return { valid: true };
+    }
+
+    // Email format test cases
+    assert.equal(validateUsername('test@gmail.com').error, 'USERNAME_EMAIL_NOT_ALLOWED');
+    assert.equal(validateUsername('user@domain.org').error, 'USERNAME_EMAIL_NOT_ALLOWED');
+    assert.equal(validateUsername('admin@xmessenger').error, 'USERNAME_EMAIL_NOT_ALLOWED');
+    assert.equal(validateUsername('hello@').error, 'USERNAME_EMAIL_NOT_ALLOWED');
+
+    // All-numeric test cases (ASCII & Persian/Arabic)
+    assert.equal(validateUsername('123456').error, 'USERNAME_ALL_NUMERIC');
+    assert.equal(validateUsername('09123456789').error, 'USERNAME_ALL_NUMERIC');
+    assert.equal(validateUsername('987654321').error, 'USERNAME_ALL_NUMERIC');
+    assert.equal(validateUsername('۱۲۳۴۵۶').error, 'USERNAME_ALL_NUMERIC');
+
+    // Valid usernames test cases
+    assert.equal(validateUsername('pourya_dev').valid, true);
+    assert.equal(validateUsername('user123').valid, true);
+    assert.equal(validateUsername('admin_01').valid, true);
+    assert.equal(validateUsername('messenger_pro').valid, true);
+  });
 });

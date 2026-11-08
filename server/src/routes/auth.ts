@@ -87,6 +87,16 @@ authRouter.post('/register', async (req, res) => {
       return res.status(400).json({ error: 'INVALID_USERNAME', message: 'Username must be between 3 and 32 characters' });
     }
 
+    // Username cannot be an email format or contain @
+    if (trimmedUsername.includes('@') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedUsername)) {
+      return res.status(400).json({ error: 'USERNAME_EMAIL_NOT_ALLOWED', message: 'Username cannot be an email format' });
+    }
+
+    // Username cannot be purely numeric (all digits, English or Persian/Arabic)
+    if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(trimmedUsername)) {
+      return res.status(400).json({ error: 'USERNAME_ALL_NUMERIC', message: 'Username cannot be all numbers' });
+    }
+
     if (password.length < 6) {
       return res.status(400).json({ error: 'WEAK_PASSWORD', message: 'Password must be at least 6 characters' });
     }

@@ -29,23 +29,41 @@ export const AuthModal: React.FC = () => {
     e.preventDefault();
     setError(null);
 
-    if (!username.trim() || !password) {
+    const cleanUsername = username.trim();
+    if (!cleanUsername || !password) {
       setError(t('errRequiredFields'));
       return;
     }
 
-    if (isRegister && password !== confirmPassword) {
-      setError(t('passwordsDoNotMatch'));
-      return;
+    if (isRegister) {
+      if (cleanUsername.includes('@') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(cleanUsername)) {
+        setError(t('errUsernameEmailNotAllowed'));
+        return;
+      }
+
+      if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(cleanUsername)) {
+        setError(t('errUsernameAllNumericNotAllowed'));
+        return;
+      }
+
+      if (cleanUsername.length < 3 || cleanUsername.length > 32) {
+        setError(t('errUsernameLength'));
+        return;
+      }
+
+      if (password !== confirmPassword) {
+        setError(t('passwordsDoNotMatch'));
+        return;
+      }
     }
 
     setLoading(true);
     try {
       if (isRegister) {
-        const res = await api.register(username.trim(), password);
+        const res = await api.register(cleanUsername, password);
         login(res.token, res.user);
       } else {
-        const res = await api.login(username.trim(), password);
+        const res = await api.login(cleanUsername, password);
         login(res.token, res.user);
       }
     } catch (err: any) {
