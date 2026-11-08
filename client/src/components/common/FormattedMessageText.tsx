@@ -55,6 +55,13 @@ const CodeCard: React.FC<CodeCardProps> = ({ code, badge, isUrl }) => {
 
   const handleCopy = (e?: React.MouseEvent) => {
     e?.stopPropagation();
+
+    // If user has manually selected a portion of text, don't hijack their selection
+    const selection = window.getSelection();
+    if (selection && selection.toString().trim().length > 0 && (e?.target as HTMLElement)?.tagName !== 'BUTTON') {
+      return;
+    }
+
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(code);
@@ -67,6 +74,10 @@ const CodeCard: React.FC<CodeCardProps> = ({ code, badge, isUrl }) => {
         textArea.select();
         document.execCommand('copy');
         document.body.removeChild(textArea);
+      }
+      // Remove any browser selection so text does not get highlighted on tap/click
+      if (window.getSelection) {
+        window.getSelection()?.removeAllRanges();
       }
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
@@ -134,7 +145,7 @@ const CodeCard: React.FC<CodeCardProps> = ({ code, badge, isUrl }) => {
       {/* Code Text Content Box */}
       <div 
         dir="ltr" 
-        className="p-3 text-[11.5px] leading-relaxed break-all select-all font-sans text-slate-800 dark:text-slate-200 max-h-52 overflow-y-auto"
+        className="p-3 text-[11.5px] leading-relaxed break-all select-text font-sans text-slate-800 dark:text-slate-200 max-h-52 overflow-y-auto"
       >
         {code}
       </div>
