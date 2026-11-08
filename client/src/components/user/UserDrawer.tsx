@@ -43,7 +43,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         if (reg) {
           reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
           reg.active?.postMessage({ type: 'PURGE_CACHE' });
-          await reg.update().catch(() => {});
+          await reg.unregister().catch(() => {});
         }
       }
       if ('caches' in window) {

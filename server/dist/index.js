@@ -50301,25 +50301,25 @@ app.get("/manifest.json", (req, res) => {
     }
   ] : [
     {
-      src: "/icon-192.png",
+      src: `/icon-192.png?v=${config.appVersion}`,
       sizes: "192x192",
       type: "image/png",
       purpose: "any"
     },
     {
-      src: "/icon-512.png",
+      src: `/icon-512.png?v=${config.appVersion}`,
       sizes: "512x512",
       type: "image/png",
       purpose: "any"
     },
     {
-      src: "/icon-512-maskable.png",
+      src: `/icon-512-maskable.png?v=${config.appVersion}`,
       sizes: "512x512",
       type: "image/png",
       purpose: "maskable"
     },
     {
-      src: "/shield.svg",
+      src: `/shield.svg?v=${config.appVersion}`,
       sizes: "any",
       type: "image/svg+xml",
       purpose: "any"
@@ -50350,7 +50350,7 @@ if (staticDir) {
   console.log(`[Server] Serving static client from: ${staticDir}`);
   app.use(import_express4.default.static(staticDir, {
     setHeaders: (res, filePath) => {
-      const isUncached = filePath.endsWith(".html") || filePath.endsWith("sw.js") || filePath.endsWith("manifest.json") || !filePath.includes(import_path5.default.sep + "assets" + import_path5.default.sep);
+      const isUncached = filePath.endsWith(".html") || filePath.endsWith("sw.js") || filePath.endsWith("manifest.json") || filePath.endsWith(".png") || filePath.endsWith(".svg") || filePath.endsWith(".ico") || filePath.endsWith(".json") || !filePath.includes(import_path5.default.sep + "assets" + import_path5.default.sep);
       if (isUncached) {
         res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
         res.setHeader("Pragma", "no-cache");

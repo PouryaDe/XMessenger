@@ -6,7 +6,7 @@ import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { getErrorMessage } from '../../utils/errors.js';
-import { Shield, Lock, User as UserIcon, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
+import { Lock, User as UserIcon, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
   const { t } = useTranslation();
@@ -70,8 +70,12 @@ export const AuthModal: React.FC = () => {
 
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-7">
-          <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-white/[0.08] border border-stone-200/50 dark:border-white/[0.09] flex items-center justify-center mb-4 shadow-xs">
-            <Shield className="w-8 h-8 text-slate-800 dark:text-amber-400" />
+          <div className="w-16 h-16 rounded-3xl bg-slate-900/5 dark:bg-white/[0.06] border border-stone-200/50 dark:border-white/[0.09] flex items-center justify-center mb-4 shadow-xs overflow-hidden p-1.5">
+            <img 
+              src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
+              alt={t('appName')} 
+              className="w-full h-full object-cover rounded-2xl shadow-xs" 
+            />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {t('appName')}

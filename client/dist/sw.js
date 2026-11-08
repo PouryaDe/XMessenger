@@ -1,13 +1,19 @@
 // XMessenger PWA Service Worker (Automated Build Stamping)
-const BUILD_VERSION = 'vmw7548im-20261108';
+const BUILD_VERSION = 'vmw75b3nh-20261108';
 const CACHE_NAME = 'xmessenger-' + BUILD_VERSION;
 
 const PRECACHE_ASSETS = [
   '/manifest.json',
   '/shield.svg',
+  '/shield.svg?v=2.1.0',
   '/icon-192.png',
+  '/icon-192.png?v=2.1.0',
   '/icon-512.png',
-  '/apple-touch-icon.png'
+  '/icon-512.png?v=2.1.0',
+  '/icon-512-maskable.png',
+  '/icon-512-maskable.png?v=2.1.0',
+  '/apple-touch-icon.png',
+  '/apple-touch-icon.png?v=2.1.0'
 ];
 
 self.addEventListener('install', (event) => {
@@ -103,7 +109,28 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Static Assets (Hashed JS/CSS, images, fonts)
+  // 4. Icons & Brand Assets: Network-first to prevent stale icon caching
+  const isIconRequest = 
+    url.pathname.includes('icon') ||
+    url.pathname.includes('apple-touch') ||
+    url.pathname.endsWith('.svg');
+
+  if (isIconRequest) {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.status === 200) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => caches.match(event.request))
+    );
+    return;
+  }
+
+  // 5. Static Assets (Hashed JS/CSS, images, fonts)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

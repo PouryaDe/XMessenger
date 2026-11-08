@@ -469,7 +469,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     {settings.pwaIconUrl ? (
                       <img src={settings.pwaIconUrl} alt="PWA Icon" className="w-full h-full object-cover" />
                     ) : (
-                      <img src="/icon-192.png" alt="PWA Icon Default" className="w-full h-full object-cover" />
+                      <img src={`/icon-192.png?v=${APP_VERSION}`} alt="PWA Icon Default" className="w-full h-full object-cover" />
                     )}
                   </div>
                 </div>
