@@ -158,15 +158,15 @@ export const AuthModal: React.FC = () => {
           <button
             type="submit"
             disabled={Boolean(loading || (isRegister && appMeta && !appMeta.registrationEnabled))}
-            className="w-full py-3.5 sm:py-4 px-5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-sm sm:text-base transition-all shadow-xs hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed mt-4 sm:mt-5"
+            className="w-full h-12 sm:h-13 px-5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-sm sm:text-base transition-all shadow-xs hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed mt-4 sm:mt-5 select-none"
           >
             {loading ? (
-              <span className="w-4.5 h-4.5 border-2 border-white/40 border-t-white dark:border-slate-900/40 dark:border-t-slate-900 rounded-full animate-spin" />
+              <span className="w-5 h-5 border-2 border-white/40 border-t-white dark:border-slate-900/40 dark:border-t-slate-900 rounded-full animate-spin" />
             ) : (
-              <>
-                <span>{isRegister ? t('register') : t('login')}</span>
-                <ArrowRight className="w-4.5 h-4.5 rtl:rotate-180" />
-              </>
+              <div className="inline-flex items-center justify-center gap-2 leading-none">
+                <span className="translate-y-[-0.5px]">{isRegister ? t('register') : t('login')}</span>
+                <ArrowRight className="w-4 h-4 rtl:rotate-180 translate-y-[1px] shrink-0" />
+              </div>
             )}
           </button>
         </form>
