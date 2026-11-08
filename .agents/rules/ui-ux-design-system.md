@@ -48,6 +48,10 @@ This design system contract defines the visual identity, color harmony, typograp
 
 ## 3. Chat Input Bar (Floating Pill Standard)
 
+- **Desktop Breathing Room Standard**:
+  - **CRITICAL USER RULE**: On desktop, the floating pill input must NEVER stick to the bottom edge of the screen or chat container.
+  - Footer padding standard: `p-4 sm:px-6 sm:pt-3 sm:pb-8 md:pb-9 pb-safe shrink-0` (giving 32px to 36px of bottom floating space on desktop screens).
+  - `.pb-safe` is constrained with `@media (max-width: 639px)` so it never overrides or conflicts with desktop bottom padding.
 - **Static Border & ZERO Hover/Focus Border Jumps**:
   - **CRITICAL USER RULE**: When clicking, tapping, or typing in the input pill bar, its border MUST NOT jump, flash, darken, or expand (`hover:border-...` and `focus-within:border-...` are STRICTLY FORBIDDEN).
   - The border must remain completely static: `border border-black/[0.06] dark:border-white/10`.
@@ -75,6 +79,10 @@ This design system contract defines the visual identity, color harmony, typograp
 
 ## 4. Admin Sidebar & User Item Cards
 
+- **Top Header Action Buttons**:
+  - The 4 circular action buttons in the admin header (Settings, LanguageToggle, ThemeToggle, Logout) must be compact:
+  - Standard size: `w-8 h-8` (32px), `gap-1.5`, with `w-3.5 h-3.5` icons and `text-[11px]` font (`size="sm"`).
+  - Never use oversized `w-10 h-10` buttons that crowd the header title.
 - **Card Geometry & Radii**:
   - Standard: `rounded-xl` (12px), NOT exaggerated capsules (`rounded-[22px]`).
   - Padding: `px-3 py-2.5` (compact and balanced).
