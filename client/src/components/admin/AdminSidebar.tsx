@@ -49,14 +49,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-white/[0.08] text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] shrink-0">
             <Users className="w-5 h-5" />
           </div>
-          <div className="flex items-center gap-2">
-            <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
-              {t('adminPanel')}
-            </h2>
-            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/[0.08] text-slate-500 dark:text-slate-400">
-              v{APP_VERSION}
-            </span>
-          </div>
+          <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
+            {t('adminPanel')}
+          </h2>
         </div>
 
         <div className="flex items-center gap-1.5">
