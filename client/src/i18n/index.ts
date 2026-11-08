@@ -171,6 +171,9 @@ const resources = {
       resetToDefaultIcon: 'بازنشانی به آیکن اولیه',
       uploadAvatar: 'آپلود تصویر پروفایل',
       removeAvatar: 'حذف تصویر',
+      updateApp: 'بروزرسانی نسخه اپلیکیشن',
+      updateAppDesc: 'پاکسازی کش و دریافت آخرین تغییرات و ظاهر جدید',
+      updatingApp: 'در حال بروزرسانی...',
       // Backup & Restore
       backupTitle: 'پشتیبان‌گیری دیتابیس (Backup)',
       backupDesc: 'دریافت نسخه کامل از تمام جداول، کاربران و پیام‌های سیستم با فرمت استاندارد SQLite',
@@ -370,6 +373,9 @@ const resources = {
       resetToDefaultIcon: 'Reset to Default',
       uploadAvatar: 'Upload Profile Photo',
       removeAvatar: 'Remove Photo',
+      updateApp: 'Update Application',
+      updateAppDesc: 'Clear cache and load latest version',
+      updatingApp: 'Updating...',
       // Backup & Restore
       backupTitle: 'Database Backup',
       backupDesc: 'Download an offline, consistent snapshot of the SQLite database',

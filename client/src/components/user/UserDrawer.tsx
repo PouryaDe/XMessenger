@@ -12,7 +12,8 @@ import {
   KeyRound, 
   Trash2, 
   LogOut,
-  Camera
+  Camera,
+  RefreshCw
 } from 'lucide-react';
 
 interface Props {
@@ -31,6 +32,30 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
   const [currentPassword, setCurrentPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [pwdMsg, setPwdMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+
+  const handleForceUpdateApp = async () => {
+    setIsUpdatingApp(true);
+    try {
+      if ('serviceWorker' in navigator) {
+        const reg = await navigator.serviceWorker.getRegistration();
+        if (reg) {
+          reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
+          reg.active?.postMessage({ type: 'PURGE_CACHE' });
+          await reg.update().catch(() => {});
+        }
+      }
+      if ('caches' in window) {
+        const keys = await caches.keys();
+        await Promise.all(keys.map(k => caches.delete(k)));
+      }
+    } catch (e) {
+      console.warn('Force update purge error:', e);
+    }
+    setTimeout(() => {
+      window.location.reload();
+    }, 400);
+  };
 
   if (!isOpen) return null;
 
@@ -179,6 +204,26 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
               <Trash2 className="w-4 h-4" />
             </div>
             <span>{t('clearChat')}</span>
+          </button>
+
+          {/* Update PWA / Force Refresh App */}
+          <button
+            onClick={handleForceUpdateApp}
+            disabled={isUpdatingApp}
+            className="w-full flex items-center justify-between p-4 rounded-[22px] bg-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] shadow-xs border border-black/[0.06] dark:border-white/[0.06] text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all text-start"
+          >
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                <RefreshCw className={`w-4 h-4 ${isUpdatingApp ? 'animate-spin' : ''}`} />
+              </div>
+              <div>
+                <p className="leading-tight">{t('updateApp')}</p>
+                <p className="text-[10px] text-slate-400 font-normal mt-0.5">{t('updateAppDesc')}</p>
+              </div>
+            </div>
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-500 font-mono shrink-0">
+              {isUpdatingApp ? t('updatingApp') : 'PWA'}
+            </span>
           </button>
         </div>
 

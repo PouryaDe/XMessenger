@@ -1,5 +1,6 @@
-// XMessenger PWA Service Worker (v2.0.0 - Fast Live Reload Standard)
-const CACHE_NAME = 'xmessenger-v2';
+// XMessenger PWA Service Worker (Automated Build Stamping)
+const BUILD_VERSION = 'vmw74lj5q-20261108';
+const CACHE_NAME = 'xmessenger-' + BUILD_VERSION;
 
 const PRECACHE_ASSETS = [
   '/manifest.json',
@@ -10,6 +11,7 @@ const PRECACHE_ASSETS = [
 ];
 
 self.addEventListener('install', (event) => {
+  // Force this new service worker to become the active worker immediately without waiting
   self.skipWaiting();
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => {
@@ -26,7 +28,7 @@ self.addEventListener('activate', (event) => {
       return Promise.all(
         keys.map((key) => {
           if (key !== CACHE_NAME) {
-            console.log('[SW] Purging old cache:', key);
+            console.log('[SW] Purging old cache version:', key);
             return caches.delete(key);
           }
         })
@@ -35,31 +37,51 @@ self.addEventListener('activate', (event) => {
   );
 });
 
-// Immediate skip waiting on message
+// Immediate skip waiting or cache purge on message from client
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'SKIP_WAITING') {
-    self.skipWaiting();
-  }
-  if (event.data && event.data.type === 'PURGE_CACHE') {
-    caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+  if (event.data) {
+    if (event.data.type === 'SKIP_WAITING') {
+      self.skipWaiting();
+    }
+    if (event.data.type === 'PURGE_CACHE') {
+      caches.keys().then((keys) => Promise.all(keys.map((k) => caches.delete(k))));
+    }
   }
 });
 
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 1. Bypass API, WebSocket, and non-GET requests completely
+  // 1. Bypass API, WebSocket, and uploads completely (never intercept or cache)
   if (
     event.request.method !== 'GET' ||
     url.pathname.startsWith('/api') ||
-    url.pathname.startsWith('/socket.io')
+    url.pathname.startsWith('/socket.io') ||
+    url.pathname.startsWith('/uploads')
   ) {
     return;
   }
 
-  // 2. Navigation / HTML Document requests: STRICT NETWORK-FIRST
-  // HTML document is NEVER served stale when network is available
-  if (event.request.mode === 'navigate' || event.request.destination === 'document') {
+  // 2. Service worker itself, manifest, and version.json must NEVER be served from cache
+  if (
+    url.pathname === '/sw.js' || 
+    url.pathname === '/manifest.json' || 
+    url.pathname === '/version.json'
+  ) {
+    event.respondWith(fetch(event.request));
+    return;
+  }
+
+  // 3. Navigation & HTML Document requests: STRICT NETWORK-FIRST
+  // Critical for iOS/Android standalone PWAs where mode may be 'same-origin' or empty
+  const isHtmlRequest =
+    event.request.mode === 'navigate' ||
+    event.request.destination === 'document' ||
+    url.pathname === '/' ||
+    url.pathname === '/index.html' ||
+    (event.request.headers.get('accept') && event.request.headers.get('accept').includes('text/html'));
+
+  if (isHtmlRequest) {
     event.respondWith(
       fetch(event.request)
         .then((networkResponse) => {
@@ -69,18 +91,19 @@ self.addEventListener('fetch', (event) => {
           }
           return networkResponse;
         })
-        .catch(() => caches.match(event.request).then((cached) => cached || caches.match('/')))
+        .catch(async () => {
+          // Offline fallback when network is completely unavailable
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
+          const rootCached = await caches.match('/');
+          if (rootCached) return rootCached;
+          return caches.match('/index.html');
+        })
     );
     return;
   }
 
-  // 3. Service worker itself & manifest must NEVER be read from cache
-  if (url.pathname === '/sw.js' || url.pathname === '/manifest.json') {
-    event.respondWith(fetch(event.request));
-    return;
-  }
-
-  // 4. Static Assets (Hashed JS, CSS, images): Cache-first with network fallback
+  // 4. Static Assets (Hashed JS/CSS, images, fonts)
   event.respondWith(
     caches.match(event.request).then((cached) => {
       if (cached) return cached;

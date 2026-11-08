@@ -49484,13 +49484,25 @@ authRouter.get("/meta", (req, res) => {
   const appName = getSettingValue("app_name", "XMessenger");
   const pwaShortName = getSettingValue("pwa_short_name", "XMessenger");
   const pwaIconUrl = getSettingValue("pwa_icon_url", "");
+  let buildVersion = "";
+  try {
+    const v1 = import_path2.default.resolve(process.cwd(), "../client/dist/version.json");
+    const v2 = import_path2.default.resolve(process.cwd(), "./client-dist/version.json");
+    const target = import_fs2.default.existsSync(v1) ? v1 : import_fs2.default.existsSync(v2) ? v2 : null;
+    if (target) {
+      const data = JSON.parse(import_fs2.default.readFileSync(target, "utf-8"));
+      buildVersion = data.buildVersion || "";
+    }
+  } catch (e) {
+  }
   res.json({
     registrationEnabled: regEnabled,
     requireApproval,
     defaultTtl,
     appName,
     pwaShortName,
-    pwaIconUrl
+    pwaIconUrl,
+    buildVersion
   });
 });
 authRouter.post("/register", async (req, res) => {

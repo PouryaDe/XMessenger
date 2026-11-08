@@ -49,13 +49,25 @@ exports.authRouter.get('/meta', (req, res) => {
     const appName = (0, index_js_2.getSettingValue)('app_name', 'XMessenger');
     const pwaShortName = (0, index_js_2.getSettingValue)('pwa_short_name', 'XMessenger');
     const pwaIconUrl = (0, index_js_2.getSettingValue)('pwa_icon_url', '');
+    let buildVersion = '';
+    try {
+        const v1 = path_1.default.resolve(process.cwd(), '../client/dist/version.json');
+        const v2 = path_1.default.resolve(process.cwd(), './client-dist/version.json');
+        const target = fs_1.default.existsSync(v1) ? v1 : (fs_1.default.existsSync(v2) ? v2 : null);
+        if (target) {
+            const data = JSON.parse(fs_1.default.readFileSync(target, 'utf-8'));
+            buildVersion = data.buildVersion || '';
+        }
+    }
+    catch (e) { }
     res.json({
         registrationEnabled: regEnabled,
         requireApproval,
         defaultTtl,
         appName,
         pwaShortName,
-        pwaIconUrl
+        pwaIconUrl,
+        buildVersion
     });
 });
 // Register new user

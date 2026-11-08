@@ -7,6 +7,7 @@ export interface AppMeta {
   appName?: string;
   pwaShortName?: string;
   pwaIconUrl?: string;
+  buildVersion?: string;
 }
 
 export interface User {

@@ -25,6 +25,22 @@ export const App: React.FC = () => {
         const linkApple = document.querySelector('link[rel="apple-touch-icon"]');
         if (linkApple) linkApple.setAttribute('href', meta.pwaIconUrl);
       }
+      // Check for remote build updates and prompt service worker refresh
+      if (meta.buildVersion) {
+        const storedBuild = localStorage.getItem('xmessenger_app_build');
+        if (storedBuild && storedBuild !== meta.buildVersion) {
+          console.log('[PWA] Server build version updated to:', meta.buildVersion);
+          localStorage.setItem('xmessenger_app_build', meta.buildVersion);
+          if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.getRegistration().then((reg) => {
+              reg?.waiting?.postMessage({ type: 'SKIP_WAITING' });
+              reg?.update().catch(() => {});
+            });
+          }
+        } else if (!storedBuild) {
+          localStorage.setItem('xmessenger_app_build', meta.buildVersion);
+        }
+      }
     }).catch(console.error);
   }, []);
 

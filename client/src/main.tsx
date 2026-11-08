@@ -5,17 +5,18 @@ import './index.css';
 import './i18n/index.js';
 
 // Register PWA Service Worker with immediate auto-update & live reload
-if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env.NODE_ENV === 'production') {
+if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js').then((registration) => {
-      // Force immediate check for worker updates on every page load
+      // 1. Force immediate check for worker updates on every page load
       registration.update().catch(() => {});
 
-      // If a worker is waiting, activate it immediately
+      // 2. If a worker is waiting, activate it immediately
       if (registration.waiting) {
         registration.waiting.postMessage({ type: 'SKIP_WAITING' });
       }
 
+      // 3. Listen for worker updates
       registration.addEventListener('updatefound', () => {
         const newWorker = registration.installing;
         if (newWorker) {
@@ -31,6 +32,7 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env
       console.warn('[PWA] Service worker registration error:', err);
     });
 
+    // 4. Reload smoothly once new controller claims clients
     let isRefreshing = false;
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!isRefreshing) {
@@ -38,6 +40,29 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator && process.env
         window.location.reload();
       }
     });
+
+    // 5. Resume from background / phone screen unlock check
+    document.addEventListener('visibilitychange', () => {
+      if (document.visibilityState === 'visible') {
+        navigator.serviceWorker.getRegistration().then((reg) => {
+          reg?.update().catch(() => {});
+        });
+      }
+    });
+
+    // 6. Window focus check
+    window.addEventListener('focus', () => {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        reg?.update().catch(() => {});
+      });
+    });
+
+    // 7. Periodic background check every 2.5 minutes
+    setInterval(() => {
+      navigator.serviceWorker.getRegistration().then((reg) => {
+        reg?.update().catch(() => {});
+      });
+    }, 150000);
   });
 }
 
