@@ -150,15 +150,15 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
     >
       <div className="relative max-w-[85%] sm:max-w-md md:max-w-lg">
         
-        {/* Message Bubble Card with Telegram Curved Corner Tail */}
+        {/* Message Bubble Card with Modern Rounded Corners */}
         <div
           ref={bubbleRef}
           onContextMenu={handleContextMenu}
           onClick={handleBubbleClick}
           className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${
             isOwn
-              ? 'bg-[#F7F1E5] text-slate-900 border-amber-900/[0.06] dark:bg-[#282119] dark:text-slate-100 dark:border-amber-500/25 rounded-[18px] rounded-br-[2px]'
-              : 'bg-white text-slate-900 border-black/[0.04] dark:bg-[#151922] dark:text-slate-100 dark:border-white/[0.07] rounded-[18px] rounded-bl-[2px]'
+              ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.06] dark:bg-[#232936] dark:text-white dark:border-white/[0.08] rounded-[20px] rounded-br-[6px]'
+              : 'bg-white text-slate-900 border-black/[0.04] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06] rounded-[20px] rounded-bl-[6px]'
           }`}
         >
           {/* Image attachment if present */}
@@ -186,19 +186,15 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
           <div
             dir="ltr"
             className={`flex items-center gap-1.5 mt-1.5 text-[10px] font-sans justify-end ${
-              isOwn ? 'text-amber-950/60 dark:text-amber-100/60' : 'text-slate-400 dark:text-slate-400'
+              isOwn ? 'text-slate-500 dark:text-slate-300' : 'text-slate-400 dark:text-slate-400'
             }`}
           >
             {/* Ephemeral Flame Tag - Subtle & Calm */}
             <span
-              className={`flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium ${
-                isOwn
-                  ? 'bg-amber-900/[0.06] dark:bg-white/[0.08] text-amber-950/80 dark:text-amber-200/90'
-                  : 'bg-black/[0.04] dark:bg-white/10 text-slate-500 dark:text-slate-400'
-              }`}
+              className="flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium bg-black/[0.04] dark:bg-white/[0.08] text-slate-600 dark:text-slate-200"
               title={`${t('expiresAt')}${new Date(message.expiresAt).toLocaleTimeString()}`}
             >
-              <Flame className={`w-2.5 h-2.5 ${isOwn ? 'text-amber-600 dark:text-amber-400' : 'text-slate-400'}`} />
+              <Flame className="w-2.5 h-2.5 text-amber-500 dark:text-amber-400" />
               <span>{timeLeft}</span>
             </span>
 
@@ -207,47 +203,13 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
             {isOwn && (
               <span>
                 {message.isRead ? (
-                  <CheckCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400 inline" />
+                  <CheckCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 inline" />
                 ) : (
                   <Check className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 inline" />
                 )}
               </span>
             )}
           </div>
-
-          {/* Telegram-style Curved Bubble Tail (Outgoing = bottom-right, Incoming = bottom-left) */}
-          {isOwn ? (
-            <svg
-              viewBox="0 0 11 20"
-              width="11"
-              height="20"
-              style={{ transform: 'scaleX(-1)' }}
-              className="absolute -bottom-[1px] -right-[9px] pointer-events-none fill-[#F7F1E5] dark:fill-[#282119]"
-              aria-hidden="true"
-            >
-              <g transform="translate(9 -14)" fill="inherit" fillRule="evenodd">
-                <path
-                  d="M-6 16h6v17c-.193-2.84-.876-5.767-2.05-8.782-.904-2.325-2.446-4.485-4.625-6.48A1 1 0 01-6 16z"
-                  transform="matrix(1 0 0 -1 0 49)"
-                />
-              </g>
-            </svg>
-          ) : (
-            <svg
-              viewBox="0 0 11 20"
-              width="11"
-              height="20"
-              className="absolute -bottom-[1px] -left-[9px] pointer-events-none fill-white dark:fill-[#151922]"
-              aria-hidden="true"
-            >
-              <g transform="translate(9 -14)" fill="inherit" fillRule="evenodd">
-                <path
-                  d="M-6 16h6v17c-.193-2.84-.876-5.767-2.05-8.782-.904-2.325-2.446-4.485-4.625-6.48A1 1 0 01-6 16z"
-                  transform="matrix(1 0 0 -1 0 49)"
-                />
-              </g>
-            </svg>
-          )}
 
           {/* Feedback badge for Copied */}
           {copied && (

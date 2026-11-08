@@ -13,13 +13,13 @@ This design system contract defines the visual identity, color harmony, typograp
   - Ambient radial gradients: subtle warm golden amber (`rgba(235, 225, 189, 0.70)`) and muted soft slate (`rgba(213, 223, 235, 0.72)`).
   - **Rule**: NEVER use cold gray, plain stark white, or harsh yellow backgrounds.
 - **Message Bubbles (Color Harmony Contract)**:
-  - **Outgoing Bubble (Sender)**: Warm Champagne Cream (`#F7F1E5`).
-    - **CRITICAL LESSON**: Never use cold pastel blue or harsh mint green (`#EFFDDE`) on a warm sand/beige canvas. Warm Champagne Cream (`#F7F1E5`) with subtle border `border-amber-900/[0.06]` provides perfect visual harmony with the sandy linen and golden amber glows.
-    - SVG Tail: position `absolute -bottom-[1px] -right-[9px]`, scaleX(-1), filled with `#F7F1E5` (light) or `#282119` (dark).
-  - **Incoming Bubble (Counterpart / Admin)**: Pure Crisp White (`#FFFFFF`) with dark charcoal text (`text-slate-900`) and tail `fill-white`.
-  - **Read Checkmarks**: Emerald Green (`#10B981` / `text-emerald-600 dark:text-emerald-400`) for read status, subtle muted gray (`text-slate-400`) for sent/unread.
-  - **Time & Ephemeral Info**: Warm muted amber tint (`text-amber-950/60 dark:text-amber-100/60`) on outgoing, calm muted gray (`text-slate-400`) on incoming.
-  - **Flame Tag (TTL Countdown)**: Subtle and harmonious with amber tint (`bg-amber-900/[0.06] text-amber-950/80` in light, `bg-white/[0.08] text-amber-200/90` in dark).
+  - **Outgoing Bubble (Sender)**: Soft Warm Stone Linen (`#EDE8E0`) in Light Mode / Deep Slate Obsidian (`#232936`) in Dark Mode.
+    - **CRITICAL LESSON**: Never use green, brown, or saturated royal blue bubbles. Clean slate obsidian (`#232936`) in dark mode and soft stone linen (`#EDE8E0`) in light mode blend naturally with the canvas and eliminate all color muddiness.
+    - Corners: Modern rounded bubble `rounded-[20px] rounded-br-[6px]`. No external SVG triangle tails (which create border cut-off glitches).
+  - **Incoming Bubble (Counterpart / Admin)**: Pure Crisp White (`#FFFFFF`) in light mode / Charcoal Obsidian (`#161B24`) in dark mode with `rounded-[20px] rounded-bl-[6px]`.
+  - **Read Checkmarks**: Emerald Green (`text-emerald-500 dark:text-emerald-400`) for read status, subtle muted gray (`text-slate-400`) for sent/unread.
+  - **Time & Ephemeral Info**: Subtle slate tint (`text-slate-500 dark:text-slate-300`) on outgoing, calm muted gray (`text-slate-400`) on incoming.
+  - **Flame Tag (TTL Countdown)**: Clean neutral pill (`bg-black/[0.04] dark:bg-white/[0.08]`) with golden flame (`text-amber-500 dark:text-amber-400`).
 
 ### 1.2. Dark Mode (Warm Obsidian Ambient Canvas & Frosted Glassmorphism)
 - **Ambient Canvas Background**:
@@ -34,25 +34,20 @@ This design system contract defines the visual identity, color harmony, typograp
   - Floating Input Pill: `dark:bg-[#151922]/95 dark:backdrop-blur-xl dark:border-white/[0.08]`
   - Drawer & Modals: `dark:bg-[#0E121A]/95 dark:backdrop-blur-2xl dark:border-white/[0.08]` with translucent inner cards `dark:bg-white/[0.04]`
 - **Message Bubbles**:
-  - **Outgoing Bubble**: Deep Amber Obsidian (`#282119`) with delicate amber border `dark:border-amber-500/25` and crisp white/slate text (`text-slate-100`).
-  - **Incoming Bubble**: Charcoal Obsidian (`#151922`) with hairline border `dark:border-white/[0.07]`.
+  - **Outgoing Bubble**: Deep Slate Obsidian (`#232936`) with delicate hairline border `dark:border-white/[0.08]` and crisp white text (`text-white`).
+  - **Incoming Bubble**: Charcoal Obsidian (`#161B24`) with hairline border `dark:border-white/[0.06]`.
   - **Read Checkmarks**: Emerald (`text-emerald-400`).
-  - **Flame Tag**: Dark translucent badge (`bg-white/[0.08] text-amber-200/90`).
+  - **Flame Tag**: Translucent badge (`bg-white/[0.08] text-slate-200`).
 
 ---
 
-## 2. Message Bubbles & Corner Tail Standard
+## 2. Message Bubbles & Corner Standard
 
 - **No Avatars Beside Messages in Chat Stream**:
   - **CRITICAL USER RULE**: Do NOT render user avatar circles next to every message bubble in the chat view. The counterpart's avatar is already permanently visible in the sticky top header.
-- **Telegram Curved Bubble Tails**:
-  - Message bubbles feature authentic Telegram curved corner tails rendered via seamless SVG paths.
-  - **Outgoing Tail (Bottom-Right)**:
-    - Bubble corner: `rounded-[18px] rounded-br-[2px]`
-    - SVG Tail: position `absolute -bottom-[1px] -right-[9px]`, scaleX(-1), filled with `#EFFDDE` (light) or `#2B5278` (dark).
-    - SVG Path: `M-6 16h6v17c-.193-2.84-.876-5.767-2.05-8.782-.904-2.325-2.446-4.485-4.625-6.48A1 1 0 01-6 16z`
-  - **Incoming Tail (Bottom-Left)**:
-    - Bubble corner: `rounded-[18px] rounded-bl-[2px]`
+- **Modern Smooth Rounded Corners (No Broken SVG Tails)**:
+  - Message bubbles use clean, seamless modern rounded corners (`rounded-[20px]` with subtle directional 6px corner).
+  - Absolutely NO separate external SVG triangle tails that cause border clipping or detached visual artifacts.
     - SVG Tail: position `absolute -bottom-[1px] -left-[9px]`, filled with `#FFFFFF` (light) or `#182533` (dark).
 
 ---
