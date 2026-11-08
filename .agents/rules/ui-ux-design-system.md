@@ -13,12 +13,13 @@ This design system contract defines the visual identity, color harmony, typograp
   - Ambient radial gradients: subtle warm golden amber (`rgba(235, 225, 189, 0.70)`) and muted soft slate (`rgba(213, 223, 235, 0.72)`).
   - **Rule**: NEVER use cold gray, plain stark white, or harsh yellow backgrounds.
 - **Message Bubbles (Color Harmony Contract)**:
-  - **Outgoing Bubble (Sender)**: Telegram Soft Pistachio / Warm Mint (`#EFFDDE`).
-    - **CRITICAL LESSON**: Never use cold pastel blue (`#E3EDF7`) on a warm sand/beige canvas. Cold blue and warm sand clash. `#EFFDDE` is the global standard of Telegram and WhatsApp on warm wallpapers—it creates a soft, natural, eye-friendly harmony.
-  - **Incoming Bubble (Counterpart / Admin)**: Pure Crisp White (`#FFFFFF`) with dark charcoal text (`text-slate-900`).
-  - **Read Checkmarks**: Telegram Green (`#4FAE4E`) for read status, subtle muted gray (`#94A3B8`) for sent/unread.
-  - **Time & Ephemeral Info**: Subtle emerald tint (`text-emerald-900/60`) on outgoing, calm muted gray (`text-slate-400`) on incoming.
-  - **Flame Tag (TTL Countdown)**: Must be subtle, calm, and neutral (`bg-black/[0.04]` with `text-emerald-700/60` or `text-slate-400`). **Rule**: Never use bright, glaring amber/orange flames inside the bubble that distract the eye.
+  - **Outgoing Bubble (Sender)**: Warm Champagne Cream (`#F7F1E5`).
+    - **CRITICAL LESSON**: Never use cold pastel blue or harsh mint green (`#EFFDDE`) on a warm sand/beige canvas. Warm Champagne Cream (`#F7F1E5`) with subtle border `border-amber-900/[0.06]` provides perfect visual harmony with the sandy linen and golden amber glows.
+    - SVG Tail: position `absolute -bottom-[1px] -right-[9px]`, scaleX(-1), filled with `#F7F1E5` (light) or `#282119` (dark).
+  - **Incoming Bubble (Counterpart / Admin)**: Pure Crisp White (`#FFFFFF`) with dark charcoal text (`text-slate-900`) and tail `fill-white`.
+  - **Read Checkmarks**: Emerald Green (`#10B981` / `text-emerald-600 dark:text-emerald-400`) for read status, subtle muted gray (`text-slate-400`) for sent/unread.
+  - **Time & Ephemeral Info**: Warm muted amber tint (`text-amber-950/60 dark:text-amber-100/60`) on outgoing, calm muted gray (`text-slate-400`) on incoming.
+  - **Flame Tag (TTL Countdown)**: Subtle and harmonious with amber tint (`bg-amber-900/[0.06] text-amber-950/80` in light, `bg-white/[0.08] text-amber-200/90` in dark).
 
 ### 1.2. Dark Mode (Warm Obsidian Ambient Canvas & Frosted Glassmorphism)
 - **Ambient Canvas Background**:
@@ -33,10 +34,10 @@ This design system contract defines the visual identity, color harmony, typograp
   - Floating Input Pill: `dark:bg-[#151922]/95 dark:backdrop-blur-xl dark:border-white/[0.08]`
   - Drawer & Modals: `dark:bg-[#0E121A]/95 dark:backdrop-blur-2xl dark:border-white/[0.08]` with translucent inner cards `dark:bg-white/[0.04]`
 - **Message Bubbles**:
-  - **Outgoing Bubble**: Telegram Muted Navy (`#20364C` / `#2B5278`) with crisp white/slate text (`text-slate-100`).
-  - **Incoming Bubble**: Dark Slate Navy (`#161D27` / `#182533`).
-  - **Read Checkmarks**: Soft Cyan/Blue (`#64B5F6`).
-  - **Flame Tag**: Dark translucent badge (`bg-black/25 text-slate-300`).
+  - **Outgoing Bubble**: Deep Amber Obsidian (`#282119`) with delicate amber border `dark:border-amber-500/25` and crisp white/slate text (`text-slate-100`).
+  - **Incoming Bubble**: Charcoal Obsidian (`#151922`) with hairline border `dark:border-white/[0.07]`.
+  - **Read Checkmarks**: Emerald (`text-emerald-400`).
+  - **Flame Tag**: Dark translucent badge (`bg-white/[0.08] text-amber-200/90`).
 
 ---
 
