@@ -456,7 +456,7 @@ export const AdminDashboard: React.FC = () => {
         {activeUser ? (
           <>
             {/* Top Chat Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
-            <header className="pt-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.6rem))] pb-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/40 dark:bg-[#12161E]/70 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
+            <header className="pt-safe pb-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/40 dark:bg-[#12161E]/70 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
               <div className="flex items-center gap-3">
                 {/* Back button for mobile */}
                 <button
@@ -590,8 +590,14 @@ export const AdminDashboard: React.FC = () => {
                     const prevMsg = index > 0 ? messages[index - 1] : null;
                     const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
                     const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
-                    const isFirstInGroup = showDateSeparator || !prevMsg || (prevMsg.senderId !== msg.senderId);
-                    const isLastInGroup = !nextMsg || (nextMsg.senderId !== msg.senderId) || !isSameDay(msg.createdAt, nextMsg.createdAt);
+
+                    const isOwnMsg = (m: typeof msg | null) => !m ? false : (m.senderId === user?.id || m.isOwn === true);
+                    const prevIsOwn = isOwnMsg(prevMsg);
+                    const currIsOwn = isOwnMsg(msg);
+                    const nextIsOwn = isOwnMsg(nextMsg);
+
+                    const isFirstInGroup = showDateSeparator || !prevMsg || (prevIsOwn !== currIsOwn);
+                    const isLastInGroup = !nextMsg || (nextIsOwn !== currIsOwn) || !isSameDay(msg.createdAt, nextMsg.createdAt);
                     const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
                     const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
                     const repliedSenderName = repliedMsg
@@ -603,7 +609,7 @@ export const AdminDashboard: React.FC = () => {
                         {showDateSeparator && <DateSeparator date={msg.createdAt} />}
                         <MessageItem
                           message={msg}
-                          isOwn={msg.senderId === user?.id || msg.isOwn === true}
+                          isOwn={currIsOwn}
                           isFirstInGroup={isFirstInGroup}
                           isLastInGroup={isLastInGroup}
                           onDelete={deleteMessage}
@@ -622,12 +628,12 @@ export const AdminDashboard: React.FC = () => {
                 <div ref={messagesEndRef} />
               </main>
 
-              {/* Floating Scroll to Bottom Button - Fixed directly above the input bar */}
+              {/* Floating Scroll to Bottom Button - Fixed directly above the input bar on the right side */}
               {showScrollBottom && (
                 <button
                   type="button"
                   onClick={() => scrollToBottom('smooth')}
-                  className="absolute bottom-3 end-4 sm:end-8 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 dark:bg-[#1C222D]/95 text-slate-700 dark:text-slate-200 border border-black/[0.08] dark:border-white/[0.12] shadow-floating backdrop-blur-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all animate-fade-in cursor-pointer"
+                  className="absolute bottom-3.5 right-4 sm:right-8 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 dark:bg-[#1C222D]/95 text-slate-700 dark:text-slate-200 border border-black/[0.08] dark:border-white/[0.12] shadow-floating backdrop-blur-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all animate-fade-in cursor-pointer"
                   title={t('scrollToBottom')}
                 >
                   <ChevronDown className="w-5 h-5 text-slate-700 dark:text-slate-200" />
@@ -636,7 +642,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Bottom Docked Input Area with frosted glass spanning into safe-area */}
-            <footer className="px-3 sm:px-6 pt-2 pb-[max(0.65rem,calc(env(safe-area-inset-bottom,0px)+0.45rem))] shrink-0 bg-white/70 dark:bg-[#12161E]/80 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.08]">
+            <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-white/70 dark:bg-[#12161E]/80 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.08]">
               <form
                 onSubmit={handleSend}
                 className="max-w-3xl mx-auto"

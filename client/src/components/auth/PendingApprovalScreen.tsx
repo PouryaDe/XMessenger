@@ -28,7 +28,7 @@ export const PendingApprovalScreen: React.FC = () => {
 
   return (
     <div className="fixed inset-0 z-40 flex items-center justify-center p-4 sm:p-6 py-6 sm:py-8 bg-ambient-canvas font-sans overflow-y-auto overscroll-none">
-      <div className="fixed top-[max(1.25rem,calc(env(safe-area-inset-top,0px)+0.85rem))] end-4 z-50 flex items-center gap-2">
+      <div className="fixed top-safe end-4 z-50 flex items-center gap-2">
         <LanguageToggle />
         <ThemeToggle />
       </div>

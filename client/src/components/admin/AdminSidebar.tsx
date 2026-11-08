@@ -52,7 +52,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
   return (
     <aside className="w-full sm:w-80 md:w-96 h-full bg-white/45 dark:bg-[#0E1218]/50 backdrop-blur-2xl border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/[0.08] shadow-[1px_0_3px_rgba(0,0,0,0.03)] rtl:shadow-[-1px_0_3px_rgba(0,0,0,0.03)] flex flex-col shrink-0 font-sans z-20">
       {/* Top Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
-      <div className="pt-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.6rem))] pb-2.5 px-4 sm:px-5 border-b border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between shrink-0 bg-transparent">
+      <div className="pt-safe pb-2.5 px-4 sm:px-5 border-b border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between shrink-0 bg-transparent">
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-white/[0.08] text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] shrink-0">
             <Users className="w-4 h-4" />

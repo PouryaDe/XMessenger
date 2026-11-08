@@ -140,19 +140,31 @@ html.dark body::before {
   background-position: center;
 }
 
-/* Mobile PWA Safe Area Utilities (iOS Notch & Home Bar) */
+/* Mobile PWA Safe Area Utilities (iOS Notch, Dynamic Island & Home Bar) */
+.pt-safe {
+  padding-top: max(0.875rem, calc(env(safe-area-inset-top, 0px) + 0.65rem));
+}
+
 .pb-safe {
-  padding-bottom: max(0.5rem, calc(env(safe-area-inset-bottom, 0px) + 0.35rem));
+  padding-bottom: max(0.65rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
+}
+
+.pt-safe-drawer {
+  padding-top: max(0.875rem, calc(env(safe-area-inset-top, 0px) + 0.65rem));
+}
+
+.pb-safe-drawer {
+  padding-bottom: max(0.875rem, calc(env(safe-area-inset-bottom, 0px) + 0.55rem));
+}
+
+.top-safe {
+  top: max(1.25rem, calc(env(safe-area-inset-top, 0px) + 0.85rem));
 }
 
 @media (min-width: 640px) {
   .pb-safe {
     padding-bottom: max(0.75rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem));
   }
-}
-
-.pt-safe {
-  padding-top: max(0.75rem, calc(env(safe-area-inset-top, 0px) + 0.6rem));
 }
 
 /* Smooth message animations */

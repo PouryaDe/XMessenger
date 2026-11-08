@@ -159,3 +159,22 @@ This design system contract defines the visual identity, color harmony, typograp
   - **Lower Messages (`rect.top >= 135px`)**: Menu opens **UPWARDS** (`bottom-full mb-2`), and badge opens above (`-top-7`).
   - **Stacking Context**: When `showMenu` is active, the entire message item is elevated to `relative z-40` with menu at `z-50`, preventing subsequent message elements in the DOM from painting over the open menu.
 
+---
+
+## 9. Mobile PWA Safe Areas, Floating Scroll Control & Indicator Standards
+
+- **Safe Area Inset Utility Classes**:
+  - Never use raw arbitrary Tailwind values like `pt-[max(...)]` or `pb-[max(...)]` with nested commas, as Tailwind CSS drops them during bundling.
+  - Always use dedicated CSS utilities defined in `client/src/index.css`:
+    - `.pt-safe`: `padding-top: max(0.875rem, calc(env(safe-area-inset-top, 0px) + 0.65rem))` — guarantees clean clearance below iOS Dynamic Island and notch across iPhone models.
+    - `.pb-safe`: `padding-bottom: max(0.65rem, calc(env(safe-area-inset-bottom, 0px) + 0.5rem))` — extends the docked input footer cleanly into the iOS home indicator safe area without black gaps.
+    - `.top-safe`: `top: max(1.25rem, calc(env(safe-area-inset-top, 0px) + 0.85rem))` — keeps top floating actions (e.g., auth language/theme pills) below the status bar.
+    - `.pt-safe-drawer` / `.pb-safe-drawer`: Dedicated safe area padding for sliding drawers.
+- **Floating Scroll-to-Bottom FAB**:
+  - Position strictly at `bottom-3.5 right-4 sm:right-6 z-20` inside the scroll container wrapper.
+  - In RTL (Persian) mode, placing it at the right side aligns with thumb ergonomics and avoids colliding with the left-aligned Send button or incoming message bubbles.
+- **Circular Loading & Status Badges**:
+  - Loading indicators, spinner containers, and icon badges must always use `rounded-full` (circles), never rounded squircles or squares (`rounded-2xl` / `rounded-3xl`).
+- **No Artificial Separator Gradients / Masks**:
+  - Avoid artificial top/bottom dark gradient overlays (`bg-gradient-to-b from-[#...]/90`) or CSS fade masks (`chat-fade-mask`), which create muddy horizontal shadow bands. Rely on clean frosted glassmorphism borders (`border-b border-black/[0.05] dark:border-white/[0.08]`).
+
