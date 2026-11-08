@@ -53,22 +53,22 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           </h2>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5">
           <button
             onClick={onOpenSettings}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
+            className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
             title={t('settings')}
           >
-            <Sliders className="w-4 h-4 text-amber-500" />
+            <Sliders className="w-3.5 h-3.5 text-amber-500" />
           </button>
-          <LanguageToggle />
-          <ThemeToggle />
+          <LanguageToggle size="sm" />
+          <ThemeToggle size="sm" />
           <button
             onClick={logout}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
+            className="w-8 h-8 rounded-full bg-white dark:bg-slate-800 text-slate-400 hover:text-red-500 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
             title={t('logout')}
           >
-            <LogOut className="w-4 h-4" />
+            <LogOut className="w-3.5 h-3.5" />
           </button>
         </div>
       </div>

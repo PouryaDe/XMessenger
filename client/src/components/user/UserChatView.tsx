@@ -273,7 +273,7 @@ export const UserChatView: React.FC = () => {
       </main>
 
       {/* Floating Pill Input Bar with Telegram Send Button INSIDE the Pill */}
-      <footer className="p-4 pb-safe shrink-0">
+      <footer className="p-4 sm:px-6 sm:pt-3 sm:pb-8 md:pb-9 pb-safe shrink-0">
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
           {/* Selected Image Preview Chip */}
           {imagePreviewUrl && (

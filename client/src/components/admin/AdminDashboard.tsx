@@ -415,7 +415,7 @@ export const AdminDashboard: React.FC = () => {
             </main>
 
             {/* Bottom Floating Pill Input Area */}
-            <footer className="p-4 pb-safe shrink-0">
+            <footer className="p-4 sm:px-6 sm:pt-3 sm:pb-8 md:pb-9 pb-safe shrink-0">
               <form
                 onSubmit={handleSend}
                 className="max-w-3xl mx-auto"

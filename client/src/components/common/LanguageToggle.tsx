@@ -2,7 +2,12 @@ import React from 'react';
 import { useTranslation } from 'react-i18next';
 import { setAppLanguage } from '../../i18n/index.js';
 
-export const LanguageToggle: React.FC<{ className?: string }> = ({ className = '' }) => {
+interface Props {
+  className?: string;
+  size?: 'sm' | 'md';
+}
+
+export const LanguageToggle: React.FC<Props> = ({ className = '', size = 'md' }) => {
   const { t, i18n } = useTranslation();
   const currentLang = i18n.language || 'fa';
 
@@ -11,10 +16,12 @@ export const LanguageToggle: React.FC<{ className?: string }> = ({ className = '
     setAppLanguage(nextLang);
   };
 
+  const sizeClasses = size === 'sm' ? 'w-8 h-8 text-[11px]' : 'w-10 h-10 text-xs';
+
   return (
     <button
       onClick={toggleLanguage}
-      className={`w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all font-bold text-xs shrink-0 select-none ${className}`}
+      className={`${sizeClasses} rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all font-bold shrink-0 select-none ${className}`}
       title={t('changeLanguage')}
     >
       <span>{currentLang === 'fa' ? 'EN' : 'فا'}</span>
