@@ -329,7 +329,7 @@ export const AdminDashboard: React.FC = () => {
         {activeUser ? (
           <>
             {/* Top Chat Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
-            <header className="pt-safe pb-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/40 dark:bg-[#12161E]/70 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
+            <header className="pt-safe pb-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-transparent z-10 border-b border-black/[0.05] dark:border-white/[0.06]">
               <div className="flex items-center gap-3">
                 {/* Back button for mobile */}
                 <button
@@ -529,7 +529,7 @@ export const AdminDashboard: React.FC = () => {
             </div>
 
             {/* Bottom Docked Input Area with frosted glass spanning into safe-area */}
-            <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-white/70 dark:bg-[#12161E]/80 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.08]">
+            <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-transparent border-t border-black/[0.05] dark:border-white/[0.06]">
               <form
                 onSubmit={handleSend}
                 className="max-w-3xl mx-auto"

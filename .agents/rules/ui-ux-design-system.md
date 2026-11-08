@@ -28,7 +28,8 @@ This design system contract defines the visual identity, color harmony, typograp
   - Ambient radial gradients: Mirroring light mode's atmospheric lighting geometry with subtle dark golden amber (`rgba(217, 119, 6, 0.12)` at top-right & `0.08` at bottom-left) and deep muted royal slate (`rgba(37, 99, 235, 0.12)` at top-left & `rgba(30, 58, 138, 0.14)` at bottom-right).
   - **Rule**: NEVER use flat solid black (`#000000`), stark 90s blue gradients (`linear-gradient(#020617, #0B1120)`), or opaque flat slate solids.
 - **Glassmorphic Frosted Surfaces**:
-  - Headers: `dark:bg-[#12161E]/70 dark:backdrop-blur-xl dark:border-white/[0.08]`
+  - Headers: `bg-transparent border-b border-black/[0.05] dark:border-white/[0.06]` (seamlessly continues full-bleed ambient canvas gradients without opaque slabs)
+  - Footers: `bg-transparent border-t border-black/[0.05] dark:border-white/[0.06]` containing floating frosted input pill
   - Floating 24h Banner Pill: `dark:bg-white/[0.08] dark:backdrop-blur-md dark:border-white/10 dark:text-amber-300/90`
   - Circular Action Buttons: `dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md dark:border-white/[0.09] dark:text-slate-200`
   - Floating Input Pill: `dark:bg-[#151922]/95 dark:backdrop-blur-xl dark:border-white/[0.08]`
