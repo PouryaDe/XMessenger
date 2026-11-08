@@ -180,12 +180,12 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/40 backdrop-blur-xs font-sans">
-      <div className="w-full max-w-xl bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/10 rounded-[32px] p-5 sm:p-7 shadow-floating relative animate-message flex flex-col max-h-[90vh]">
+      <div className="w-full max-w-xl bg-white/95 dark:bg-[#0E121A]/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[32px] p-5 sm:p-7 shadow-floating relative animate-message flex flex-col max-h-[90vh]">
         
         {/* Header */}
-        <div className="flex items-center justify-between pb-3 border-b border-stone-200/50 dark:border-slate-800">
+        <div className="flex items-center justify-between pb-3 border-b border-stone-200/50 dark:border-white/[0.06]">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-slate-800 text-amber-500 flex items-center justify-center shadow-xs border border-black/5 dark:border-white/10">
+            <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-white/[0.08] text-amber-500 flex items-center justify-center shadow-xs border border-black/5 dark:border-white/[0.09]">
               <Sliders className="w-5 h-5" />
             </div>
             <div>
@@ -199,20 +199,20 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+            className="w-10 h-10 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
 
         {/* 3 Modern Segmented Tabs */}
-        <div className="flex items-center gap-1.5 p-1.5 my-3 bg-stone-100 dark:bg-slate-800/60 rounded-2xl border border-black/5 dark:border-white/5">
+        <div className="flex items-center gap-1.5 p-1.5 my-3 bg-stone-100 dark:bg-black/30 rounded-2xl border border-black/5 dark:border-white/5">
           <button
             type="button"
             onClick={() => setActiveTab('general')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'general'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-101'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -225,7 +225,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             onClick={() => setActiveTab('branding')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'branding'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-101'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -238,7 +238,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             onClick={() => setActiveTab('backup')}
             className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
               activeTab === 'backup'
-                ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs scale-101'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
@@ -266,7 +266,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'general' && (
             <>
               {/* 1. Registration Switch */}
-              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
+              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
                 <div>
                   <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block">
                     {t('allowRegistration')}
@@ -284,7 +284,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* 2. Manual Approval Switch */}
-              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
+              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
                 <div>
                   <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block">
                     {t('registrationApproval')}
@@ -302,7 +302,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* 3. Disappearing TTL */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
                 <label className="text-xs font-bold text-slate-900 dark:text-white flex items-center justify-between mb-1">
                   <span className="flex items-center gap-2">
                     <Clock className="w-4 h-4 text-amber-500" />
@@ -330,7 +330,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         defaultTtlSeconds: isNaN(val) ? 60 : Math.max(1, val) * 60
                       });
                     }}
-                    className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
+                    className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
                     placeholder="1440"
                   />
                   <span className="absolute end-4 text-xs text-slate-400 font-semibold pointer-events-none">
@@ -339,7 +339,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 </div>
 
                 {/* Quick Presets Chips */}
-                <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-stone-100 dark:border-slate-700/50">
+                <div className="flex items-center flex-wrap gap-1.5 mt-3 pt-2.5 border-t border-stone-100 dark:border-white/[0.06]">
                   {[
                     { min: 15, label: '15m' },
                     { min: 60, label: '1h' },
@@ -357,7 +357,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         className={`px-2.5 py-1 rounded-full text-[10px] font-bold transition-all ${
                           isSelected
                             ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs scale-102'
-                            : 'bg-stone-100 dark:bg-slate-700/60 text-slate-600 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-slate-700'
+                            : 'bg-stone-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-stone-200 dark:hover:bg-white/[0.10]'
                         }`}
                       >
                         {preset.min} {t('minutesUnit')} ({preset.label})
@@ -373,7 +373,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'branding' && (
             <>
               {/* Application Name */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-1.5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-1.5">
                 <label className="text-xs font-bold text-slate-900 dark:text-white block">
                   {t('appNameLabel')}
                 </label>
@@ -385,12 +385,12 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   value={settings.appName || ''}
                   onChange={(e) => setSettings({ ...settings, appName: e.target.value })}
                   placeholder="XMessenger"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-sans focus:outline-none focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white font-sans focus:outline-none focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
                 />
               </div>
 
               {/* PWA Short Name */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-1.5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-1.5">
                 <label className="text-xs font-bold text-slate-900 dark:text-white block">
                   {t('pwaShortNameLabel')}
                 </label>
@@ -402,12 +402,12 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   value={settings.pwaShortName || ''}
                   onChange={(e) => setSettings({ ...settings, pwaShortName: e.target.value })}
                   placeholder="XMessenger"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-slate-900 dark:text-white font-sans focus:outline-none focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white font-sans focus:outline-none focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
                 />
               </div>
 
               {/* PWA Icon Upload */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-900 dark:text-white block">
@@ -418,7 +418,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     </p>
                   </div>
                   {/* Current Icon Preview */}
-                  <div className="w-14 h-14 rounded-2xl bg-stone-100 dark:bg-slate-700 overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center shadow-xs">
+                  <div className="w-14 h-14 rounded-2xl bg-stone-100 dark:bg-white/[0.08] overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center shadow-xs">
                     {settings.pwaIconUrl ? (
                       <img src={settings.pwaIconUrl} alt="PWA Icon" className="w-full h-full object-cover" />
                     ) : (
@@ -427,7 +427,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-slate-700/50">
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-white/[0.06]">
                   <input
                     ref={pwaIconInputRef}
                     type="file"
@@ -460,7 +460,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* Admin Profile Picture Upload */}
-              <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
+              <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <label className="text-xs font-bold text-slate-900 dark:text-white block">
@@ -471,7 +471,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     </p>
                   </div>
                   {/* Current Admin Avatar Preview */}
-                  <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-base shadow-xs">
+                  <div className="w-14 h-14 rounded-full bg-slate-200 dark:bg-white/[0.08] overflow-hidden shrink-0 border border-black/10 dark:border-white/10 flex items-center justify-center font-bold text-slate-700 dark:text-slate-200 text-base shadow-xs">
                     {settings.adminAvatarUrl ? (
                       <img src={settings.adminAvatarUrl} alt="Admin Avatar" className="w-full h-full object-cover" />
                     ) : (
@@ -480,7 +480,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-slate-700/50">
+                <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-white/[0.06]">
                   <input
                     ref={adminAvatarInputRef}
                     type="file"
@@ -518,7 +518,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'backup' && (
             <>
               {/* 1. Download Backup Card */}
-              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-3">
+              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/10">
                     <Download className="w-5 h-5" />
@@ -554,7 +554,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               </div>
 
               {/* 2. Restore Backup Card */}
-              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-3">
+              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-3">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-amber-50 dark:bg-amber-950/40 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0 border border-amber-500/10">
                     <Upload className="w-5 h-5" />
@@ -592,7 +592,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     type="button"
                     onClick={() => restoreFileInputRef.current?.click()}
                     disabled={isRestoring}
-                    className="w-full sm:w-auto px-4 py-2.5 rounded-full text-xs font-bold bg-stone-100 dark:bg-slate-700/60 text-slate-700 dark:text-slate-200 hover:bg-stone-200 dark:hover:bg-slate-700 transition-colors flex items-center justify-center gap-2 shrink-0"
+                    className="w-full sm:w-auto px-4 py-2.5 rounded-full text-xs font-bold bg-stone-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-200 hover:bg-stone-200 dark:hover:bg-white/[0.12] transition-colors flex items-center justify-center gap-2 shrink-0"
                   >
                     <Upload className="w-3.5 h-3.5" />
                     <span>{restoreFile ? restoreFile.name : t('selectBackupFile')}</span>
@@ -647,10 +647,10 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer Actions */}
-        <div className="flex items-center justify-end gap-2.5 mt-4 pt-3 border-t border-stone-200/50 dark:border-slate-800 shrink-0">
+        <div className="flex items-center justify-end gap-2.5 mt-4 pt-3 border-t border-stone-200/50 dark:border-white/[0.06] shrink-0">
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-slate-800 transition-colors"
+            className="px-5 py-2.5 rounded-full text-xs font-bold text-slate-600 dark:text-slate-400 hover:bg-white/60 dark:hover:bg-white/[0.08] transition-colors"
           >
             {t('cancel')}
           </button>

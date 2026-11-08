@@ -16,7 +16,7 @@ export const ThemeToggle: React.FC<Props> = ({ className = '', size = 'md' }) =>
   return (
     <button
       onClick={toggleTheme}
-      className={`${sizeClasses} rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0 ${className}`}
+      className={`${sizeClasses} rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0 ${className}`}
       title={theme === 'dark' ? 'Light Mode' : 'Dark Mode'}
     >
       {theme === 'dark' ? (

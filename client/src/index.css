@@ -117,7 +117,7 @@ html, body, #root {
 }
 
 .dark .glass-card {
-  background: rgba(22, 32, 50, 0.85);
+  background: rgba(18, 22, 30, 0.85);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
 }
@@ -136,15 +136,22 @@ html, body, #root {
 }
 
 .dark .bg-ambient-canvas {
-  background-color: #0B0F17;
-  background-image: linear-gradient(to bottom, #020617, #0B1120, #020617);
+  background-color: #0E1218;
+  background-image: 
+    radial-gradient(ellipse 75% 65% at 88% 10%, rgba(217, 119, 6, 0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 75% 65% at 10% 10%, rgba(37, 99, 235, 0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 70% at 12% 90%, rgba(217, 119, 6, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 70% at 88% 90%, rgba(30, 58, 138, 0.14) 0%, transparent 65%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-attachment: fixed;
 }
 
-/* Light theme: Absolutely no shadows on inputs or input containers */
-html:not(.dark) input,
-html:not(.dark) select,
-html:not(.dark) textarea,
-html:not(.dark) [data-input-pill] {
+/* Universal input shadow reset: Absolutely no shadows on inputs or floating pills in all themes */
+input,
+select,
+textarea,
+[data-input-pill] {
   box-shadow: none !important;
 }
 

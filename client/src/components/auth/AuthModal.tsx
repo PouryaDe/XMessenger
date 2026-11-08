@@ -62,14 +62,14 @@ export const AuthModal: React.FC = () => {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-slate-900/95 border border-stone-200/60 dark:border-slate-800 rounded-[32px] shadow-floating p-7 sm:p-9 relative overflow-hidden">
+      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E121A]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative overflow-hidden">
         {/* Soft Ambient Glow */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-amber-300/20 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-emerald-300/20 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
 
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-7">
-          <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-slate-800 border border-stone-200/50 dark:border-slate-700 flex items-center justify-center mb-4 shadow-xs">
+          <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-white/[0.08] border border-stone-200/50 dark:border-white/[0.09] flex items-center justify-center mb-4 shadow-xs">
             <Shield className="w-8 h-8 text-slate-800 dark:text-amber-400" />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
@@ -104,7 +104,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete="username"
                 dir="ltr"
                 placeholder="e.g. user101"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 font-mono shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 font-mono shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
               />
             </div>
           </div>
@@ -123,7 +123,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 dir="ltr"
                 placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
               />
             </div>
           </div>
@@ -143,7 +143,7 @@ export const AuthModal: React.FC = () => {
                   autoComplete="new-password"
                   dir="ltr"
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800/80 text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
+                  className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
                 />
               </div>
             </div>

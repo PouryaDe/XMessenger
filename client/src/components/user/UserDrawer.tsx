@@ -86,9 +86,9 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer content */}
-      <div className={`relative w-full max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/10 shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
+      <div className={`relative w-full max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-[#0E121A]/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/[0.08] shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
         {/* Header */}
-        <div className="p-6 pt-safe border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
+        <div className="p-6 pt-safe border-b border-stone-200/50 dark:border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Clickable Profile Avatar with Upload Camera */}
             <div className="relative group">
@@ -103,7 +103,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="w-12 h-12 rounded-full bg-white dark:bg-slate-800 text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/10 text-sm font-mono uppercase overflow-hidden relative group/avatar focus:outline-none"
+                className="w-12 h-12 rounded-full bg-white dark:bg-white/[0.08] text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] text-sm font-mono uppercase overflow-hidden relative group/avatar focus:outline-none"
                 title={t('uploadAvatar')}
               >
                 {user?.avatarUrl ? (
@@ -128,7 +128,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
           <button
             onClick={onClose}
-            className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+            className="w-10 h-10 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           >
             <X className="w-4 h-4" />
           </button>
@@ -137,7 +137,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         {/* Body Menu Items */}
         <div className="flex-1 overflow-y-auto p-5 space-y-3.5">
           {/* Privacy Security Box */}
-          <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5">
+          <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
             <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 font-bold text-xs mb-1.5">
               <ShieldCheck className="w-4 h-4 shrink-0" />
               <span>{t('security')}</span>
@@ -148,7 +148,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
 
           {/* Quick Toggles in Rounded Card */}
-          <div className="p-4 rounded-[24px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 space-y-3">
+          <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-3">
             <div className="flex items-center justify-between">
               <span className="text-xs text-slate-800 dark:text-slate-300 font-medium">{t('language')}</span>
               <LanguageToggle />
@@ -162,9 +162,9 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
           {/* Password change option */}
           <button
             onClick={() => setShowPasswordModal(true)}
-            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 text-xs font-semibold text-slate-800 dark:text-slate-200 hover:bg-white/80 transition-all"
+            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] shadow-xs border border-black/[0.06] dark:border-white/[0.06] text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-slate-700 flex items-center justify-center text-slate-700 dark:text-slate-200 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-white/[0.06] flex items-center justify-center text-slate-700 dark:text-slate-200 shrink-0">
               <KeyRound className="w-4 h-4" />
             </div>
             <span>{t('changePassword')}</span>
@@ -173,9 +173,9 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
           {/* Wipe Entire Chat */}
           <button
             onClick={handleClearHistory}
-            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-slate-800/90 shadow-xs border border-black/[0.06] dark:border-white/5 text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50/50 transition-all"
+            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-white/[0.04] dark:hover:bg-red-950/20 shadow-xs border border-black/[0.06] dark:border-white/[0.06] text-xs font-semibold text-red-600 dark:text-red-400 transition-all"
           >
-            <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-950/40 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
+            <div className="w-8 h-8 rounded-full bg-red-50 dark:bg-red-500/15 flex items-center justify-center text-red-600 dark:text-red-400 shrink-0">
               <Trash2 className="w-4 h-4" />
             </div>
             <span>{t('clearChat')}</span>
@@ -183,7 +183,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Footer Logout */}
-        <div className="p-5 pb-safe border-t border-stone-200/50 dark:border-slate-800">
+        <div className="p-5 pb-safe border-t border-stone-200/50 dark:border-white/[0.06]">
           <button
             onClick={logout}
             className="w-full py-3 px-4 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold transition-all shadow-xs hover:scale-102 active:scale-98 flex items-center justify-center gap-2"
@@ -197,7 +197,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       {/* Change Password Modal */}
       {showPasswordModal && (
         <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-slate-900 border border-stone-200/70 dark:border-slate-800 rounded-[28px] p-6 shadow-floating">
+          <div className="w-full max-w-sm bg-white dark:bg-[#12161E] border border-stone-200/70 dark:border-white/[0.08] rounded-[28px] p-6 shadow-floating">
             <h4 className="text-sm font-bold mb-4 text-slate-900 dark:text-white flex items-center gap-2">
               <KeyRound className="w-4 h-4 text-amber-500" />
               <span>{t('changePassword')}</span>
@@ -218,7 +218,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   onChange={(e) => setCurrentPassword(e.target.value)}
                   required
                   dir="ltr"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
                 />
               </div>
               <div>
@@ -229,7 +229,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                   onChange={(e) => setNewPassword(e.target.value)}
                   required
                   dir="ltr"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-slate-500 shadow-none transition-colors"
+                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
                 />
               </div>
 
@@ -237,7 +237,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 <button
                   type="button"
                   onClick={() => setShowPasswordModal(false)}
-                  className="flex-1 py-2.5 rounded-full bg-stone-100 dark:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300"
+                  className="flex-1 py-2.5 rounded-full bg-stone-100 dark:bg-white/[0.08] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-stone-200 dark:hover:bg-white/[0.12] transition-colors"
                 >
                   {t('cancel')}
                 </button>

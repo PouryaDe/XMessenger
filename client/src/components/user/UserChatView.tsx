@@ -192,10 +192,10 @@ export const UserChatView: React.FC = () => {
   const isOpponentTyping = adminInfo ? typingUsers[adminInfo.id] : false;
 
   return (
-    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-slate-800 sm:shadow-floating shadow-none overflow-hidden font-sans">
+    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
       
       {/* Top Header */}
-      <header className="px-5 py-3.5 pt-safe flex items-center justify-between shrink-0 bg-white/45 dark:bg-slate-900/45 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/10 z-10">
+      <header className="px-5 py-3.5 pt-safe flex items-center justify-between shrink-0 bg-white/45 dark:bg-[#12161E]/70 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.08] z-10">
         {/* Admin Avatar & Live Status */}
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -207,7 +207,7 @@ export const UserChatView: React.FC = () => {
               )}
             </div>
             <div
-              className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 transition-colors ${
+              className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] transition-colors ${
                 isAdminOnline ? 'bg-emerald-500' : 'bg-slate-400'
               }`}
             />
@@ -232,7 +232,7 @@ export const UserChatView: React.FC = () => {
         {/* Circular Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+          className="w-10 h-10 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           title={t('menuAndSettings')}
         >
           <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-slate-300" />
@@ -241,7 +241,7 @@ export const UserChatView: React.FC = () => {
 
       {/* Ephemeral Flame Tag Banner in Rounded Pill Card */}
       <div className="px-4 pt-4 sm:pt-5 pb-2 flex justify-center shrink-0 select-none">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-slate-800/80 backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-400 font-sans">
+        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-white/[0.08] backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-300/90 font-sans">
           <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-pulse" />
           <span>{t('chatTtlBanner')}</span>
         </div>
@@ -251,7 +251,7 @@ export const UserChatView: React.FC = () => {
       <main className="flex-1 overflow-y-auto px-5 py-2 space-y-1">
         {messages.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/5 flex items-center justify-center mb-3 text-amber-500">
+            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
               <Lock className="w-7 h-7" />
             </div>
             <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
@@ -279,7 +279,7 @@ export const UserChatView: React.FC = () => {
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
           {/* Selected Image Preview Chip */}
           {imagePreviewUrl && (
-            <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-slate-800/95 border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 shadow-sm animate-message">
+            <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/5 dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-sm animate-message">
               <div className="flex items-center gap-3 overflow-hidden">
                 <img
                   src={imagePreviewUrl}
@@ -316,7 +316,7 @@ export const UserChatView: React.FC = () => {
           <div
             data-input-pill
             dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
-            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-slate-800 shadow-none border border-black/[0.06] dark:border-white/10"
+            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-none border border-black/[0.06] dark:border-white/[0.08]"
           >
             {/* Attachment Button */}
             <button
@@ -336,7 +336,7 @@ export const UserChatView: React.FC = () => {
               onChange={handleInputChange}
               onPaste={handlePaste}
               placeholder={selectedImage ? t('imageCaptionPlaceholder') : t('typeMessage')}
-              className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans px-3 ${
+              className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-slate-100 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-sans px-3 ${
                 isInputRtl ? 'text-right' : 'text-left'
               }`}
             />

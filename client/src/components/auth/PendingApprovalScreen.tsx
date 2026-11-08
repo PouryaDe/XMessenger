@@ -33,8 +33,8 @@ export const PendingApprovalScreen: React.FC = () => {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-slate-900/95 border border-stone-200/60 dark:border-slate-800 rounded-[32px] p-8 text-center shadow-floating relative">
-        <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-slate-800 border border-stone-200/50 dark:border-slate-700 text-amber-500 mx-auto flex items-center justify-center mb-5 shadow-xs animate-pulse">
+      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E121A]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] p-8 text-center shadow-floating relative">
+        <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-white/[0.08] border border-stone-200/50 dark:border-white/[0.09] text-amber-500 mx-auto flex items-center justify-center mb-5 shadow-xs animate-pulse">
           <Clock className="w-8 h-8" />
         </div>
 
@@ -46,7 +46,7 @@ export const PendingApprovalScreen: React.FC = () => {
           {t('pendingDesc')}
         </p>
 
-        <div className="p-4 rounded-2xl bg-stone-50 dark:bg-slate-800/60 border border-stone-200/60 dark:border-slate-700/60 mb-6 text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-2 font-sans">
+        <div className="p-4 rounded-2xl bg-stone-50 dark:bg-white/[0.04] border border-stone-200/60 dark:border-white/[0.06] mb-6 text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-2 font-sans">
           <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
           <span>{t('usernameLabel')}<strong className="text-slate-900 dark:text-white font-mono">{user?.username}</strong></span>
         </div>
@@ -62,7 +62,7 @@ export const PendingApprovalScreen: React.FC = () => {
 
           <button
             onClick={logout}
-            className="w-full py-2.5 px-4 rounded-full bg-stone-100 dark:bg-slate-800 hover:bg-stone-200 text-slate-700 dark:text-slate-300 text-xs font-semibold transition-colors flex items-center justify-center gap-2"
+            className="w-full py-2.5 px-4 rounded-full bg-stone-100 dark:bg-white/[0.08] hover:bg-stone-200 dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 text-xs font-semibold transition-colors flex items-center justify-center gap-2"
           >
             <LogOut className="w-4 h-4" />
             <span>{t('logout')}</span>

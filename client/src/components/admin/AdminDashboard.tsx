@@ -287,18 +287,18 @@ export const AdminDashboard: React.FC = () => {
         {activeUser ? (
           <>
             {/* Top Chat Header */}
-            <header className="px-6 py-4 pt-safe flex items-center justify-between shrink-0 bg-white/35 dark:bg-slate-900/35 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/10">
+            <header className="px-6 py-4 pt-safe flex items-center justify-between shrink-0 bg-white/35 dark:bg-[#12161E]/60 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
               <div className="flex items-center gap-3">
                 {/* Back button for mobile */}
                 <button
                   onClick={() => setActiveUserId(null)}
-                  className="sm:hidden w-10 h-10 rounded-full bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+                  className="sm:hidden w-10 h-10 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
                 >
                   <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
                 </button>
 
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold font-mono text-xs uppercase shadow-xs border border-white dark:border-slate-600 overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold font-mono text-xs uppercase shadow-xs border border-white dark:border-white/[0.08] overflow-hidden">
                     {activeUser.avatarUrl ? (
                       <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
                     ) : (
@@ -306,7 +306,7 @@ export const AdminDashboard: React.FC = () => {
                     )}
                   </div>
                   <div
-                    className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-slate-900 ${
+                    className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] ${
                       onlineUsers[activeUser.id] ? 'bg-emerald-500' : 'bg-slate-400'
                     }`}
                   />
@@ -360,10 +360,10 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleBanToggle}
-                  className={`w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
+                  className={`w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
                     activeUser.status === 'banned'
-                      ? 'text-amber-600 bg-amber-50'
-                      : 'text-slate-400 hover:text-amber-500'
+                      ? 'text-amber-600 bg-amber-50 dark:bg-amber-500/20'
+                      : 'text-slate-400 hover:text-amber-500 dark:text-slate-300 dark:hover:text-amber-400'
                   }`}
                   title={activeUser.status === 'banned' ? t('unban') : t('ban')}
                 >
@@ -372,7 +372,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleWipeChat}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 text-slate-400 hover:text-red-500 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] text-slate-400 hover:text-red-500 dark:text-slate-300 dark:hover:text-red-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                   title={t('clearChat')}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -380,7 +380,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleDeleteUser}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 text-slate-400 hover:text-red-600 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] text-slate-400 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
                   title={t('deleteUser')}
                 >
                   <UserX className="w-4 h-4" />
@@ -392,7 +392,7 @@ export const AdminDashboard: React.FC = () => {
             <main className="flex-1 overflow-y-auto px-6 py-3 space-y-1">
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
+                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
                     <MessageSquare className="w-7 h-7" />
                   </div>
                   <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
@@ -423,7 +423,7 @@ export const AdminDashboard: React.FC = () => {
               >
                 {/* Selected Image Preview Chip */}
                 {imagePreviewUrl && (
-                  <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-slate-800/95 border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 shadow-sm animate-message">
+                  <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/5 dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-sm animate-message">
                     <div className="flex items-center gap-3 overflow-hidden">
                       <img
                         src={imagePreviewUrl}
@@ -460,7 +460,7 @@ export const AdminDashboard: React.FC = () => {
                 <div
                   data-input-pill
                   dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
-                  className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-slate-800 shadow-none border border-black/[0.06] dark:border-white/10"
+                  className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-none border border-black/[0.06] dark:border-white/[0.08]"
                 >
                   {/* Attachment Button */}
                   <button
@@ -479,7 +479,7 @@ export const AdminDashboard: React.FC = () => {
                     onChange={handleInputChange}
                     onPaste={handlePaste}
                     placeholder={selectedImage ? t('imageCaptionPlaceholder') : t('typeMessage')}
-                    className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-white focus:outline-none placeholder:text-slate-400 font-sans px-3 ${
+                    className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-slate-100 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-sans px-3 ${
                       isInputRtl ? 'text-right' : 'text-left'
                     }`}
                   />
@@ -511,7 +511,7 @@ export const AdminDashboard: React.FC = () => {
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-slate-800 shadow-xs border border-black/5 dark:border-white/10 text-amber-500 flex items-center justify-center mb-4 transition-transform hover:scale-105">
+            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] text-amber-500 flex items-center justify-center mb-4 transition-transform hover:scale-105">
               <MessageSquare className="w-7 h-7" />
             </div>
             <h3 className="text-base font-bold text-slate-800 dark:text-slate-200 tracking-tight">

@@ -20,11 +20,21 @@ This design system contract defines the visual identity, color harmony, typograp
   - **Time & Ephemeral Info**: Subtle emerald tint (`text-emerald-900/60`) on outgoing, calm muted gray (`text-slate-400`) on incoming.
   - **Flame Tag (TTL Countdown)**: Must be subtle, calm, and neutral (`bg-black/[0.04]` with `text-emerald-700/60` or `text-slate-400`). **Rule**: Never use bright, glaring amber/orange flames inside the bubble that distract the eye.
 
-### 1.2. Dark Mode (Deep Obsidian & Telegram Navy)
-- **Background**: Deep obsidian canvas (`#0B0F17`) with subtle dark gradient (`linear-gradient(to bottom, #020617, #0B1120, #020617)`).
+### 1.2. Dark Mode (Warm Obsidian Ambient Canvas & Frosted Glassmorphism)
+- **Ambient Canvas Background**:
+  - Class: `.dark .bg-ambient-canvas`
+  - Base Color: `#0E1218` (Warm obsidian charcoal).
+  - Ambient radial gradients: Mirroring light mode's atmospheric lighting geometry with subtle dark golden amber (`rgba(217, 119, 6, 0.12)` at top-right & `0.08` at bottom-left) and deep muted royal slate (`rgba(37, 99, 235, 0.12)` at top-left & `rgba(30, 58, 138, 0.14)` at bottom-right).
+  - **Rule**: NEVER use flat solid black (`#000000`), stark 90s blue gradients (`linear-gradient(#020617, #0B1120)`), or opaque flat slate solids.
+- **Glassmorphic Frosted Surfaces**:
+  - Headers: `dark:bg-[#12161E]/70 dark:backdrop-blur-xl dark:border-white/[0.08]`
+  - Floating 24h Banner Pill: `dark:bg-white/[0.08] dark:backdrop-blur-md dark:border-white/10 dark:text-amber-300/90`
+  - Circular Action Buttons: `dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md dark:border-white/[0.09] dark:text-slate-200`
+  - Floating Input Pill: `dark:bg-[#151922]/95 dark:backdrop-blur-xl dark:border-white/[0.08]`
+  - Drawer & Modals: `dark:bg-[#0E121A]/95 dark:backdrop-blur-2xl dark:border-white/[0.08]` with translucent inner cards `dark:bg-white/[0.04]`
 - **Message Bubbles**:
-  - **Outgoing Bubble**: Telegram Muted Navy (`#2B5278`) with crisp white/slate text (`text-slate-100`).
-  - **Incoming Bubble**: Dark Slate Navy (`#182533`).
+  - **Outgoing Bubble**: Telegram Muted Navy (`#20364C` / `#2B5278`) with crisp white/slate text (`text-slate-100`).
+  - **Incoming Bubble**: Dark Slate Navy (`#161D27` / `#182533`).
   - **Read Checkmarks**: Soft Cyan/Blue (`#64B5F6`).
   - **Flame Tag**: Dark translucent badge (`bg-black/25 text-slate-300`).
 

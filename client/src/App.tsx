@@ -38,7 +38,7 @@ export const App: React.FC = () => {
 
     const metaTheme = document.querySelector('meta[name="theme-color"]');
     if (metaTheme) {
-      metaTheme.setAttribute('content', theme === 'dark' ? '#0B0F17' : '#DFDDD6');
+      metaTheme.setAttribute('content', theme === 'dark' ? '#0E1218' : '#DFDDD6');
     }
   }, [theme]);
 

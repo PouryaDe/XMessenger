@@ -252,11 +252,11 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
               ref={menuRef}
               dir="rtl"
               onClick={(e) => e.stopPropagation()}
-              className={`absolute ${menuDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'} ${isOwn ? 'end-0' : 'start-0'} w-44 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-1.5 shadow-floating z-50 animate-message font-sans`}
+              className={`absolute ${menuDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'} ${isOwn ? 'end-0' : 'start-0'} w-44 bg-white/95 dark:bg-[#151A24]/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-1.5 shadow-floating z-50 animate-message font-sans`}
             >
               <button
                 onClick={handleCopy}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700/60 transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors"
               >
                 <Copy className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
                 <span>{t('copyText')}</span>
