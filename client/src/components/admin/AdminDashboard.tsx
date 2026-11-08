@@ -603,15 +603,6 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 )}
 
-                {/* Hidden File Input */}
-                <input
-                  type="file"
-                  ref={fileInputRef}
-                  accept="image/*"
-                  className="hidden"
-                  onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0])}
-                />
-
                 <div
                   data-input-pill
                   dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
@@ -630,6 +621,12 @@ export const AdminDashboard: React.FC = () => {
                   <input
                     ref={messageInputRef}
                     type="text"
+                    name="message"
+                    enterKeyHint="send"
+                    autoComplete="off"
+                    autoCorrect="on"
+                    autoCapitalize="sentences"
+                    spellCheck={false}
                     dir={isInputRtl ? 'rtl' : 'ltr'}
                     value={inputText}
                     onChange={handleInputChange}
@@ -669,6 +666,17 @@ export const AdminDashboard: React.FC = () => {
                 </div>
               </form>
             </footer>
+
+            {/* Hidden File Input placed outside the form to suppress iOS WebKit multi-input accessory navigation arrows */}
+            <input
+              type="file"
+              ref={fileInputRef}
+              accept="image/*"
+              tabIndex={-1}
+              aria-hidden="true"
+              style={{ display: 'none' }}
+              onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0])}
+            />
           </>
         ) : (
           <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
