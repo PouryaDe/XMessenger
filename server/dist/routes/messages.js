@@ -13,6 +13,7 @@ const index_js_1 = require("../database/index.js");
 const auth_js_1 = require("../middleware/auth.js");
 const crypto_js_1 = require("../utils/crypto.js");
 const index_js_2 = require("../config/index.js");
+const pushService_js_1 = require("../services/pushService.js");
 function createMessagesRouter(io) {
     const router = (0, express_1.Router)();
     // Chat Image Upload Storage
@@ -188,6 +189,8 @@ function createMessagesRouter(io) {
                 io.to('room:admin').emit('message:new', messagePayload);
                 io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
             }
+            // Dispatch Web Push notification for background/PWA users
+            (0, pushService_js_1.dispatchPushForMessage)(currentUser, recipientId, text.trim()).catch(() => { });
             res.status(201).json({ message: { ...messagePayload, isOwn: true } });
         }
         catch (err) {

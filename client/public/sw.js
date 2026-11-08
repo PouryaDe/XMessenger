@@ -55,6 +55,60 @@ self.addEventListener('message', (event) => {
   }
 });
 
+// -------------------------------------------------------------
+// Web Push Notifications Event Handlers (PWA & Web)
+// -------------------------------------------------------------
+self.addEventListener('push', (event) => {
+  let data = {};
+  if (event.data) {
+    try {
+      data = event.data.json();
+    } catch (e) {
+      data = { title: 'XMessenger', body: event.data.text() };
+    }
+  }
+
+  const title = data.title || 'XMessenger';
+  const options = {
+    body: data.body || 'شما یک پیام جدید دارید',
+    icon: data.icon || '/icon-192.png',
+    badge: data.badge || '/icon-192.png',
+    data: data.data || { url: '/' },
+    vibrate: [150, 80, 150],
+    tag: data.tag || 'xmessenger-new-message',
+    renotify: true
+  };
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      // Check if user is currently viewing the active chat window
+      const isFocused = clientList.some((c) => c.focused);
+      if (isFocused && data.silentIfFocused) {
+        return;
+      }
+      return self.registration.showNotification(title, options);
+    })
+  );
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+
+  event.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
+      for (const client of clientList) {
+        if ('focus' in client) {
+          return client.focus();
+        }
+      }
+      if (self.clients.openWindow) {
+        return self.clients.openWindow(targetUrl);
+      }
+    })
+  );
+});
+
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 

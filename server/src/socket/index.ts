@@ -5,6 +5,7 @@ import { config } from '../config/index.js';
 import { db, getSettingValue } from '../database/index.js';
 import { AuthUser } from '../middleware/auth.js';
 import { encryptMessage, decryptMessage } from '../utils/crypto.js';
+import { dispatchPushForMessage } from '../services/pushService.js';
 
 interface AuthenticatedSocket extends Socket {
   user?: AuthUser;
@@ -188,6 +189,9 @@ export function setupSocketServer(io: Server) {
           // Broadcast to user's active sockets
           io.to(userRoom).emit('message:sent', messagePayload);
         }
+
+        // Dispatch Web Push notification for background/PWA users
+        dispatchPushForMessage(user, recipientId, text.trim()).catch(() => {});
 
         if (callback) callback({ success: true, message: { ...messagePayload, isOwn: true } });
       } catch (err) {

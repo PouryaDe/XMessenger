@@ -312,5 +312,50 @@ export const api = {
       body: formData
     });
     return safeJson<{ success: boolean; message: string }>(res, 'Failed to restore database');
+  },
+
+  // Web Push Notifications
+  async getVapidPublicKey(): Promise<{ publicKey: string }> {
+    const res = await fetch(`${API_BASE}/push/vapid-public-key`);
+    return safeJson<{ publicKey: string }>(res, 'Failed to get VAPID key');
+  },
+
+  async getPushStatus(): Promise<{ subscribed: boolean; activeDevices: number }> {
+    const res = await fetch(`${API_BASE}/push/status`, {
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ subscribed: boolean; activeDevices: number }>(res, 'Failed to get push status');
+  },
+
+  async savePushSubscription(subscription: any): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/push/subscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
+      body: JSON.stringify({ subscription })
+    });
+    return safeJson<{ success: boolean; message: string }>(res, 'Failed to save push subscription');
+  },
+
+  async removePushSubscription(endpoint: string): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/push/unsubscribe`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...getAuthHeader()
+      },
+      body: JSON.stringify({ endpoint })
+    });
+    return safeJson<{ success: boolean; message: string }>(res, 'Failed to remove push subscription');
+  },
+
+  async sendTestPush(): Promise<{ success: boolean; message: string }> {
+    const res = await fetch(`${API_BASE}/push/test`, {
+      method: 'POST',
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ success: boolean; message: string }>(res, 'Failed to send test push notification');
   }
 };

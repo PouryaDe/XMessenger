@@ -16,15 +16,24 @@ import {
   Camera, 
   Trash2, 
   AlertTriangle, 
-  RefreshCw
+  RefreshCw,
+  Bell,
+  BellRing,
+  Send
 } from 'lucide-react';
+import { 
+  getCurrentSubscription, 
+  subscribeToPush, 
+  unsubscribeFromPush, 
+  sendTestNotification 
+} from '../../services/push.js';
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
 
-type TabType = 'general' | 'branding' | 'backup';
+type TabType = 'general' | 'notifications' | 'branding' | 'backup';
 
 export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const { t } = useTranslation();
@@ -45,11 +54,61 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const adminAvatarInputRef = useRef<HTMLInputElement>(null);
   const restoreFileInputRef = useRef<HTMLInputElement>(null);
 
+  // Push Notifications states
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+  const [isPushLoading, setIsPushLoading] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [pushErrorMsg, setPushErrorMsg] = useState<string | null>(null);
+  const [activeDevicesCount, setActiveDevicesCount] = useState<number>(0);
+
   useEffect(() => {
     if (isOpen) {
       api.getAdminSettings().then(setSettings).catch(console.error);
+      getCurrentSubscription().then(sub => setIsPushSubscribed(Boolean(sub)));
+      api.getPushStatus().then(status => setActiveDevicesCount(status.activeDevices)).catch(() => {});
     }
   }, [isOpen]);
+
+  const handleTogglePush = async () => {
+    setIsPushLoading(true);
+    setPushErrorMsg(null);
+    try {
+      if (isPushSubscribed) {
+        await unsubscribeFromPush();
+        setIsPushSubscribed(false);
+      } else {
+        const res = await subscribeToPush();
+        if (res.success) {
+          setIsPushSubscribed(true);
+          api.getPushStatus().then(status => setActiveDevicesCount(status.activeDevices)).catch(() => {});
+        } else {
+          if (res.error === 'IOS_PWA_REQUIRED') {
+            setPushErrorMsg(t('pushIosTip'));
+          } else if (res.error === 'PERMISSION_DENIED') {
+            setPushErrorMsg(t('pushPermissionDenied'));
+          } else {
+            setPushErrorMsg(t('pushUnsupported'));
+          }
+        }
+      }
+    } catch (e: any) {
+      setPushErrorMsg(e.message || t('pushUnsupported'));
+    } finally {
+      setIsPushLoading(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setIsSendingTest(true);
+    try {
+      const ok = await sendTestNotification();
+      alert(ok ? t('pushTestSent') : t('pushTestFailed'));
+    } catch {
+      alert(t('pushTestFailed'));
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
 
   if (!isOpen || !settings) return null;
 
@@ -211,45 +270,58 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* 3 Modern Segmented Tabs */}
-        <div className="flex items-center gap-1.5 p-1.5 my-3 bg-stone-100 dark:bg-black/30 rounded-2xl border border-black/5 dark:border-white/5">
+        {/* 4 Modern Segmented Tabs */}
+        <div className="flex items-center gap-1.5 p-1.5 my-3 bg-stone-100 dark:bg-black/30 rounded-2xl border border-black/5 dark:border-white/5 overflow-x-auto">
           <button
             type="button"
             onClick={() => setActiveTab('general')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
               activeTab === 'general'
                 ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Sliders className="w-3.5 h-3.5" />
-            <span>{t('generalTab')}</span>
+            <span className="truncate">{t('generalTab')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('notifications')}
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
+              activeTab === 'notifications'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
+            }`}
+          >
+            <Bell className="w-3.5 h-3.5" />
+            <span className="truncate">{t('notificationsTab')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('branding')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
               activeTab === 'branding'
                 ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span>{t('brandingTab')}</span>
+            <span className="truncate">{t('brandingTab')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('backup')}
-            className={`flex-1 py-2 px-3 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all ${
+            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
               activeTab === 'backup'
                 ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
             <Database className="w-3.5 h-3.5" />
-            <span>{t('backupTab')}</span>
+            <span className="truncate">{t('backupTab')}</span>
           </button>
         </div>
 
@@ -416,7 +488,88 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
             </>
           )}
 
-          {/* TAB 2: PWA & BRANDING */}
+          {/* TAB 2: NOTIFICATIONS */}
+          {activeTab === 'notifications' && (
+            <>
+              {/* Push Status Card */}
+              <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="flex items-start gap-3">
+                    <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
+                      isPushSubscribed 
+                        ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20' 
+                        : 'bg-stone-100 dark:bg-white/[0.06] text-slate-400 border-black/5 dark:border-white/5'
+                    }`}>
+                      {isPushSubscribed ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+                    </div>
+                    <div>
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                        {t('pushNotifications')}
+                      </h4>
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                        {t('pushNotificationsDesc')}
+                      </p>
+                    </div>
+                  </div>
+
+                  <button
+                    type="button"
+                    onClick={handleTogglePush}
+                    disabled={isPushLoading}
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-xs shrink-0 cursor-pointer ${
+                      isPushSubscribed
+                        ? 'bg-stone-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30'
+                        : 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold'
+                    }`}
+                  >
+                    {isPushLoading ? t('pushSubscribing') : (isPushSubscribed ? t('disablePush') : t('enablePush'))}
+                  </button>
+                </div>
+
+                {pushErrorMsg && (
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 leading-relaxed font-sans">
+                    {pushErrorMsg}
+                  </div>
+                )}
+
+                {isPushSubscribed && (
+                  <div className="pt-2 border-t border-stone-100 dark:border-white/[0.06] flex items-center justify-between">
+                    <span className="text-[11px] text-emerald-600 dark:text-emerald-400 font-medium flex items-center gap-1.5">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      {t('pushEnabled')}
+                    </span>
+
+                    <button
+                      type="button"
+                      onClick={handleSendTestPush}
+                      disabled={isSendingTest}
+                      className="px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                    >
+                      <Send className="w-3 h-3" />
+                      <span>{isSendingTest ? t('pushSubscribing') : t('pushSendTest')}</span>
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {/* Devices & System Info Card */}
+              <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-2">
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
+                    دستگاه‌های فعال ثبت‌شده برای شما
+                  </span>
+                  <span className="text-xs px-2.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-700 dark:text-slate-300 font-bold">
+                    {activeDevicesCount} دستگاه
+                  </span>
+                </div>
+                <p className="text-[11px] text-slate-400 leading-relaxed">
+                  سیستم پوش نوتیفیکیشن XMessenger مبتنی بر استاندارد رسمی Web Push و VAPID است و بر روی کامپیوترها، تبلت‌ها و گوشی‌های اندروید و آیفون (iOS 16.4 به بعد در حالت PWA) حتی زمانی که صفحه بسته باشد، نوتیفیکیشن ارسال می‌کند.
+                </p>
+              </div>
+            </>
+          )}
+
+          {/* TAB 3: PWA & BRANDING */}
           {activeTab === 'branding' && (
             <>
               {/* Application Name */}

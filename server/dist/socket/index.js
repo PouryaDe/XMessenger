@@ -12,6 +12,7 @@ const uuid_1 = require("uuid");
 const index_js_1 = require("../config/index.js");
 const index_js_2 = require("../database/index.js");
 const crypto_js_1 = require("../utils/crypto.js");
+const pushService_js_1 = require("../services/pushService.js");
 // Track connected sockets per user for 100% accurate online presence
 const userSockets = new Map();
 function isUserOnline(userId) {
@@ -177,6 +178,8 @@ function setupSocketServer(io) {
                     // Broadcast to user's active sockets
                     io.to(userRoom).emit('message:sent', messagePayload);
                 }
+                // Dispatch Web Push notification for background/PWA users
+                (0, pushService_js_1.dispatchPushForMessage)(user, recipientId, text.trim()).catch(() => { });
                 if (callback)
                     callback({ success: true, message: { ...messagePayload, isOwn: true } });
             }

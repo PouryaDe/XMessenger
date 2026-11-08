@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
@@ -8,13 +8,22 @@ import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { 
+  getCurrentSubscription, 
+  subscribeToPush, 
+  unsubscribeFromPush, 
+  sendTestNotification
+} from '../../services/push.js';
+import { 
   X, 
   ShieldCheck, 
   KeyRound, 
   Trash2, 
   LogOut,
   Camera,
-  RefreshCw
+  RefreshCw,
+  Bell,
+  BellRing,
+  Send
 } from 'lucide-react';
 
 interface Props {
@@ -34,6 +43,61 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
   const [newPassword, setNewPassword] = useState('');
   const [pwdMsg, setPwdMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+
+  // Push Notifications state
+  const [isPushSubscribed, setIsPushSubscribed] = useState(false);
+  const [isPushLoading, setIsPushLoading] = useState(false);
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [pushErrorMsg, setPushErrorMsg] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (isOpen) {
+      setPushErrorMsg(null);
+      getCurrentSubscription().then((sub) => {
+        setIsPushSubscribed(Boolean(sub));
+      });
+    }
+  }, [isOpen]);
+
+  const handleTogglePush = async () => {
+    setIsPushLoading(true);
+    setPushErrorMsg(null);
+    try {
+      if (isPushSubscribed) {
+        await unsubscribeFromPush();
+        setIsPushSubscribed(false);
+      } else {
+        const res = await subscribeToPush();
+        if (res.success) {
+          setIsPushSubscribed(true);
+        } else {
+          if (res.error === 'IOS_PWA_REQUIRED') {
+            setPushErrorMsg(t('pushIosTip'));
+          } else if (res.error === 'PERMISSION_DENIED') {
+            setPushErrorMsg(t('pushPermissionDenied'));
+          } else {
+            setPushErrorMsg(t('pushUnsupported'));
+          }
+        }
+      }
+    } catch (e: any) {
+      setPushErrorMsg(e.message || t('pushUnsupported'));
+    } finally {
+      setIsPushLoading(false);
+    }
+  };
+
+  const handleSendTestPush = async () => {
+    setIsSendingTest(true);
+    try {
+      const ok = await sendTestNotification();
+      alert(ok ? t('pushTestSent') : t('pushTestFailed'));
+    } catch {
+      alert(t('pushTestFailed'));
+    } finally {
+      setIsSendingTest(false);
+    }
+  };
 
   const handleForceUpdateApp = async () => {
     setIsUpdatingApp(true);
@@ -183,6 +247,62 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
               <span className="text-xs text-slate-800 dark:text-slate-300 font-medium">{t('theme')}</span>
               <ThemeToggle />
             </div>
+          </div>
+
+          {/* Web Push Notifications Card */}
+          <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-2.5">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex items-center gap-3 overflow-hidden">
+                <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
+                  isPushSubscribed 
+                    ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' 
+                    : 'bg-stone-100 dark:bg-white/[0.06] text-slate-400'
+                }`}>
+                  {isPushSubscribed ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
+                </div>
+                <div className="truncate">
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">
+                    {t('pushNotifications')}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-normal mt-0.5 truncate">
+                    {isPushSubscribed ? t('pushEnabled') : t('pushDisabled')}
+                  </p>
+                </div>
+              </div>
+
+              <button
+                type="button"
+                onClick={handleTogglePush}
+                disabled={isPushLoading}
+                className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all shadow-xs shrink-0 cursor-pointer ${
+                  isPushSubscribed
+                    ? 'bg-stone-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30'
+                    : 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold'
+                }`}
+              >
+                {isPushLoading ? t('pushSubscribing') : (isPushSubscribed ? t('disablePush') : t('enablePush'))}
+              </button>
+            </div>
+
+            {pushErrorMsg && (
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed font-sans">
+                {pushErrorMsg}
+              </div>
+            )}
+
+            {isPushSubscribed && (
+              <div className="pt-1 flex justify-end">
+                <button
+                  type="button"
+                  onClick={handleSendTestPush}
+                  disabled={isSendingTest}
+                  className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer"
+                >
+                  <Send className="w-3 h-3" />
+                  <span>{isSendingTest ? t('pushSubscribing') : t('pushSendTest')}</span>
+                </button>
+              </div>
+            )}
           </div>
 
           {/* Password change option */}

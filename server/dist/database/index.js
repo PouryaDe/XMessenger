@@ -59,7 +59,22 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_messages_expires_at ON messages(expires_at);
     CREATE INDEX IF NOT EXISTS idx_messages_participants ON messages(sender_id, recipient_id);
   `);
-    // 3. Settings table
+    // 3. Push Subscriptions table
+    exports.db.exec(`
+    CREATE TABLE IF NOT EXISTS push_subscriptions (
+      id TEXT PRIMARY KEY,
+      user_id TEXT NOT NULL,
+      endpoint TEXT UNIQUE NOT NULL,
+      p256dh TEXT NOT NULL,
+      auth TEXT NOT NULL,
+      user_agent TEXT,
+      created_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_push_user_id ON push_subscriptions(user_id);
+  `);
+    // 4. Settings table
     exports.db.exec(`
     CREATE TABLE IF NOT EXISTS settings (
       key TEXT PRIMARY KEY,

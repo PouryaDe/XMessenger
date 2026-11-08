@@ -9,11 +9,14 @@ import { initDatabase, getSettingValue } from './database/index.js';
 import { authRouter } from './routes/auth.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createMessagesRouter } from './routes/messages.js';
+import { pushRouter } from './routes/push.js';
 import { setupSocketServer } from './socket/index.js';
 import { startTtlWorker } from './workers/ttlCleaner.js';
+import { initVapid } from './services/pushService.js';
 
-// 1. Initialize SQLite Database
+// 1. Initialize SQLite Database & VAPID keys
 initDatabase();
+initVapid();
 
 // 2. Setup Express & HTTP Server
 const app = express();
@@ -41,6 +44,7 @@ app.use(express.json({ limit: '5mb' }));
 app.use('/api/auth', authRouter);
 app.use('/api/admin', createAdminRouter(io));
 app.use('/api/messages', createMessagesRouter(io));
+app.use('/api/push', pushRouter);
 
 // Health check endpoint
 app.get('/api/health', (req, res) => {

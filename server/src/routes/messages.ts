@@ -8,6 +8,7 @@ import { authenticate, requireActive, AuthenticatedRequest } from '../middleware
 import { encryptMessage, decryptMessage } from '../utils/crypto.js';
 import { Server } from 'socket.io';
 import { config } from '../config/index.js';
+import { dispatchPushForMessage } from '../services/pushService.js';
 
 export function createMessagesRouter(io?: Server) {
   const router = Router();
@@ -214,6 +215,9 @@ export function createMessagesRouter(io?: Server) {
         io.to('room:admin').emit('message:new', messagePayload);
         io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
       }
+
+      // Dispatch Web Push notification for background/PWA users
+      dispatchPushForMessage(currentUser, recipientId, text.trim()).catch(() => {});
 
       res.status(201).json({ message: { ...messagePayload, isOwn: true } });
     } catch (err) {

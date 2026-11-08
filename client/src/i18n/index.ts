@@ -163,6 +163,7 @@ const resources = {
       usernameLabel: 'نام کاربری: ',
       // Tabs & Settings
       generalTab: 'عمومی و پیام‌ها',
+      notificationsTab: 'نوتیفیکیشن‌ها',
       brandingTab: 'شخصی‌سازی و PWA',
       backupTab: 'پشتیبان‌گیری دیتابیس',
       // PWA & Branding
@@ -210,7 +211,21 @@ const resources = {
       dateYesterday: 'دیروز',
       scrollToBottom: 'رفتن به پیام‌های جدید',
       changeLanguage: 'تغییر زبان',
-      onlyImagesAllowed: 'فقط فایل‌های تصویری مجاز هستند'
+      onlyImagesAllowed: 'فقط فایل‌های تصویری مجاز هستند',
+      // Push Notifications
+      pushNotifications: 'پوش نوتیفیکیشن',
+      pushNotificationsDesc: 'دریافت اعلان پیام‌های جدید هنگام بسته بودن برنامه',
+      enablePush: 'فعال‌سازی نوتیفیکیشن',
+      disablePush: 'غیرفعال‌سازی',
+      pushEnabled: 'نوتیفیکیشن فعال است',
+      pushDisabled: 'نوتیفیکیشن غیرفعال است',
+      pushSubscribing: 'در حال فعال‌سازی...',
+      pushSendTest: 'ارسال اعلان آزمایشی',
+      pushTestSent: 'اعلان آزمایشی ارسال شد!',
+      pushTestFailed: 'ارسال اعلان آزمایشی ناموفق بود.',
+      pushPermissionDenied: 'دسترسی نوتیفیکیشن در مرورگر مسدود شده است. لطفاً در تنظیمات مرورگر آن را مجاز کنید.',
+      pushIosTip: 'در آیفون، ابتدا باید از طریق دکمه Share گزینه Add to Home Screen را بزنید تا نوتیفیکیشن فعال شود.',
+      pushUnsupported: 'مرورگر شما از پوش نوتیفیکیشن وب پشتیبانی نمی‌کند.'
     }
   },
   en: {
@@ -375,6 +390,7 @@ const resources = {
       defaultOption: 'Default',
       // Tabs & Settings
       generalTab: 'General & Security',
+      notificationsTab: 'Notifications',
       brandingTab: 'PWA & Branding',
       backupTab: 'Database Backup',
       // PWA & Branding
@@ -422,7 +438,21 @@ const resources = {
       dateYesterday: 'Yesterday',
       scrollToBottom: 'Scroll to bottom',
       changeLanguage: 'Change Language',
-      onlyImagesAllowed: 'Only image files are allowed'
+      onlyImagesAllowed: 'Only image files are allowed',
+      // Push Notifications
+      pushNotifications: 'Push Notifications',
+      pushNotificationsDesc: 'Receive alerts for new messages even when the app is closed',
+      enablePush: 'Enable Notifications',
+      disablePush: 'Disable',
+      pushEnabled: 'Notifications are active',
+      pushDisabled: 'Notifications are disabled',
+      pushSubscribing: 'Enabling...',
+      pushSendTest: 'Send test notification',
+      pushTestSent: 'Test notification sent!',
+      pushTestFailed: 'Failed to send test notification.',
+      pushPermissionDenied: 'Notification permission was denied. Please allow it in browser settings.',
+      pushIosTip: 'On iPhone, tap Share and then "Add to Home Screen" to enable push notifications.',
+      pushUnsupported: 'Your browser does not support Web Push notifications.'
     }
   }
 };
