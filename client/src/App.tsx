@@ -126,7 +126,7 @@ export const App: React.FC = () => {
   function renderUpdatingOverlay() {
     return (
       <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ambient-canvas/95 backdrop-blur-md text-slate-800 dark:text-white animate-fade-in select-none">
-        <div className="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-500 mb-4 animate-spin">
+        <div className="w-14 h-14 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 dark:text-amber-400 mb-4 animate-spin shadow-sm">
           <RefreshCw className="w-6 h-6" />
         </div>
         <h3 className="font-bold text-sm sm:text-base mb-1.5 text-slate-900 dark:text-white">

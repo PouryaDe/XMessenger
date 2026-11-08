@@ -6,7 +6,6 @@ import {
   Trash2, 
   Check, 
   CheckCheck, 
-  Flame, 
   Copy, 
   X, 
   Download, 
@@ -44,7 +43,6 @@ const MessageItemComponent: React.FC<Props> = ({
   isHighlighted = false
 }) => {
   const { t } = useTranslation();
-  const [timeLeft, setTimeLeft] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('up');
@@ -91,34 +89,6 @@ const MessageItemComponent: React.FC<Props> = ({
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, [showMenu]);
-
-  // Calculate remaining TTL
-  useEffect(() => {
-    function updateTimer() {
-      const now = new Date().getTime();
-      const expiry = new Date(message.expiresAt).getTime();
-      const diffSec = Math.max(0, Math.floor((expiry - now) / 1000));
-
-      if (diffSec <= 0) {
-        setTimeLeft('0s');
-        return;
-      }
-
-      if (diffSec < 60) {
-        setTimeLeft(`${diffSec}s`);
-      } else if (diffSec < 3600) {
-        setTimeLeft(`${Math.floor(diffSec / 60)}m`);
-      } else if (diffSec < 86400) {
-        setTimeLeft(`${Math.floor(diffSec / 3600)}h`);
-      } else {
-        setTimeLeft(`${Math.floor(diffSec / 86400)}d`);
-      }
-    }
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 5000);
-    return () => clearInterval(interval);
-  }, [message.expiresAt]);
 
   const handleReplyClick = (e?: React.MouseEvent) => {
     e?.stopPropagation();
@@ -305,9 +275,18 @@ const MessageItemComponent: React.FC<Props> = ({
           {isLastInGroup && isOwn && (
             <svg
               viewBox="0 0 11 20"
-              className="absolute -bottom-[0.5px] -right-[7px] w-[9px] h-[16px] pointer-events-none fill-[#EDE8E0] dark:fill-[#232936]"
+              className="absolute -bottom-[1px] -right-[8px] w-[10px] h-[18px] pointer-events-none overflow-visible filter drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.05)] dark:drop-shadow-none"
             >
-              <path d="M0 0 C0 8 3 16 11 20 L0 20 Z" />
+              <path
+                d="M0 0 C0 8 3 16 11 20 L0 20 Z"
+                className="fill-[#EDE8E0] dark:fill-[#232936]"
+              />
+              <path
+                d="M0 0 C0 8 3 16 11 20 L0 20"
+                fill="none"
+                strokeWidth="1"
+                className="stroke-black/[0.06] dark:stroke-white/[0.08]"
+              />
             </svg>
           )}
 
@@ -315,9 +294,18 @@ const MessageItemComponent: React.FC<Props> = ({
           {isLastInGroup && !isOwn && (
             <svg
               viewBox="0 0 11 20"
-              className="absolute -bottom-[0.5px] -left-[7px] w-[9px] h-[16px] pointer-events-none fill-white dark:fill-[#161B24] -scale-x-100"
+              className="absolute -bottom-[1px] -left-[8px] w-[10px] h-[18px] pointer-events-none overflow-visible filter drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.05)] dark:drop-shadow-none -scale-x-100"
             >
-              <path d="M0 0 C0 8 3 16 11 20 L0 20 Z" />
+              <path
+                d="M0 0 C0 8 3 16 11 20 L0 20 Z"
+                className="fill-white dark:fill-[#161B24]"
+              />
+              <path
+                d="M0 0 C0 8 3 16 11 20 L0 20"
+                fill="none"
+                strokeWidth="1"
+                className="stroke-black/[0.04] dark:stroke-white/[0.06]"
+              />
             </svg>
           )}
 
@@ -395,22 +383,13 @@ const MessageItemComponent: React.FC<Props> = ({
             <FormattedMessageText text={caption} />
           )}
 
-          {/* Footer inside bubble: Flame Tag + Time + Read status */}
+          {/* Footer inside bubble: Time + Read status */}
           <div
             dir="ltr"
-            className={`flex items-center gap-1.5 mt-1.5 text-[10px] font-sans justify-end ${
+            className={`flex items-center gap-1.5 mt-1 text-[10px] font-sans justify-end select-none ${
               isOwn ? 'text-slate-500 dark:text-slate-300' : 'text-slate-400 dark:text-slate-400'
             }`}
           >
-            {/* Ephemeral Flame Tag - Subtle & Calm */}
-            <span
-              className="flex items-center gap-1 px-1.5 py-0.5 rounded-full font-medium bg-black/[0.04] dark:bg-white/[0.08] text-slate-600 dark:text-slate-200"
-              title={`${t('expiresAt')}${new Date(message.expiresAt).toLocaleTimeString()}`}
-            >
-              <Flame className="w-2.5 h-2.5 text-amber-500 dark:text-amber-400" />
-              <span>{timeLeft}</span>
-            </span>
-
             <span>{formattedTime}</span>
 
             {isOwn && (
@@ -428,35 +407,39 @@ const MessageItemComponent: React.FC<Props> = ({
             )}
           </div>
 
-          {/* Telegram Style Reaction Badge (Image 3) */}
+          {/* Telegram Style Reaction Badge */}
           {reactions.length > 0 && (
             <div
               onClick={(e) => {
                 e.stopPropagation();
                 triggerLike();
               }}
-              className={`absolute -bottom-2.5 ${isOwn ? 'end-2.5' : 'start-2.5'} z-20 flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-xs cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 ${
+              className={`absolute -bottom-3 ${isOwn ? 'end-3' : 'start-3'} z-20 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 border ${
                 hasLiked
-                  ? 'bg-[#2AABEE]/20 border-[#2AABEE]/40 text-[#2AABEE] dark:text-[#38b9fc]'
-                  : 'bg-white/95 dark:bg-[#1E2430]/95 border-black/10 dark:border-white/10 text-slate-700 dark:text-slate-200'
+                  ? 'bg-[#2AABEE] border-[#2AABEE] text-white shadow-[0_2px_8px_rgba(42,171,238,0.38)]'
+                  : 'bg-white dark:bg-[#1E2530] border-black/10 dark:border-white/10 text-slate-700 dark:text-slate-200 shadow-[0_2px_5px_rgba(0,0,0,0.12)]'
               }`}
               title={reactions.map((r) => r.username).join(', ')}
             >
-              <span className="text-xs leading-none">👍</span>
+              <span className="text-sm leading-none drop-shadow-xs">👍</span>
               {/* Reactor User Avatar */}
-              <div className="flex items-center -space-x-1 rtl:space-x-reverse">
+              <div className="flex items-center -space-x-1.5 rtl:space-x-reverse">
                 {reactions.slice(0, 3).map((r, i) => (
                   r.avatarUrl ? (
                     <img
                       key={r.userId || i}
                       src={r.avatarUrl}
                       alt={r.username}
-                      className="w-3.5 h-3.5 rounded-full object-cover border border-white dark:border-[#1E2430]"
+                      className={`w-4 h-4 rounded-full object-cover border-1.5 ${hasLiked ? 'border-[#2AABEE]' : 'border-white dark:border-[#1E2530]'}`}
                     />
                   ) : (
                     <span
                       key={r.userId || i}
-                      className="w-3.5 h-3.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[8px] font-bold flex items-center justify-center border border-white dark:border-[#1E2430]"
+                      className={`w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center border-1.5 ${
+                        hasLiked 
+                          ? 'bg-white text-[#2AABEE] border-[#2AABEE]' 
+                          : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-white dark:border-[#1E2530]'
+                      }`}
                     >
                       {(r.username || '?')[0].toUpperCase()}
                     </span>
@@ -464,7 +447,7 @@ const MessageItemComponent: React.FC<Props> = ({
                 ))}
               </div>
               {reactions.length > 1 && (
-                <span className="text-[10px] font-bold leading-none ms-0.5">
+                <span className={`text-[11px] font-bold leading-none ms-0.5 ${hasLiked ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>
                   {reactions.length}
                 </span>
               )}

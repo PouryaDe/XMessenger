@@ -335,7 +335,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
           <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-white/[0.04] shadow-xs border border-black/[0.06] dark:border-white/[0.06] transition-all overflow-hidden">
             <div className="flex items-center justify-between gap-2.5 min-w-0">
               <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
-                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                <div className="w-8 h-8 rounded-full bg-amber-500/15 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
                   <RefreshCw className={`w-4 h-4 ${isUpdatingApp ? 'animate-spin' : ''}`} />
                 </div>
                 <div className="min-w-0 flex-1 text-start overflow-hidden">
@@ -352,7 +352,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
                 type="button"
                 onClick={handleForceUpdateApp}
                 disabled={isUpdatingApp}
-                className="px-2.5 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold shrink-0 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
+                className="px-2.5 py-1.5 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-[10px] font-bold shrink-0 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
               >
                 {isUpdatingApp ? (
                   <>
