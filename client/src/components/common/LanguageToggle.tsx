@@ -21,10 +21,12 @@ export const LanguageToggle: React.FC<Props> = ({ className = '', size = 'md' })
   return (
     <button
       onClick={toggleLanguage}
-      className={`${sizeClasses} rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all font-bold shrink-0 select-none ${className}`}
+      className={`${sizeClasses} p-0 m-0 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all font-bold shrink-0 select-none overflow-hidden leading-none ${className}`}
       title={t('changeLanguage')}
     >
-      <span>{currentLang === 'fa' ? 'EN' : 'فا'}</span>
+      <span className="inline-flex items-center justify-center leading-none text-center font-sans tracking-tight pt-[1px]">
+        {currentLang === 'fa' ? 'EN' : 'فا'}
+      </span>
     </button>
   );
 };

@@ -10,6 +10,12 @@ import { getSocket } from '../../services/socket.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { api, Message } from '../../services/api.js';
 import { 
+  isPushSupported, 
+  isIosRequiringPwa, 
+  getCurrentSubscription, 
+  subscribeToPush 
+} from '../../services/push.js';
+import { 
   ShieldCheck, 
   Flame, 
   Paperclip, 
@@ -18,7 +24,8 @@ import {
   X,
   Loader2,
   ChevronDown,
-  Reply
+  Reply,
+  Bell
 } from 'lucide-react';
 
 export const UserChatView: React.FC = () => {
@@ -55,6 +62,8 @@ export const UserChatView: React.FC = () => {
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const [showPushPrompt, setShowPushPrompt] = useState(false);
+  const [isSubscribingPrompt, setIsSubscribingPrompt] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messageInputRef = useRef<HTMLInputElement>(null);
@@ -137,7 +146,53 @@ export const UserChatView: React.FC = () => {
         markConversationAsRead(adminInfo.id);
       }
     });
+
+    // Check if user should be prompted to enable push notifications
+    if (typeof window !== 'undefined') {
+      const isDismissed = localStorage.getItem('xmessenger_dismiss_push_prompt') === 'true';
+      if (!isDismissed) {
+        if (isPushSupported()) {
+          if (typeof Notification !== 'undefined' && Notification.permission !== 'granted') {
+            getCurrentSubscription().then((sub) => {
+              if (!sub) setShowPushPrompt(true);
+            }).catch(() => {});
+          }
+        } else if (isIosRequiringPwa()) {
+          setShowPushPrompt(true);
+        }
+      }
+    }
   }, [adminInfo?.id]);
+
+  const handleEnablePushFromPrompt = async () => {
+    setIsSubscribingPrompt(true);
+    try {
+      const res = await subscribeToPush();
+      if (res.success) {
+        setShowPushPrompt(false);
+        localStorage.setItem('xmessenger_dismiss_push_prompt', 'true');
+      } else {
+        if (res.error === 'IOS_PWA_REQUIRED') {
+          alert(t('pushIosTip'));
+        } else if (res.error === 'PERMISSION_DENIED') {
+          alert(t('pushPermissionDenied'));
+          setShowPushPrompt(false);
+        } else {
+          alert(t('pushUnsupported'));
+          setShowPushPrompt(false);
+        }
+      }
+    } catch {
+      setShowPushPrompt(false);
+    } finally {
+      setIsSubscribingPrompt(false);
+    }
+  };
+
+  const handleDismissPushPrompt = () => {
+    setShowPushPrompt(false);
+    localStorage.setItem('xmessenger_dismiss_push_prompt', 'true');
+  };
 
   // Socket event listeners
   useEffect(() => {
@@ -296,7 +351,7 @@ export const UserChatView: React.FC = () => {
     <div className="relative flex flex-col flex-1 h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
       
       {/* Top Header */}
-      <header className="px-5 py-3.5 pt-safe flex items-center justify-between shrink-0 bg-white/45 dark:bg-[#12161E]/70 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.08] z-10">
+      <header className="h-16 px-4 sm:px-5 flex items-center justify-between shrink-0 bg-white/45 dark:bg-[#12161E]/70 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.08] z-10">
         {/* Admin Avatar & Live Status */}
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -333,75 +388,122 @@ export const UserChatView: React.FC = () => {
         {/* Circular Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="w-10 h-10 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+          className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
           title={t('menuAndSettings')}
         >
           <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-slate-300" />
         </button>
       </header>
 
+      {/* Push Notification Suggestion Banner */}
+      {showPushPrompt && (
+        <div className="px-4 pt-2.5 pb-1 flex justify-center shrink-0 select-none animate-fade-in z-20">
+          <div className="w-full max-w-lg p-3 rounded-2xl bg-white/85 dark:bg-[#151922]/90 backdrop-blur-xl border border-amber-500/30 dark:border-amber-400/25 shadow-xs flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2.5 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+                <Bell className="w-4 h-4 animate-bounce" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                  {t('pushPromptTitle')}
+                </p>
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  {t('pushPromptDesc')}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-1.5 shrink-0">
+              <button
+                onClick={handleEnablePushFromPrompt}
+                disabled={isSubscribingPrompt}
+                className="px-3.5 py-1.5 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-95 text-white font-bold text-xs shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
+              >
+                {isSubscribingPrompt ? (
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <span>{t('pushPromptEnable')}</span>
+                )}
+              </button>
+              <button
+                onClick={handleDismissPushPrompt}
+                className="w-7 h-7 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 flex items-center justify-center transition-colors cursor-pointer"
+                title={t('pushPromptDismiss')}
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Ephemeral Flame Tag Banner in Rounded Pill Card */}
-      <div className="px-4 pt-4 sm:pt-5 pb-2 flex justify-center shrink-0 select-none">
+      <div className="px-4 pt-3 pb-1.5 flex justify-center shrink-0 select-none">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-white/[0.08] backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-300/90 font-sans">
           <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-pulse" />
           <span>{t('chatTtlBanner')}</span>
         </div>
       </div>
 
-      {/* Messages Stream */}
-      <main 
-        ref={scrollContainerRef}
-        onScroll={handleScroll}
-        className="flex-1 overflow-y-auto px-5 py-2 space-y-1"
-      >
-        {messages.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-            <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
-              <Lock className="w-7 h-7" />
-            </div>
-            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-              {t('secureChatNoticeTitle')}
-            </h4>
-            <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
-              {t('secureChatNoticeDesc')}
-            </p>
-          </div>
-        ) : (
-          messages.map((msg, index) => {
-            const prevMsg = index > 0 ? messages[index - 1] : null;
-            const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
-            const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
-            const isFirstInGroup = showDateSeparator || !prevMsg || (prevMsg.senderId !== msg.senderId);
-            const isLastInGroup = !nextMsg || (nextMsg.senderId !== msg.senderId) || !isSameDay(msg.createdAt, nextMsg.createdAt);
-            const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
-            const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
-            const repliedSenderName = repliedMsg
-              ? (repliedIsOwn ? t('replyToSelf') : t('chatWithAdmin'))
-              : '';
+      {/* Messages Stream with Ambient Gradient Fades */}
+      <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
+        <div className="pointer-events-none absolute top-0 inset-x-0 h-6 bg-gradient-to-b from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
 
-            return (
-              <React.Fragment key={msg.id}>
-                {showDateSeparator && <DateSeparator date={msg.createdAt} />}
-                <MessageItem
-                  message={msg}
-                  isOwn={msg.senderId === user?.id || msg.isOwn === true}
-                  isFirstInGroup={isFirstInGroup}
-                  isLastInGroup={isLastInGroup}
-                  onDelete={deleteMessage}
-                  onReply={handleReply}
-                  onReact={toggleReaction}
-                  currentUser={user}
-                  repliedMessage={repliedMsg}
-                  repliedSenderName={repliedSenderName}
-                  onScrollToMessage={handleScrollToMessage}
-                  isHighlighted={highlightedMsgId === msg.id}
-                />
-              </React.Fragment>
-            );
-          })
-        )}
-        <div ref={messagesEndRef} />
-      </main>
+        <main 
+          ref={scrollContainerRef}
+          onScroll={handleScroll}
+          className="flex-1 overflow-y-auto px-5 py-2 space-y-1 chat-fade-mask relative"
+        >
+          {messages.length === 0 ? (
+            <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
+              <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
+                <Lock className="w-7 h-7" />
+              </div>
+              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+                {t('secureChatNoticeTitle')}
+              </h4>
+              <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
+                {t('secureChatNoticeDesc')}
+              </p>
+            </div>
+          ) : (
+            messages.map((msg, index) => {
+              const prevMsg = index > 0 ? messages[index - 1] : null;
+              const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
+              const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+              const isFirstInGroup = showDateSeparator || !prevMsg || (prevMsg.senderId !== msg.senderId);
+              const isLastInGroup = !nextMsg || (nextMsg.senderId !== msg.senderId) || !isSameDay(msg.createdAt, nextMsg.createdAt);
+              const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
+              const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
+              const repliedSenderName = repliedMsg
+                ? (repliedIsOwn ? t('replyToSelf') : t('chatWithAdmin'))
+                : '';
+
+              return (
+                <React.Fragment key={msg.id}>
+                  {showDateSeparator && <DateSeparator date={msg.createdAt} />}
+                  <MessageItem
+                    message={msg}
+                    isOwn={msg.senderId === user?.id || msg.isOwn === true}
+                    isFirstInGroup={isFirstInGroup}
+                    isLastInGroup={isLastInGroup}
+                    onDelete={deleteMessage}
+                    onReply={handleReply}
+                    onReact={toggleReaction}
+                    currentUser={user}
+                    repliedMessage={repliedMsg}
+                    repliedSenderName={repliedSenderName}
+                    onScrollToMessage={handleScrollToMessage}
+                    isHighlighted={highlightedMsgId === msg.id}
+                  />
+                </React.Fragment>
+              );
+            })
+          )}
+          <div ref={messagesEndRef} />
+        </main>
+
+        <div className="pointer-events-none absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
+      </div>
 
       {/* Floating Scroll to Bottom Button */}
       {showScrollBottom && (

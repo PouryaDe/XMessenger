@@ -48,6 +48,7 @@ export const AdminDashboard: React.FC = () => {
     syncMessages,
     markMessagesReadByRecipient,
     syncReadUser,
+    isLoadingMessages,
     toggleReaction,
     updateMessageReactions
   } = useChatStore();
@@ -392,7 +393,7 @@ export const AdminDashboard: React.FC = () => {
         {activeUser ? (
           <>
             {/* Top Chat Header */}
-            <header className="px-6 py-4 pt-safe flex items-center justify-between shrink-0 bg-white/35 dark:bg-[#12161E]/60 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
+            <header className="h-16 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/35 dark:bg-[#12161E]/60 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
               <div className="flex items-center gap-3">
                 {/* Back button for mobile */}
                 <button
@@ -493,60 +494,75 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </header>
 
-            {/* Messages Area */}
-            <main 
-              ref={scrollContainerRef}
-              onScroll={handleScroll}
-              className="flex-1 overflow-y-auto px-6 py-3 space-y-1"
-            >
-              {messages.length === 0 ? (
-                <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-                  <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
-                    <MessageSquare className="w-7 h-7" />
-                  </div>
-                  <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
-                    {t('noMessagesInChat')}
-                  </p>
-                  <p className="text-xs max-w-[260px] mt-1.5 leading-relaxed text-slate-400">
-                    {t('messagesTtlNotice')}
-                  </p>
-                </div>
-              ) : (
-                messages.map((msg, index) => {
-                  const prevMsg = index > 0 ? messages[index - 1] : null;
-                  const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
-                  const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
-                  const isFirstInGroup = showDateSeparator || !prevMsg || (prevMsg.senderId !== msg.senderId);
-                  const isLastInGroup = !nextMsg || (nextMsg.senderId !== msg.senderId) || !isSameDay(msg.createdAt, nextMsg.createdAt);
-                  const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
-                  const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
-                  const repliedSenderName = repliedMsg
-                    ? (repliedIsOwn ? t('replyToSelf') : activeUser.username)
-                    : '';
+            {/* Messages Area with Ambient Gradient Fades */}
+            <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
+              <div className="pointer-events-none absolute top-0 inset-x-0 h-6 bg-gradient-to-b from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
 
-                  return (
-                    <React.Fragment key={msg.id}>
-                      {showDateSeparator && <DateSeparator date={msg.createdAt} />}
-                      <MessageItem
-                        message={msg}
-                        isOwn={msg.senderId === user?.id || msg.isOwn === true}
-                        isFirstInGroup={isFirstInGroup}
-                        isLastInGroup={isLastInGroup}
-                        onDelete={deleteMessage}
-                        onReply={handleReply}
-                        onReact={toggleReaction}
-                        currentUser={user}
-                        repliedMessage={repliedMsg}
-                        repliedSenderName={repliedSenderName}
-                        onScrollToMessage={handleScrollToMessage}
-                        isHighlighted={highlightedMsgId === msg.id}
-                      />
-                    </React.Fragment>
-                  );
-                })
-              )}
-              <div ref={messagesEndRef} />
-            </main>
+              <main 
+                ref={scrollContainerRef}
+                onScroll={handleScroll}
+                className="flex-1 overflow-y-auto px-6 py-3 space-y-1 chat-fade-mask relative"
+              >
+                {isLoadingMessages && messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none animate-fade-in">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/25 text-amber-500 flex items-center justify-center mb-3 animate-spin">
+                      <Loader2 className="w-6 h-6" />
+                    </div>
+                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
+                      {t('loadingConversation')}
+                    </p>
+                  </div>
+                ) : messages.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
+                    <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
+                      <MessageSquare className="w-7 h-7" />
+                    </div>
+                    <p className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {t('noMessagesInChat')}
+                    </p>
+                    <p className="text-xs max-w-[260px] mt-1.5 leading-relaxed text-slate-400">
+                      {t('messagesTtlNotice')}
+                    </p>
+                  </div>
+                ) : (
+                  messages.map((msg, index) => {
+                    const prevMsg = index > 0 ? messages[index - 1] : null;
+                    const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
+                    const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+                    const isFirstInGroup = showDateSeparator || !prevMsg || (prevMsg.senderId !== msg.senderId);
+                    const isLastInGroup = !nextMsg || (nextMsg.senderId !== msg.senderId) || !isSameDay(msg.createdAt, nextMsg.createdAt);
+                    const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
+                    const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
+                    const repliedSenderName = repliedMsg
+                      ? (repliedIsOwn ? t('replyToSelf') : activeUser.username)
+                      : '';
+
+                    return (
+                      <React.Fragment key={msg.id}>
+                        {showDateSeparator && <DateSeparator date={msg.createdAt} />}
+                        <MessageItem
+                          message={msg}
+                          isOwn={msg.senderId === user?.id || msg.isOwn === true}
+                          isFirstInGroup={isFirstInGroup}
+                          isLastInGroup={isLastInGroup}
+                          onDelete={deleteMessage}
+                          onReply={handleReply}
+                          onReact={toggleReaction}
+                          currentUser={user}
+                          repliedMessage={repliedMsg}
+                          repliedSenderName={repliedSenderName}
+                          onScrollToMessage={handleScrollToMessage}
+                          isHighlighted={highlightedMsgId === msg.id}
+                        />
+                      </React.Fragment>
+                    );
+                  })
+                )}
+                <div ref={messagesEndRef} />
+              </main>
+
+              <div className="pointer-events-none absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
+            </div>
 
             {/* Floating Scroll to Bottom Button */}
             {showScrollBottom && (

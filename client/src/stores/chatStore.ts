@@ -5,6 +5,7 @@ import { useAuthStore } from './authStore.js';
 
 interface ChatState {
   messages: Message[];
+  messagesByConversation: Record<string, Message[]>; // Fast in-memory cache per conversation for 0ms chat switching
   activeUserId: string | null; // Selected user for Admin
   adminUsers: AdminUserItem[];
   isAdminOnline: boolean;
@@ -50,6 +51,7 @@ const initialCachedMessages: Message[] = typeof window !== 'undefined' ? (() => 
 
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: initialCachedMessages,
+  messagesByConversation: {},
   activeUserId: null,
   adminUsers: [],
   isAdminOnline: false,
@@ -60,13 +62,32 @@ export const useChatStore = create<ChatState>((set, get) => ({
   isLoadingMessages: false,
 
   setActiveUserId: (id) => {
-    set({ activeUserId: id });
+    const prevActiveId = get().activeUserId;
+    if (prevActiveId === id) return;
+
+    // Cache previous messages under previous active user ID
+    const currentMsgs = get().messages;
+    const prevKey = prevActiveId || 'main';
+    const updatedCache = {
+      ...get().messagesByConversation,
+      ...(currentMsgs.length > 0 ? { [prevKey]: currentMsgs } : {})
+    };
+
+    const nextKey = id || 'main';
+    const cachedMessages = id ? (updatedCache[nextKey] || []) : [];
+
+    // Instant UI switch (0ms) - Never display previous user's chat!
+    set({
+      activeUserId: id,
+      messagesByConversation: updatedCache,
+      messages: cachedMessages,
+      isLoadingMessages: Boolean(id) && cachedMessages.length === 0
+    });
+
     if (id) {
       // Immediately clear unread badge for this user (0ms instant sync)
       get().markConversationAsRead(id);
       get().loadMessages(id);
-    } else {
-      set({ messages: [] });
     }
   },
 
@@ -94,12 +115,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   loadMessages: async (targetUserId) => {
     try {
-      set({ isLoadingMessages: true });
+      const cacheKey = targetUserId || 'main';
+      const cached = get().messagesByConversation[cacheKey];
+      if (!cached || cached.length === 0) {
+        set({ isLoadingMessages: true });
+      }
+
       const data = await api.getMessages(targetUserId);
-      set({ messages: data.messages, isLoadingMessages: false });
-      try {
-        sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(data.messages.slice(-50)));
-      } catch {}
+
+      // Race condition protection: ensure admin did not switch away to another chat while fetching
+      const currentActiveId = get().activeUserId;
+      const isTargetStillActive = targetUserId ? (currentActiveId === targetUserId) : (!currentActiveId);
+
+      const nextCache = {
+        ...get().messagesByConversation,
+        [cacheKey]: data.messages
+      };
+
+      if (isTargetStillActive) {
+        set({
+          messages: data.messages,
+          messagesByConversation: nextCache,
+          isLoadingMessages: false
+        });
+        try {
+          sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(data.messages.slice(-50)));
+        } catch {}
+      } else {
+        set({ messagesByConversation: nextCache });
+      }
+
       if (targetUserId) {
         set((state) => ({
           adminUsers: state.adminUsers.map((u) => 
@@ -206,7 +251,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       try {
         sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(newMessages.slice(-50)));
       } catch {}
-      return { messages: newMessages };
+      const convKey = state.activeUserId || 'main';
+      return {
+        messages: newMessages,
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          [convKey]: newMessages
+        }
+      };
     });
   },
 
@@ -317,7 +369,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       try {
         sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(updated.slice(-50)));
       } catch {}
-      return { messages: updated };
+      const convKey = state.activeUserId || 'main';
+      return {
+        messages: updated,
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          [convKey]: updated
+        }
+      };
     });
   },
 
@@ -435,24 +494,46 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return u;
       });
 
+      const convKey = activeUserId || 'main';
       return {
         messages: newMessages,
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          [convKey]: newMessages
+        },
         adminUsers: updatedAdminUsers
       };
     });
   },
 
   removeMessage: (messageId) => {
-    set((state) => ({
-      messages: state.messages.filter((m) => m.id !== messageId)
-    }));
+    set((state) => {
+      const newMessages = state.messages.filter((m) => m.id !== messageId);
+      const convKey = state.activeUserId || 'main';
+      return {
+        messages: newMessages,
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          [convKey]: newMessages
+        }
+      };
+    });
   },
 
   clearMessages: () => {
     try {
       sessionStorage.removeItem('xmessenger_cached_messages');
     } catch {}
-    set({ messages: [] });
+    set((state) => {
+      const convKey = state.activeUserId || 'main';
+      return {
+        messages: [],
+        messagesByConversation: {
+          ...state.messagesByConversation,
+          [convKey]: []
+        }
+      };
+    });
   },
 
   setOnlineStatus: (userId, isOnline, lastSeen) => {
