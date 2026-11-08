@@ -66,37 +66,41 @@ export const AuthModal: React.FC = () => {
       <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-7">
-          <div className="w-16 h-16 rounded-3xl bg-black/5 dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.09] flex items-center justify-center mb-4 shadow-xs overflow-hidden p-1.5">
-            <img 
-              src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
-              alt={appMeta?.appName || 'XMessenger'} 
-              className="w-full h-full object-cover rounded-2xl shadow-xs" 
-            />
+          <div className="relative mb-5 group">
+            {/* Ambient soft glow underneath */}
+            <div className="absolute -inset-1.5 rounded-[28px] bg-gradient-to-tr from-amber-500/20 via-amber-400/10 to-blue-500/20 blur-lg opacity-70 dark:opacity-40 group-hover:opacity-100 transition-opacity" />
+            <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-[22px] sm:rounded-[24px] overflow-hidden border border-black/[0.08] dark:border-white/[0.14] shadow-lg dark:shadow-[0_12px_28px_rgba(0,0,0,0.55)] bg-[#0E1218] flex items-center justify-center">
+              <img 
+                src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
+                alt={appMeta?.appName || 'XMessenger'} 
+                className="w-full h-full object-cover" 
+              />
+            </div>
           </div>
-          <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-2xl sm:text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-white">
             {appMeta?.appName || 'XMessenger'}
           </h1>
-          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
+          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-xs leading-relaxed">
             {t('tagline')}
           </p>
         </div>
 
         {/* Error notification */}
         {error && (
-          <div className="mb-4 p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs text-red-600 dark:text-red-400">
+          <div className="mb-4 p-3 rounded-2xl bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/60 flex items-center gap-2 text-xs sm:text-sm text-red-600 dark:text-red-400">
             <AlertCircle className="w-4 h-4 shrink-0" />
             <span>{error}</span>
           </div>
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-4.5">
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1 rtl:text-right ltr:text-left">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1 rtl:text-right ltr:text-left">
               {t('username')}
             </label>
             <div className="relative">
-              <UserIcon className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <UserIcon className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="text"
                 value={username}
@@ -105,17 +109,17 @@ export const AuthModal: React.FC = () => {
                 autoComplete="username"
                 dir="ltr"
                 placeholder="e.g. user101"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
+                className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/25 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
               />
             </div>
           </div>
 
           <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1 rtl:text-right ltr:text-left">
+            <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1 rtl:text-right ltr:text-left">
               {t('password')}
             </label>
             <div className="relative">
-              <Lock className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Lock className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="password"
                 value={password}
@@ -124,18 +128,18 @@ export const AuthModal: React.FC = () => {
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 dir="ltr"
                 placeholder="••••••••"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
+                className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/25 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
               />
             </div>
           </div>
 
           {isRegister && (
             <div>
-              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1 rtl:text-right ltr:text-left">
+              <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1 rtl:text-right ltr:text-left">
                 {t('confirmPassword')}
               </label>
               <div className="relative">
-                <CheckCircle2 className="w-4 h-4 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <CheckCircle2 className="w-5 h-5 text-slate-400 absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none" />
                 <input
                   type="password"
                   value={confirmPassword}
@@ -144,7 +148,7 @@ export const AuthModal: React.FC = () => {
                   autoComplete="new-password"
                   dir="ltr"
                   placeholder="••••••••"
-                  className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
+                  className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/25 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
                 />
               </div>
             </div>
@@ -154,14 +158,14 @@ export const AuthModal: React.FC = () => {
           <button
             type="submit"
             disabled={Boolean(loading || (isRegister && appMeta && !appMeta.registrationEnabled))}
-            className="w-full py-3.5 px-5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-xs transition-all shadow-xs hover:scale-102 active:scale-98 flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed mt-3"
+            className="w-full py-3.5 sm:py-4 px-5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-sm sm:text-base transition-all shadow-xs hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 disabled:opacity-40 disabled:cursor-not-allowed mt-4 sm:mt-5"
           >
             {loading ? (
-              <span className="w-4 h-4 border-2 border-white/40 border-t-white dark:border-slate-900/40 dark:border-t-slate-900 rounded-full animate-spin" />
+              <span className="w-4.5 h-4.5 border-2 border-white/40 border-t-white dark:border-slate-900/40 dark:border-t-slate-900 rounded-full animate-spin" />
             ) : (
               <>
                 <span>{isRegister ? t('register') : t('login')}</span>
-                <ArrowRight className="w-4 h-4 rtl:rotate-180" />
+                <ArrowRight className="w-4.5 h-4.5 rtl:rotate-180" />
               </>
             )}
           </button>
@@ -175,7 +179,7 @@ export const AuthModal: React.FC = () => {
                 setIsRegister(false);
                 setError(null);
               }}
-              className="text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 font-semibold"
+              className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold transition-colors"
             >
               {t('haveAccount')}
             </button>
@@ -186,12 +190,12 @@ export const AuthModal: React.FC = () => {
                   setIsRegister(true);
                   setError(null);
                 }}
-                className="text-xs text-slate-600 dark:text-slate-300 hover:text-slate-900 font-semibold"
+                className="text-xs sm:text-sm text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white font-semibold transition-colors"
               >
                 {t('noAccount')}
               </button>
             ) : (
-              <p className="text-xs text-amber-500">
+              <p className="text-xs sm:text-sm text-amber-500">
                 {t('regDisabled')}
               </p>
             )
@@ -199,7 +203,7 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Footer Version */}
-        <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-4 select-none">
+        <div className="text-center text-xs text-slate-400 dark:text-slate-500 mt-4 select-none">
           XMessenger v{appMeta?.version || APP_VERSION}
         </div>
       </div>

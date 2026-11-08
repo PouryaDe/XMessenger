@@ -290,11 +290,55 @@ input:focus, textarea:focus, select:focus {
 input[type="password"] {
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif !important;
   letter-spacing: 0.18em;
-  font-size: 13px !important;
+  font-size: 15px !important;
 }
 
 input[type="password"]::placeholder {
   font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, sans-serif !important;
   letter-spacing: normal !important;
-  font-size: 12px !important;
+  font-size: 14px !important;
+}
+
+/* =========================================================================
+   Browser Autofill / Autocomplete Styling
+   Completely overrides WebKit/Blink default yellow/blue background & black text
+   ========================================================================= */
+input:-webkit-autofill,
+input:-webkit-autofill:hover, 
+input:-webkit-autofill:focus, 
+input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #ffffff inset !important;
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  border-color: #e7e5e4 !important;
+  transition: background-color 600000s ease-in-out 0s, color 600000s ease-in-out 0s !important;
+}
+
+html.dark input:-webkit-autofill,
+html.dark input:-webkit-autofill:hover, 
+html.dark input:-webkit-autofill:focus, 
+html.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 1000px #161B24 inset !important;
+  box-shadow: 0 0 0 1000px #161B24 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  transition: background-color 600000s ease-in-out 0s, color 600000s ease-in-out 0s !important;
+}
+
+input:autofill {
+  box-shadow: 0 0 0 1000px #ffffff inset !important;
+  -webkit-text-fill-color: #0f172a !important;
+  caret-color: #0f172a !important;
+  border-color: #e7e5e4 !important;
+  transition: background-color 600000s ease-in-out 0s, color 600000s ease-in-out 0s !important;
+}
+
+html.dark input:autofill {
+  box-shadow: 0 0 0 1000px #161B24 inset !important;
+  -webkit-text-fill-color: #ffffff !important;
+  caret-color: #ffffff !important;
+  border-color: rgba(255, 255, 255, 0.15) !important;
+  transition: background-color 600000s ease-in-out 0s, color 600000s ease-in-out 0s !important;
 }
