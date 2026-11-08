@@ -240,7 +240,7 @@ export const UserChatView: React.FC = () => {
       </header>
 
       {/* Ephemeral Flame Tag Banner in Rounded Pill Card */}
-      <div className="px-4 my-2.5 flex justify-center shrink-0 select-none">
+      <div className="px-4 pt-4 sm:pt-5 pb-2 flex justify-center shrink-0 select-none">
         <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-slate-800/80 backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-400 font-sans">
           <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-pulse" />
           <span>{t('chatTtlBanner')}</span>

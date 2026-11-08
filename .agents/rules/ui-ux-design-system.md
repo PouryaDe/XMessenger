@@ -124,7 +124,7 @@ This design system contract defines the visual identity, color harmony, typograp
 
 - **Ephemeral 24h Auto-Purge Banner**:
   - Must NEVER be bare unstyled text touching the top header border.
-  - Standard container: Centered floating pill card with vertical margin `my-2.5` (`px-4 my-2.5 flex justify-center`).
+  - Standard container: Centered floating pill card with generous top spacing (`px-4 pt-4 sm:pt-5 pb-2 flex justify-center`), detached from the ceiling/header.
   - Card style: `inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-slate-800/80 backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-400`.
 - **Drawer Direction & Trigger Alignment**:
   - **CRITICAL UX RULE**: The side navigation drawer MUST open from the exact same side of the screen as the button that opened it.
