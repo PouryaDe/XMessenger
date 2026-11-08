@@ -49428,6 +49428,32 @@ function setupSocketServer(io3) {
         if (callback) callback({ error: "INTERNAL_ERROR" });
       }
     });
+    socket.on("conversation:read", ({ partnerId }, callback) => {
+      try {
+        if (!partnerId) return;
+        const updated = db.prepare(`
+          UPDATE messages
+          SET is_read = 1
+          WHERE recipient_id = ? AND sender_id = ? AND is_read = 0
+        `).run(user.id, partnerId);
+        if (updated.changes > 0) {
+          io3.to(`user:${partnerId}`).emit("messages:read", {
+            readerId: user.id,
+            readAt: (/* @__PURE__ */ new Date()).toISOString()
+          });
+          if (user.role === "admin") {
+            io3.to("room:admin").emit("conversation:read_sync", {
+              userId: partnerId,
+              readerId: user.id
+            });
+          }
+        }
+        if (callback) callback({ success: true, count: updated.changes });
+      } catch (err) {
+        console.error("Socket conversation:read error:", err);
+        if (callback) callback({ error: "INTERNAL_ERROR" });
+      }
+    });
     socket.on("message:delete", ({ messageId }, callback) => {
       try {
         const row = db.prepare("SELECT id, sender_id, recipient_id FROM messages WHERE id = ?").get(messageId);
@@ -50092,11 +50118,23 @@ function createMessagesRouter(io3) {
           AND expires_at > ?
         ORDER BY created_at ASC
       `).all(currentUser.id, partnerId, partnerId, currentUser.id, now);
-      db.prepare(`
+      const updated = db.prepare(`
         UPDATE messages
         SET is_read = 1
         WHERE recipient_id = ? AND sender_id = ? AND is_read = 0
       `).run(currentUser.id, partnerId);
+      if (updated.changes > 0 && io3) {
+        io3.to(`user:${partnerId}`).emit("messages:read", {
+          readerId: currentUser.id,
+          readAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+        if (currentUser.role === "admin") {
+          io3.to("room:admin").emit("conversation:read_sync", {
+            userId: partnerId,
+            readerId: currentUser.id
+          });
+        }
+      }
       const messages = rows.map((r) => ({
         id: r.id,
         senderId: r.sender_id,
@@ -50211,6 +50249,33 @@ function createMessagesRouter(io3) {
       res.json({ success: true, message: "Conversation wiped" });
     } catch (err) {
       res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to wipe conversation" });
+    }
+  });
+  router.post("/:partnerId/read", (req, res) => {
+    try {
+      const currentUser = req.user;
+      const { partnerId } = req.params;
+      const updated = db.prepare(`
+        UPDATE messages
+        SET is_read = 1
+        WHERE recipient_id = ? AND sender_id = ? AND is_read = 0
+      `).run(currentUser.id, partnerId);
+      if (updated.changes > 0 && io3) {
+        io3.to(`user:${partnerId}`).emit("messages:read", {
+          readerId: currentUser.id,
+          readAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+        if (currentUser.role === "admin") {
+          io3.to("room:admin").emit("conversation:read_sync", {
+            userId: partnerId,
+            readerId: currentUser.id
+          });
+        }
+      }
+      res.json({ success: true, count: updated.changes });
+    } catch (err) {
+      console.error("Error marking messages as read:", err);
+      res.status(500).json({ error: "INTERNAL_ERROR" });
     }
   });
   return router;
@@ -50335,8 +50400,8 @@ app.get("/manifest.json", (req, res) => {
     scope: "/",
     display: "standalone",
     orientation: "portrait-primary",
-    background_color: "#DFDDD6",
-    theme_color: "#DFDDD6",
+    background_color: "#0E1218",
+    theme_color: "#0E1218",
     lang: "fa",
     dir: "rtl",
     categories: ["social", "utilities", "productivity"],

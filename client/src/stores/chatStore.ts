@@ -18,6 +18,9 @@ interface ChatState {
   setAdminUsers: (users: AdminUserItem[]) => void;
   loadMessages: (targetUserId?: string) => Promise<void>;
   syncMessages: () => Promise<void>;
+  markConversationAsRead: (partnerId: string) => void;
+  markMessagesReadByRecipient: (readerId: string) => void;
+  syncReadUser: (userId: string) => void;
   sendMessage: (text: string, targetUserId?: string, ttlSeconds?: number) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   addMessage: (msg: Message) => void;
@@ -44,6 +47,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setActiveUserId: (id) => {
     set({ activeUserId: id });
     if (id) {
+      // Immediately clear unread badge for this user (0ms instant sync)
+      get().markConversationAsRead(id);
       get().loadMessages(id);
     } else {
       set({ messages: [] });
@@ -51,19 +56,25 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setAdminUsers: (users) => {
-    const onlineMap: Record<string, boolean> = { ...get().onlineUsers };
-    const lastSeenMap: Record<string, string> = { ...get().lastSeenUsers };
+    const { activeUserId, onlineUsers, lastSeenUsers } = get();
+    const onlineMap: Record<string, boolean> = { ...onlineUsers };
+    const lastSeenMap: Record<string, string> = { ...lastSeenUsers };
 
-    users.forEach((u) => {
+    const sanitizedUsers = users.map((u) => {
       if (typeof u.isOnline === 'boolean') {
         onlineMap[u.id] = u.isOnline;
       }
       if (u.last_seen) {
         lastSeenMap[u.id] = u.last_seen;
       }
+      // If admin is currently in this user chat, unreadCount must stay 0
+      if (activeUserId && u.id === activeUserId) {
+        return { ...u, unreadCount: 0 };
+      }
+      return u;
     });
 
-    set({ adminUsers: users, onlineUsers: onlineMap, lastSeenUsers: lastSeenMap });
+    set({ adminUsers: sanitizedUsers, onlineUsers: onlineMap, lastSeenUsers: lastSeenMap });
   },
 
   loadMessages: async (targetUserId) => {
@@ -71,6 +82,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ isLoadingMessages: true });
       const data = await api.getMessages(targetUserId);
       set({ messages: data.messages, isLoadingMessages: false });
+      if (targetUserId) {
+        set((state) => ({
+          adminUsers: state.adminUsers.map((u) => 
+            u.id === targetUserId ? { ...u, unreadCount: 0 } : u
+          )
+        }));
+      }
     } catch (err) {
       console.error('Failed to load messages:', err);
       set({ isLoadingMessages: false });
@@ -83,9 +101,50 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const data = await api.getMessages(activeUserId || undefined);
       // Merge silently without flickering loading state
       set({ messages: data.messages });
+      if (activeUserId) {
+        set((state) => ({
+          adminUsers: state.adminUsers.map((u) => 
+            u.id === activeUserId ? { ...u, unreadCount: 0 } : u
+          )
+        }));
+      }
     } catch (err) {
       console.warn('Background sync failed:', err);
     }
+  },
+
+  markConversationAsRead: (partnerId: string) => {
+    // 1. Optimistically zero the unreadCount in adminUsers
+    set((state) => ({
+      adminUsers: state.adminUsers.map((u) => 
+        u.id === partnerId ? { ...u, unreadCount: 0 } : u
+      )
+    }));
+
+    // 2. Emit socket event for instant 0ms real-time sync
+    const socket = getSocket();
+    if (socket && socket.connected) {
+      socket.emit('conversation:read', { partnerId });
+    }
+
+    // 3. Fallback REST endpoint
+    api.markMessagesAsRead(partnerId).catch(() => {});
+  },
+
+  markMessagesReadByRecipient: (readerId: string) => {
+    set((state) => ({
+      messages: state.messages.map((m) => 
+        (m.recipientId === readerId || m.isOwn) ? { ...m, isRead: true } : m
+      )
+    }));
+  },
+
+  syncReadUser: (userId: string) => {
+    set((state) => ({
+      adminUsers: state.adminUsers.map((u) => 
+        u.id === userId ? { ...u, unreadCount: 0 } : u
+      )
+    }));
   },
 
   sendMessage: async (text, targetUserId, ttlSeconds) => {
@@ -148,12 +207,42 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   addMessage: (msg) => {
+    const { activeUserId } = get();
+    // If msg is from the user that the admin is currently viewing, mark it read immediately!
+    if (activeUserId && msg.senderId === activeUserId) {
+      get().markConversationAsRead(activeUserId);
+    }
+
     set((state) => {
       // Prevent duplicates
-      if (state.messages.some((m) => m.id === msg.id)) {
-        return state;
-      }
-      return { messages: [...state.messages, msg] };
+      const exists = state.messages.some((m) => m.id === msg.id);
+      const newMessages = exists ? state.messages : [...state.messages, msg];
+
+      // Update adminUsers lastMessage and unreadCount in real time
+      const updatedAdminUsers = state.adminUsers.map((u) => {
+        if (u.id === msg.senderId || u.id === msg.recipientId) {
+          const isSender = u.id === msg.senderId;
+          const isActiveChat = activeUserId && u.id === activeUserId;
+          const newUnread = isActiveChat ? 0 : (isSender ? (u.unreadCount || 0) + 1 : u.unreadCount || 0);
+          return {
+            ...u,
+            unreadCount: newUnread,
+            lastMessage: {
+              id: msg.id,
+              text: msg.text,
+              createdAt: msg.createdAt,
+              expiresAt: msg.expiresAt,
+              isFromAdmin: !isSender
+            }
+          };
+        }
+        return u;
+      });
+
+      return {
+        messages: newMessages,
+        adminUsers: updatedAdminUsers
+      };
     });
   },
 

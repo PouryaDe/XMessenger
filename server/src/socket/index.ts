@@ -196,6 +196,40 @@ export function setupSocketServer(io: Server) {
       }
     });
 
+    // Mark conversation messages as read (Instant 0ms Sync)
+    socket.on('conversation:read', ({ partnerId }: { partnerId: string }, callback) => {
+      try {
+        if (!partnerId) return;
+
+        const updated = db.prepare(`
+          UPDATE messages
+          SET is_read = 1
+          WHERE recipient_id = ? AND sender_id = ? AND is_read = 0
+        `).run(user.id, partnerId);
+
+        if (updated.changes > 0) {
+          // Notify sender (partnerId) that their messages were read -> double checkmark instantly
+          io.to(`user:${partnerId}`).emit('messages:read', {
+            readerId: user.id,
+            readAt: new Date().toISOString()
+          });
+
+          // Sync unread removal to admin room
+          if (user.role === 'admin') {
+            io.to('room:admin').emit('conversation:read_sync', {
+              userId: partnerId,
+              readerId: user.id
+            });
+          }
+        }
+
+        if (callback) callback({ success: true, count: updated.changes });
+      } catch (err) {
+        console.error('Socket conversation:read error:', err);
+        if (callback) callback({ error: 'INTERNAL_ERROR' });
+      }
+    });
+
     // Delete message for everyone via Socket
     socket.on('message:delete', ({ messageId }: { messageId: string }, callback) => {
       try {

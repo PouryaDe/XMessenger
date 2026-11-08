@@ -42,7 +42,9 @@ export const AdminDashboard: React.FC = () => {
     typingUsers,
     setTyping,
     sendTyping,
-    syncMessages
+    syncMessages,
+    markMessagesReadByRecipient,
+    syncReadUser
   } = useChatStore();
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -152,6 +154,14 @@ export const AdminDashboard: React.FC = () => {
       setTyping(userId, isTyping);
     });
 
+    socket.on('messages:read', ({ readerId }: { readerId: string }) => {
+      markMessagesReadByRecipient(readerId);
+    });
+
+    socket.on('conversation:read_sync', ({ userId }: { userId: string }) => {
+      syncReadUser(userId);
+    });
+
     return () => {
       socket.off('message:new');
       socket.off('message:sent');
@@ -160,6 +170,8 @@ export const AdminDashboard: React.FC = () => {
       socket.off('presence:init');
       socket.off('user:online_status');
       socket.off('typing');
+      socket.off('messages:read');
+      socket.off('conversation:read_sync');
     };
   }, [activeUserId, user?.id]);
 

@@ -95,11 +95,25 @@ function createMessagesRouter(io) {
         ORDER BY created_at ASC
       `).all(currentUser.id, partnerId, partnerId, currentUser.id, now);
             // Mark incoming messages as read
-            index_js_1.db.prepare(`
+            const updated = index_js_1.db.prepare(`
         UPDATE messages
         SET is_read = 1
         WHERE recipient_id = ? AND sender_id = ? AND is_read = 0
       `).run(currentUser.id, partnerId);
+            if (updated.changes > 0 && io) {
+                // Real-time: Notify the sender that their messages were seen (double checkmark)
+                io.to(`user:${partnerId}`).emit('messages:read', {
+                    readerId: currentUser.id,
+                    readAt: new Date().toISOString()
+                });
+                // Real-time: Sync unread count removal across all admin sessions
+                if (currentUser.role === 'admin') {
+                    io.to('room:admin').emit('conversation:read_sync', {
+                        userId: partnerId,
+                        readerId: currentUser.id
+                    });
+                }
+            }
             // Decrypt messages for the authorized party
             const messages = rows.map(r => ({
                 id: r.id,
@@ -231,6 +245,35 @@ function createMessagesRouter(io) {
         }
         catch (err) {
             res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to wipe conversation' });
+        }
+    });
+    // 5. Explicit Mark Conversation Messages as Read
+    router.post('/:partnerId/read', (req, res) => {
+        try {
+            const currentUser = req.user;
+            const { partnerId } = req.params;
+            const updated = index_js_1.db.prepare(`
+        UPDATE messages
+        SET is_read = 1
+        WHERE recipient_id = ? AND sender_id = ? AND is_read = 0
+      `).run(currentUser.id, partnerId);
+            if (updated.changes > 0 && io) {
+                io.to(`user:${partnerId}`).emit('messages:read', {
+                    readerId: currentUser.id,
+                    readAt: new Date().toISOString()
+                });
+                if (currentUser.role === 'admin') {
+                    io.to('room:admin').emit('conversation:read_sync', {
+                        userId: partnerId,
+                        readerId: currentUser.id
+                    });
+                }
+            }
+            res.json({ success: true, count: updated.changes });
+        }
+        catch (err) {
+            console.error('Error marking messages as read:', err);
+            res.status(500).json({ error: 'INTERNAL_ERROR' });
         }
     });
     return router;

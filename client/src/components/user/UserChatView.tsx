@@ -35,7 +35,9 @@ export const UserChatView: React.FC = () => {
     syncMessages,
     typingUsers,
     setTyping,
-    sendTyping
+    sendTyping,
+    markConversationAsRead,
+    markMessagesReadByRecipient
   } = useChatStore();
 
   const [inputText, setInputText] = useState('');
@@ -88,10 +90,14 @@ export const UserChatView: React.FC = () => {
     ? (i18n.language === 'fa')
     : /^[\u0600-\u06FF\u0750-\u077F\uFB50-\uFDFF\uFE70-\uFEFF]/.test(inputText.trim());
 
-  // Load initial messages
+  // Load initial messages and mark read
   useEffect(() => {
-    loadMessages();
-  }, []);
+    loadMessages().then(() => {
+      if (adminInfo?.id) {
+        markConversationAsRead(adminInfo.id);
+      }
+    });
+  }, [adminInfo?.id]);
 
   // Socket event listeners
   useEffect(() => {
@@ -100,6 +106,10 @@ export const UserChatView: React.FC = () => {
 
     socket.on('message:new', (msg) => {
       addMessage({ ...msg, isOwn: msg.senderId === user?.id });
+      // Mark as read immediately since user is actively viewing this chat
+      if (msg.senderId) {
+        markConversationAsRead(msg.senderId);
+      }
     });
 
     socket.on('message:sent', (msg) => {
@@ -112,6 +122,10 @@ export const UserChatView: React.FC = () => {
 
     socket.on('conversation:cleared', () => {
       clearMessages();
+    });
+
+    socket.on('messages:read', ({ readerId }: { readerId: string }) => {
+      markMessagesReadByRecipient(readerId);
     });
 
     socket.on('admin:online_status', ({ isOnline, lastSeen }) => {
@@ -130,6 +144,7 @@ export const UserChatView: React.FC = () => {
       socket.off('message:sent');
       socket.off('message:deleted');
       socket.off('conversation:cleared');
+      socket.off('messages:read');
       socket.off('admin:online_status');
       socket.off('typing');
     };

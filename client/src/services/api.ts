@@ -192,6 +192,14 @@ export const api = {
     return safeJson<{ success: boolean }>(res, 'Failed to delete message');
   },
 
+  async markMessagesAsRead(partnerId: string): Promise<{ success: boolean; count: number }> {
+    const res = await fetch(`${API_BASE}/messages/${partnerId}/read`, {
+      method: 'POST',
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ success: boolean; count: number }>(res, 'Failed to mark messages as read');
+  },
+
   async clearUserChat(): Promise<{ success: boolean }> {
     const res = await fetch(`${API_BASE}/messages/clear-all/my-chat`, {
       method: 'DELETE',
