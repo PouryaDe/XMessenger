@@ -132,3 +132,15 @@ This design system contract defines the visual identity, color harmony, typograp
   - In LTR (English): The menu button is on the top-right; the drawer must open on the **RIGHT** with slide-in animation `animate-drawer-right` (`translateX(100%)` to `0`).
   - Never allow cross-screen dissonance where a left-side button triggers a right-side drawer.
 
+---
+
+## 8. Smart Dynamic Context Menu Positioning (Anti-Clipping Rule)
+
+- **Root Cause of Menu Hiding**:
+  - In scrollable chat streams, static upward menus (`bottom-full mb-2`) on messages near the top of the viewport shoot up into the clipped overflow area or go underneath the sticky header.
+- **Dynamic Orientation Standard**:
+  - Compute `rect.top` via `bubbleRef.current.getBoundingClientRect()`.
+  - **Top Messages (`rect.top < 135px`)**: Menu dynamically opens **DOWNWARDS** (`top-full mt-2`), and feedback badge opens below (`-bottom-7`).
+  - **Lower Messages (`rect.top >= 135px`)**: Menu opens **UPWARDS** (`bottom-full mb-2`), and badge opens above (`-top-7`).
+  - **Stacking Context**: When `showMenu` is active, the entire message item is elevated to `relative z-40` with menu at `z-50`, preventing subsequent message elements in the DOM from painting over the open menu.
+
