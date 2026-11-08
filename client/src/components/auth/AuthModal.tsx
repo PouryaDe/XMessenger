@@ -69,12 +69,12 @@ export const AuthModal: React.FC = () => {
           <div className="w-16 h-16 rounded-3xl bg-black/5 dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.09] flex items-center justify-center mb-4 shadow-xs overflow-hidden p-1.5">
             <img 
               src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
-              alt={t('appName')} 
+              alt={appMeta?.appName || 'XMessenger'} 
               className="w-full h-full object-cover rounded-2xl shadow-xs" 
             />
           </div>
           <h1 className="text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            {t('appName')}
+            {appMeta?.appName || 'XMessenger'}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs">
             {t('tagline')}

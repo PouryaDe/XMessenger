@@ -4,7 +4,7 @@ import { initReactI18next } from 'react-i18next';
 const resources = {
   fa: {
     translation: {
-      appName: 'ایکس مسنجر',
+      appName: 'XMessenger',
       tagline: 'پیام‌رسان امن و خصوصی متمرکز',
       login: 'ورود',
       register: 'ثبت‌نام',
