@@ -54,8 +54,18 @@ This document outlines the architectural layers, data contracts, and component r
   - `message:sent`: Echo message back to sender for optimistic confirmation.
   - `message:deleted`: Purge message from memory and UI on both client instances.
   - `conversation:cleared`: Reset conversation stream for a user-admin thread.
+  - `conversation:read` & `messages:read`: Real-time instant read receipts (double checkmark `✓✓` sync).
+  - `conversation:read_sync`: Synchronize unread badge removal across all admin sessions.
+  - `user:registered` & `user:pending_approval`: Real-time new user approval alerts in admin panel.
+  - `user:status_changed`: Real-time user status changes (active, pending, banned).
   - `typing`: Live typing status broadcast with debounce.
   - `presence:init` & `user:online_status`: Real-time online/offline presence tracking.
+- Client Socket Lifecycle Standard:
+  - Immediate socket initialization from `localStorage` token upon app load.
+  - Socket instance reuse: prevents socket teardown when `checkAuth` verifies identical token.
+  - Dual-phase listener registration: components bind to both active socket and `socket:ready`/`socket:connect` events.
+  - Real-time conversation bubbling: active and background chats immediately re-sort to the top of the sidebar upon new message.
+  - Synthesized Web Audio chimes for send (`playSendSound`) and receive (`playReceiveSound`).
 
 ---
 

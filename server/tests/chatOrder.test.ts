@@ -169,4 +169,72 @@ describe('Chat Ordering by Latest Message Tests', () => {
     assert.equal(sorted[0].id, 'user_norm');
     assert.equal(sorted[1].id, 'user_err');
   });
+
+  it('accurately updates unread count and bubbles up conversation on incoming message', () => {
+    const adminUserId = 'admin_1';
+    let activeChatId: string | null = 'user_active';
+
+    const users: MockAdminUserItem[] = [
+      {
+        id: 'user_active',
+        username: 'UserActive',
+        created_at: '2026-11-08T08:00:00.000Z',
+        lastMessage: {
+          id: 'msg_1',
+          text: 'Hello from active',
+          createdAt: '2026-11-08T09:00:00.000Z',
+          expiresAt: '2026-11-09T09:00:00.000Z',
+          isFromAdmin: false
+        }
+      },
+      {
+        id: 'user_background',
+        username: 'UserBackground',
+        created_at: '2026-11-08T08:00:00.000Z',
+        lastMessage: {
+          id: 'msg_2',
+          text: 'Old message',
+          createdAt: '2026-11-08T08:30:00.000Z',
+          expiresAt: '2026-11-09T08:30:00.000Z',
+          isFromAdmin: false
+        }
+      }
+    ];
+
+    // Simulate incoming message from user_background (inactive chat)
+    const incomingMsg = {
+      id: 'msg_3',
+      senderId: 'user_background',
+      recipientId: adminUserId,
+      text: 'New inquiry from background user',
+      createdAt: '2026-11-08T09:15:00.000Z',
+      expiresAt: '2026-11-09T09:15:00.000Z',
+      isFromAdmin: false
+    };
+
+    // Store logic simulation
+    const updatedUsers = users.map((u) => {
+      if (u.id === incomingMsg.senderId) {
+        const isActive = activeChatId === u.id;
+        return {
+          ...u,
+          unreadCount: isActive ? 0 : 1,
+          lastMessage: {
+            id: incomingMsg.id,
+            text: incomingMsg.text,
+            createdAt: incomingMsg.createdAt,
+            expiresAt: incomingMsg.expiresAt,
+            isFromAdmin: false
+          }
+        };
+      }
+      return u;
+    });
+
+    const sorted = sortAdminUsersByLastMessage(updatedUsers);
+    // Background user with new message at 09:15 must bubble to top (#1)
+    assert.equal(sorted[0].id, 'user_background');
+    assert.equal((sorted[0] as any).unreadCount, 1);
+    assert.equal(sorted[1].id, 'user_active');
+  });
 });

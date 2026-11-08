@@ -2,6 +2,7 @@ import { create } from 'zustand';
 import { Message, MessageReaction, AdminUserItem, api } from '../services/api.js';
 import { getSocket } from '../services/socket.js';
 import { useAuthStore } from './authStore.js';
+import { playSendSound } from '../utils/sound.js';
 
 interface ChatState {
   messages: Message[];
@@ -386,8 +387,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
             }
           } else if (res?.message) {
             get().replaceMessage(tempId, { ...res.message, isOwn: true, status: 'sent' });
+            playSendSound();
             resolve();
           } else {
+            playSendSound();
             resolve();
           }
         });
@@ -397,6 +400,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       try {
         const res = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
         get().replaceMessage(tempId, { ...res.message, isOwn: true, status: 'sent' });
+        playSendSound();
       } catch (err) {
         get().updateMessageStatus(tempId, 'failed');
         throw err;
@@ -487,17 +491,36 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   addMessage: (msg) => {
+    const authStore = useAuthStore.getState();
+    const currentUserId = authStore.user?.id || '';
+    const isCurrentUserAdmin = authStore.user?.role === 'admin';
     const { activeUserId } = get();
-    // If msg is from the user that the admin is currently viewing, mark it read immediately!
-    if (activeUserId && msg.senderId === activeUserId) {
-      get().markConversationAsRead(activeUserId);
+
+    // Determine target conversation key
+    let convPartnerId: string;
+    if (isCurrentUserAdmin) {
+      convPartnerId = (msg.senderId === currentUserId ? msg.recipientId : msg.senderId) || activeUserId || 'main';
+    } else {
+      convPartnerId = 'main';
+    }
+
+    const isActive = isCurrentUserAdmin ? (activeUserId === convPartnerId) : true;
+
+    // If incoming message in the active chat, mark it read immediately!
+    if (isActive && msg.senderId !== currentUserId) {
+      get().markConversationAsRead(isCurrentUserAdmin ? convPartnerId : (authStore.adminInfo?.id || msg.senderId));
     }
 
     set((state) => {
-      // 1. If message already exists by id, check if changed
-      const existingIdx = state.messages.findIndex((m) => m.id === msg.id);
+      // 1. Target conversation message list
+      const targetList = state.messagesByConversation[convPartnerId] || (isActive ? state.messages : []);
+
+      // If message already exists by id, check if changed
+      const existingIdx = targetList.findIndex((m) => m.id === msg.id);
+      let updatedTargetList: Message[];
+
       if (existingIdx !== -1) {
-        const cur = state.messages[existingIdx];
+        const cur = targetList[existingIdx];
         if (
           cur.isRead === msg.isRead &&
           cur.text === msg.text &&
@@ -506,61 +529,71 @@ export const useChatStore = create<ChatState>((set, get) => ({
         ) {
           return state; // No-op, preserve reference!
         }
-        const updated = [...state.messages];
-        updated[existingIdx] = { ...cur, ...msg };
-        return { messages: updated };
-      }
-
-      // 2. If it's a confirmed message matching a pending optimistic message, replace in-place!
-      const pendingIdx = state.messages.findIndex(
-        (m) =>
-          (m.id.startsWith('temp_') || m.status === 'sending') &&
-          m.text === msg.text &&
-          (m.isOwn || m.senderId === msg.senderId)
-      );
-
-      let newMessages: Message[];
-      if (pendingIdx !== -1) {
-        newMessages = [...state.messages];
-        newMessages[pendingIdx] = { ...msg, isOwn: true, status: 'sent' };
+        updatedTargetList = [...targetList];
+        updatedTargetList[existingIdx] = { ...cur, ...msg };
       } else {
-        newMessages = [...state.messages, msg];
+        // If it's a confirmed message matching a pending optimistic message, replace in-place!
+        const pendingIdx = targetList.findIndex(
+          (m) =>
+            (m.id.startsWith('temp_') || m.status === 'sending') &&
+            m.text === msg.text &&
+            (m.isOwn || m.senderId === msg.senderId)
+        );
+
+        if (pendingIdx !== -1) {
+          updatedTargetList = [...targetList];
+          updatedTargetList[pendingIdx] = { ...msg, isOwn: true, status: 'sent' };
+        } else {
+          updatedTargetList = [...targetList, msg];
+        }
       }
 
-      try {
-        sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(newMessages.slice(-50)));
-      } catch {}
+      // 2. Update adminUsers lastMessage and unreadCount in real time (for Admin)
+      let updatedAdminUsers = state.adminUsers;
+      if (isCurrentUserAdmin) {
+        updatedAdminUsers = state.adminUsers.map((u) => {
+          if (u.id === convPartnerId) {
+            const isSender = u.id === msg.senderId;
+            const newUnread = isActive ? 0 : (isSender ? (u.unreadCount || 0) + 1 : u.unreadCount || 0);
+            return {
+              ...u,
+              unreadCount: newUnread,
+              lastMessage: {
+                id: msg.id,
+                text: msg.text,
+                createdAt: msg.createdAt,
+                expiresAt: msg.expiresAt,
+                isFromAdmin: !isSender
+              }
+            };
+          }
+          return u;
+        });
+        updatedAdminUsers = sortAdminUsersByLastMessage(updatedAdminUsers);
+      }
 
-      // Update adminUsers lastMessage and unreadCount in real time
-      const updatedAdminUsers = state.adminUsers.map((u) => {
-        if (u.id === msg.senderId || u.id === msg.recipientId) {
-          const isSender = u.id === msg.senderId;
-          const isActiveChat = activeUserId && u.id === activeUserId;
-          const newUnread = isActiveChat ? 0 : (isSender ? (u.unreadCount || 0) + 1 : u.unreadCount || 0);
-          return {
-            ...u,
-            unreadCount: newUnread,
-            lastMessage: {
-              id: msg.id,
-              text: msg.text,
-              createdAt: msg.createdAt,
-              expiresAt: msg.expiresAt,
-              isFromAdmin: !isSender
-            }
-          };
-        }
-        return u;
-      });
-
-      const convKey = activeUserId || 'main';
-      return {
-        messages: newMessages,
-        messagesByConversation: {
-          ...state.messagesByConversation,
-          [convKey]: newMessages
-        },
-        adminUsers: sortAdminUsersByLastMessage(updatedAdminUsers)
+      // 3. Update state
+      const nextByConv = {
+        ...state.messagesByConversation,
+        [convPartnerId]: updatedTargetList
       };
+
+      if (isActive) {
+        try {
+          sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(updatedTargetList.slice(-50)));
+        } catch {}
+
+        return {
+          messages: updatedTargetList,
+          messagesByConversation: nextByConv,
+          adminUsers: updatedAdminUsers
+        };
+      } else {
+        return {
+          messagesByConversation: nextByConv,
+          adminUsers: updatedAdminUsers
+        };
+      }
     });
   },
 

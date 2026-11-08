@@ -7,6 +7,8 @@ import { DateSeparator } from '../common/DateSeparator.js';
 import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
 import { getSocket } from '../../services/socket.js';
+import type { Socket } from 'socket.io-client';
+import { playReceiveSound } from '../../utils/sound.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { api, Message } from '../../services/api.js';
 import { 
@@ -194,59 +196,91 @@ export const UserChatView: React.FC = () => {
     localStorage.setItem('xmessenger_dismiss_push_prompt', 'true');
   };
 
-  // Socket event listeners
+  // Socket event listeners (resilient to initial mount & reconnections)
   useEffect(() => {
-    const socket = getSocket();
-    if (!socket) return;
+    let activeSocket = getSocket();
 
-    socket.on('message:new', (msg) => {
-      addMessage({ ...msg, isOwn: msg.senderId === user?.id });
-      // Mark as read immediately since user is actively viewing this chat
-      if (msg.senderId) {
-        markConversationAsRead(msg.senderId);
+    const registerSocketHandlers = (sock: Socket) => {
+      sock.off('message:new');
+      sock.off('message:sent');
+      sock.off('message:deleted');
+      sock.off('conversation:cleared');
+      sock.off('messages:read');
+      sock.off('message:reaction');
+      sock.off('admin:online_status');
+      sock.off('typing');
+
+      sock.on('message:new', (msg) => {
+        addMessage({ ...msg, isOwn: msg.senderId === user?.id });
+        if (!msg.isOwn && msg.senderId !== user?.id) {
+          playReceiveSound();
+        }
+        // Mark as read immediately since user is actively viewing this chat
+        if (msg.senderId) {
+          markConversationAsRead(msg.senderId);
+        }
+      });
+
+      sock.on('message:sent', (msg) => {
+        addMessage({ ...msg, isOwn: true });
+      });
+
+      sock.on('message:deleted', ({ messageId }) => {
+        removeMessage(messageId);
+      });
+
+      sock.on('conversation:cleared', () => {
+        clearMessages();
+      });
+
+      sock.on('messages:read', ({ readerId }: { readerId: string }) => {
+        markMessagesReadByRecipient(readerId);
+      });
+
+      sock.on('message:reaction', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
+        updateMessageReactions(messageId, reactions);
+      });
+
+      sock.on('admin:online_status', ({ isOnline, lastSeen }) => {
+        setAdminOnline(isOnline);
+        if (lastSeen) setAdminLastSeen(lastSeen);
+      });
+
+      sock.on('typing', ({ username, isTyping }) => {
+        if (adminInfo && (username === adminInfo.username || username === 'admin')) {
+          setTyping(adminInfo.id, isTyping);
+        }
+      });
+    };
+
+    if (activeSocket) {
+      registerSocketHandlers(activeSocket);
+    }
+
+    const onSocketReady = (e: any) => {
+      const sock = e.detail || getSocket();
+      if (sock) {
+        activeSocket = sock;
+        registerSocketHandlers(sock);
       }
-    });
+    };
 
-    socket.on('message:sent', (msg) => {
-      addMessage({ ...msg, isOwn: true });
-    });
-
-    socket.on('message:deleted', ({ messageId }) => {
-      removeMessage(messageId);
-    });
-
-    socket.on('conversation:cleared', () => {
-      clearMessages();
-    });
-
-    socket.on('messages:read', ({ readerId }: { readerId: string }) => {
-      markMessagesReadByRecipient(readerId);
-    });
-
-    socket.on('message:reaction', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
-      updateMessageReactions(messageId, reactions);
-    });
-
-    socket.on('admin:online_status', ({ isOnline, lastSeen }) => {
-      setAdminOnline(isOnline);
-      if (lastSeen) setAdminLastSeen(lastSeen);
-    });
-
-    socket.on('typing', ({ username, isTyping }) => {
-      if (adminInfo && (username === adminInfo.username || username === 'admin')) {
-        setTyping(adminInfo.id, isTyping);
-      }
-    });
+    window.addEventListener('socket:ready', onSocketReady);
+    window.addEventListener('socket:connect', onSocketReady);
 
     return () => {
-      socket.off('message:new');
-      socket.off('message:sent');
-      socket.off('message:deleted');
-      socket.off('conversation:cleared');
-      socket.off('messages:read');
-      socket.off('message:reaction');
-      socket.off('admin:online_status');
-      socket.off('typing');
+      window.removeEventListener('socket:ready', onSocketReady);
+      window.removeEventListener('socket:connect', onSocketReady);
+      if (activeSocket) {
+        activeSocket.off('message:new');
+        activeSocket.off('message:sent');
+        activeSocket.off('message:deleted');
+        activeSocket.off('conversation:cleared');
+        activeSocket.off('messages:read');
+        activeSocket.off('message:reaction');
+        activeSocket.off('admin:online_status');
+        activeSocket.off('typing');
+      }
     };
   }, [adminInfo, user?.id]);
 

@@ -219,11 +219,16 @@ export function createMessagesRouter(io?: Server) {
         reactions: []
       };
 
-      // Emit to sockets
+      // Emit to sockets (strictly matching server/src/socket/index.ts room logic)
       if (io) {
-        io.to(`user:${recipientId}`).emit('message:new', messagePayload);
-        io.to('room:admin').emit('message:new', messagePayload);
-        io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
+        if (currentUser.role === 'admin') {
+          io.to(`user:${recipientId}`).emit('message:new', messagePayload);
+          io.to('room:admin').emit('message:sent', messagePayload);
+        } else {
+          io.to(`user:${recipientId}`).emit('message:new', messagePayload);
+          io.to('room:admin').emit('message:new', messagePayload);
+          io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
+        }
       }
 
       // Dispatch Web Push notification for background/PWA users
