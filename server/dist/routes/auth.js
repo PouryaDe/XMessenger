@@ -67,6 +67,7 @@ exports.authRouter.get('/meta', (req, res) => {
         appName,
         pwaShortName,
         pwaIconUrl,
+        version: index_js_1.config.appVersion,
         buildVersion
     });
 });

@@ -29,9 +29,21 @@ else
   cd "${PROJECT_ROOT}"
 fi
 
+get_version() {
+  if [ -f "${BASE_DIR}/VERSION" ]; then
+    cat "${BASE_DIR}/VERSION" | tr -d '\r\n'
+  elif [ -f "VERSION" ]; then
+    cat "VERSION" | tr -d '\r\n'
+  else
+    echo "2.1.0"
+  fi
+}
+
+VER=$(get_version)
+
 echo -e "${CYAN}${BOLD}"
 echo "=================================================================="
-echo "    XMessenger Fast Update & Hot-Deploy Engine                    "
+echo "    XMessenger Fast Update & Hot-Deploy Engine (v${VER})          "
 echo "=================================================================="
 echo -e "${NC}"
 
@@ -193,8 +205,9 @@ if [ -f /root/.bashrc ]; then
   grep -q "alias xupdate=" /root/.bashrc 2>/dev/null || echo "alias xupdate='bash /opt/xmessenger/update.sh'" >> /root/.bashrc
 fi
 
+NEW_VER=$(get_version)
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
-echo -e "${GREEN}${BOLD}✓ XMessenger hot update completed successfully!${NC}"
+echo -e "${GREEN}${BOLD}✓ XMessenger hot update to v${NEW_VER} completed successfully!${NC}"
 echo -e "${GREEN}${BOLD}✓ Continuous auto-update daemon is now running in the background!${NC}"
 echo -e "${GREEN}${BOLD}✓ Future commits on main will now deploy AUTOMATICALLY within 10s.${NC}"
 echo -e "${GREEN}${BOLD}==================================================================${NC}\n"

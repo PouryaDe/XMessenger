@@ -3,6 +3,10 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 
+// Read version from root VERSION file
+const rootVersionPath = path.resolve(__dirname, '../VERSION');
+const appVersion = fs.existsSync(rootVersionPath) ? fs.readFileSync(rootVersionPath, 'utf-8').trim() : '2.1.0';
+
 function swVersionPlugin(): Plugin {
   return {
     name: 'sw-version-plugin',
@@ -26,7 +30,7 @@ function swVersionPlugin(): Plugin {
       const versionJsonPath = path.join(distDir, 'version.json');
       fs.writeFileSync(
         versionJsonPath,
-        JSON.stringify({ buildVersion, buildTime, buildId }, null, 2),
+        JSON.stringify({ version: appVersion, buildVersion, buildTime, buildId }, null, 2),
         'utf-8'
       );
     }
@@ -35,6 +39,7 @@ function swVersionPlugin(): Plugin {
 
 export default defineConfig({
   define: {
+    __APP_VERSION__: JSON.stringify(appVersion),
     __APP_BUILD_VERSION__: JSON.stringify(Date.now().toString(36))
   },
   plugins: [react(), swVersionPlugin()],

@@ -1294,8 +1294,8 @@ var require_node = __commonJS({
           }
           break;
         case "FILE":
-          var fs6 = require("fs");
-          stream2 = new fs6.SyncWriteStream(fd2, { autoClose: false });
+          var fs7 = require("fs");
+          stream2 = new fs7.SyncWriteStream(fd2, { autoClose: false });
           stream2._type = "fs";
           break;
         case "PIPE":
@@ -18692,7 +18692,7 @@ var require_view = __commonJS({
     "use strict";
     var debug = require_src()("express:view");
     var path6 = require("path");
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var dirname = path6.dirname;
     var basename = path6.basename;
     var extname = path6.extname;
@@ -18758,7 +18758,7 @@ var require_view = __commonJS({
     function tryStat(path7) {
       debug('stat "%s"', path7);
       try {
-        return fs6.statSync(path7);
+        return fs7.statSync(path7);
       } catch (e) {
         return void 0;
       }
@@ -19113,7 +19113,7 @@ var require_types = __commonJS({
 var require_mime = __commonJS({
   "node_modules/mime/mime.js"(exports2, module2) {
     var path6 = require("path");
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     function Mime() {
       this.types = /* @__PURE__ */ Object.create(null);
       this.extensions = /* @__PURE__ */ Object.create(null);
@@ -19134,7 +19134,7 @@ var require_mime = __commonJS({
     };
     Mime.prototype.load = function(file) {
       this._loading = file;
-      var map = {}, content = fs6.readFileSync(file, "ascii"), lines = content.split(/[\r\n]+/);
+      var map = {}, content = fs7.readFileSync(file, "ascii"), lines = content.split(/[\r\n]+/);
       lines.forEach(function(line) {
         var fields = line.replace(/\s*#.*|^\s*|\s*$/g, "").split(/\s+/);
         map[fields.shift()] = fields;
@@ -19372,7 +19372,7 @@ var require_send = __commonJS({
     var escapeHtml = require_escape_html();
     var etag = require_etag();
     var fresh = require_fresh();
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var mime = require_mime();
     var ms = require_ms2();
     var onFinished = require_on_finished();
@@ -19705,7 +19705,7 @@ var require_send = __commonJS({
       var i = 0;
       var self = this;
       debug('stat "%s"', path7);
-      fs6.stat(path7, function onstat(err, stat) {
+      fs7.stat(path7, function onstat(err, stat) {
         if (err && err.code === "ENOENT" && !extname(path7) && path7[path7.length - 1] !== sep) {
           return next(err);
         }
@@ -19720,7 +19720,7 @@ var require_send = __commonJS({
         }
         var p = path7 + "." + self._extensions[i++];
         debug('stat "%s"', p);
-        fs6.stat(p, function(err2, stat) {
+        fs7.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self.emit("file", p, stat);
@@ -19738,7 +19738,7 @@ var require_send = __commonJS({
         }
         var p = join(path7, self._index[i]);
         debug('stat "%s"', p);
-        fs6.stat(p, function(err2, stat) {
+        fs7.stat(p, function(err2, stat) {
           if (err2) return next(err2);
           if (stat.isDirectory()) return next();
           self.emit("file", p, stat);
@@ -19750,7 +19750,7 @@ var require_send = __commonJS({
     SendStream.prototype.stream = function stream(path7, options) {
       var self = this;
       var res = this.res;
-      var stream2 = fs6.createReadStream(path7, options);
+      var stream2 = fs7.createReadStream(path7, options);
       this.emit("stream", stream2);
       stream2.pipe(res);
       function cleanup() {
@@ -38231,7 +38231,7 @@ var require_dist2 = __commonJS({
 // node_modules/dotenv/lib/main.js
 var require_main = __commonJS({
   "node_modules/dotenv/lib/main.js"(exports2, module2) {
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var path6 = require("path");
     var os = require("os");
     var crypto4 = require("crypto");
@@ -38363,7 +38363,7 @@ var require_main = __commonJS({
       if (options && options.path && options.path.length > 0) {
         if (Array.isArray(options.path)) {
           for (const filepath of options.path) {
-            if (fs6.existsSync(filepath)) {
+            if (fs7.existsSync(filepath)) {
               possibleVaultPath = filepath.endsWith(".vault") ? filepath : `${filepath}.vault`;
             }
           }
@@ -38373,7 +38373,7 @@ var require_main = __commonJS({
       } else {
         possibleVaultPath = path6.resolve(process.cwd(), ".env.vault");
       }
-      if (fs6.existsSync(possibleVaultPath)) {
+      if (fs7.existsSync(possibleVaultPath)) {
         return possibleVaultPath;
       }
       return null;
@@ -38426,7 +38426,7 @@ var require_main = __commonJS({
       const parsedAll = {};
       for (const path7 of optionPaths) {
         try {
-          const parsed = DotenvModule.parse(fs6.readFileSync(path7, { encoding }));
+          const parsed = DotenvModule.parse(fs7.readFileSync(path7, { encoding }));
           DotenvModule.populate(parsedAll, parsed, options);
         } catch (e) {
           if (debug) {
@@ -42915,7 +42915,7 @@ var require_make_middleware = __commonJS({
 // node_modules/multer/storage/disk.js
 var require_disk = __commonJS({
   "node_modules/multer/storage/disk.js"(exports2, module2) {
-    var fs6 = require("fs");
+    var fs7 = require("fs");
     var os = require("os");
     var path6 = require("path");
     var crypto4 = require("crypto");
@@ -42942,7 +42942,7 @@ var require_disk = __commonJS({
       this.getFilename = opts.filename || getFilename;
       this.flush = opts.flush;
       if (typeof opts.destination === "string") {
-        fs6.mkdirSync(opts.destination, { recursive: true });
+        fs7.mkdirSync(opts.destination, { recursive: true });
         this.getDestination = function($0, $1, cb) {
           cb(null, opts.destination);
         };
@@ -42958,7 +42958,7 @@ var require_disk = __commonJS({
           if (err2) return cb(err2);
           var finalPath = path6.join(destination, filename);
           if (file.stream.destroyed) return cb(new MulterError("STREAM_DESTROYED"));
-          var outStream = fs6.createWriteStream(finalPath);
+          var outStream = fs7.createWriteStream(finalPath);
           file.path = finalPath;
           openStreams.set(file, outStream);
           outStream.once("close", function() {
@@ -42980,13 +42980,13 @@ var require_disk = __commonJS({
               });
             };
             if (!that.flush) return done();
-            fs6.open(finalPath, "r+", function(err4, fd) {
+            fs7.open(finalPath, "r+", function(err4, fd) {
               if (err4) {
                 endFlush(file);
                 return done(err4);
               }
-              fs6.fsync(fd, function(syncErr) {
-                fs6.close(fd, function(closeErr) {
+              fs7.fsync(fd, function(syncErr) {
+                fs7.close(fd, function(closeErr) {
                   endFlush(file);
                   done(syncErr || closeErr);
                 });
@@ -43003,9 +43003,9 @@ var require_disk = __commonJS({
       delete file.path;
       function unlink() {
         var flush = flushingFiles.get(file);
-        if (!flush) return fs6.unlink(path7, cb);
+        if (!flush) return fs7.unlink(path7, cb);
         flush.onClosed = function() {
-          fs6.unlink(path7, cb);
+          fs7.unlink(path7, cb);
         };
       }
       var outStream = openStreams.get(file);
@@ -47273,7 +47273,7 @@ var import_express4 = __toESM(require_express2());
 var import_http = __toESM(require("http"));
 var import_cors = __toESM(require_lib3());
 var import_path5 = __toESM(require("path"));
-var import_fs5 = __toESM(require("fs"));
+var import_fs6 = __toESM(require("fs"));
 
 // node_modules/socket.io/wrapper.mjs
 var import_dist = __toESM(require_dist2(), 1);
@@ -47283,10 +47283,27 @@ var { Server, Namespace, Socket } = import_dist.default;
 var import_dotenv = __toESM(require_main());
 var import_path = __toESM(require("path"));
 var import_crypto = __toESM(require("crypto"));
+var import_fs = __toESM(require("fs"));
 import_dotenv.default.config();
 var DATA_DIR = process.env.DATA_DIR || import_path.default.resolve(process.cwd(), "data");
+var APP_VERSION = (() => {
+  try {
+    const candidates = [
+      import_path.default.resolve(process.cwd(), "../VERSION"),
+      import_path.default.resolve(process.cwd(), "./VERSION"),
+      import_path.default.resolve(__dirname, "../../../VERSION"),
+      import_path.default.resolve(__dirname, "../../VERSION")
+    ];
+    for (const p of candidates) {
+      if (import_fs.default.existsSync(p)) return import_fs.default.readFileSync(p, "utf-8").trim();
+    }
+  } catch {
+  }
+  return "2.1.0";
+})();
 var DEFAULT_KEY = process.env.ENCRYPTION_KEY || import_crypto.default.createHash("sha256").update(process.env.JWT_SECRET || "xmessenger-default-secret-key-2026").digest("hex");
 var config = {
+  appVersion: APP_VERSION,
   port: parseInt(process.env.PORT || "3001", 10),
   jwtSecret: process.env.JWT_SECRET || "xmessenger-jwt-super-secret-key-change-in-prod-2026",
   encryptionKey: DEFAULT_KEY.substring(0, 64),
@@ -47303,7 +47320,7 @@ var config = {
 
 // src/database/index.ts
 var import_better_sqlite3 = __toESM(require("better-sqlite3"));
-var import_fs = __toESM(require("fs"));
+var import_fs2 = __toESM(require("fs"));
 
 // node_modules/uuid/dist/esm/stringify.js
 var byteToHex = [];
@@ -49080,8 +49097,8 @@ var bcryptjs_default = {
 };
 
 // src/database/index.ts
-if (!import_fs.default.existsSync(config.dataDir)) {
-  import_fs.default.mkdirSync(config.dataDir, { recursive: true });
+if (!import_fs2.default.existsSync(config.dataDir)) {
+  import_fs2.default.mkdirSync(config.dataDir, { recursive: true });
 }
 var db = new import_better_sqlite3.default(config.dbPath);
 db.pragma("journal_mode = WAL");
@@ -49164,7 +49181,7 @@ function updateSettingValue(key, value) {
 // src/routes/auth.ts
 var import_express = __toESM(require_express2());
 var import_path2 = __toESM(require("path"));
-var import_fs2 = __toESM(require("fs"));
+var import_fs3 = __toESM(require("fs"));
 var import_multer = __toESM(require_multer());
 
 // src/utils/crypto.ts
@@ -49453,8 +49470,8 @@ function setupSocketServer(io3) {
 // src/routes/auth.ts
 var authRouter = (0, import_express.Router)();
 var avatarsDir = import_path2.default.join(config.dataDir, "uploads", "avatars");
-if (!import_fs2.default.existsSync(avatarsDir)) {
-  import_fs2.default.mkdirSync(avatarsDir, { recursive: true });
+if (!import_fs3.default.existsSync(avatarsDir)) {
+  import_fs3.default.mkdirSync(avatarsDir, { recursive: true });
 }
 var avatarStorage = import_multer.default.diskStorage({
   destination: (_req, _file, cb) => {
@@ -49488,9 +49505,9 @@ authRouter.get("/meta", (req, res) => {
   try {
     const v1 = import_path2.default.resolve(process.cwd(), "../client/dist/version.json");
     const v2 = import_path2.default.resolve(process.cwd(), "./client-dist/version.json");
-    const target = import_fs2.default.existsSync(v1) ? v1 : import_fs2.default.existsSync(v2) ? v2 : null;
+    const target = import_fs3.default.existsSync(v1) ? v1 : import_fs3.default.existsSync(v2) ? v2 : null;
     if (target) {
-      const data = JSON.parse(import_fs2.default.readFileSync(target, "utf-8"));
+      const data = JSON.parse(import_fs3.default.readFileSync(target, "utf-8"));
       buildVersion = data.buildVersion || "";
     }
   } catch (e) {
@@ -49502,6 +49519,7 @@ authRouter.get("/meta", (req, res) => {
     appName,
     pwaShortName,
     pwaIconUrl,
+    version: config.appVersion,
     buildVersion
   });
 });
@@ -49616,9 +49634,9 @@ authRouter.post("/avatar", authenticate, uploadAvatar.single("avatar"), (req, re
     const prev = db.prepare("SELECT avatar_url FROM users WHERE id = ?").get(userId);
     if (prev?.avatar_url && prev.avatar_url.startsWith("/uploads/avatars/")) {
       const oldPath = import_path2.default.join(config.dataDir, prev.avatar_url);
-      if (import_fs2.default.existsSync(oldPath)) {
+      if (import_fs3.default.existsSync(oldPath)) {
         try {
-          import_fs2.default.unlinkSync(oldPath);
+          import_fs3.default.unlinkSync(oldPath);
         } catch (_) {
         }
       }
@@ -49643,9 +49661,9 @@ authRouter.delete("/avatar", authenticate, (req, res) => {
     const prev = db.prepare("SELECT avatar_url FROM users WHERE id = ?").get(userId);
     if (prev?.avatar_url && prev.avatar_url.startsWith("/uploads/avatars/")) {
       const oldPath = import_path2.default.join(config.dataDir, prev.avatar_url);
-      if (import_fs2.default.existsSync(oldPath)) {
+      if (import_fs3.default.existsSync(oldPath)) {
         try {
-          import_fs2.default.unlinkSync(oldPath);
+          import_fs3.default.unlinkSync(oldPath);
         } catch (_) {
         }
       }
@@ -49682,14 +49700,14 @@ authRouter.post("/change-password", authenticate, async (req, res) => {
 var import_express2 = __toESM(require_express2());
 var import_better_sqlite32 = __toESM(require("better-sqlite3"));
 var import_path3 = __toESM(require("path"));
-var import_fs3 = __toESM(require("fs"));
+var import_fs4 = __toESM(require("fs"));
 var import_multer2 = __toESM(require_multer());
 function createAdminRouter(io3) {
   const router = (0, import_express2.Router)();
   const iconsDir = import_path3.default.join(config.dataDir, "uploads", "icons");
   const tempDir = import_path3.default.join(config.dataDir, "uploads", "temp");
-  if (!import_fs3.default.existsSync(iconsDir)) import_fs3.default.mkdirSync(iconsDir, { recursive: true });
-  if (!import_fs3.default.existsSync(tempDir)) import_fs3.default.mkdirSync(tempDir, { recursive: true });
+  if (!import_fs4.default.existsSync(iconsDir)) import_fs4.default.mkdirSync(iconsDir, { recursive: true });
+  if (!import_fs4.default.existsSync(tempDir)) import_fs4.default.mkdirSync(tempDir, { recursive: true });
   const iconStorage = import_multer2.default.diskStorage({
     destination: (_req, _file, cb) => cb(null, iconsDir),
     filename: (_req, file, cb) => {
@@ -49861,9 +49879,9 @@ function createAdminRouter(io3) {
       const prevIcon = getSettingValue("pwa_icon_url", "");
       if (prevIcon && prevIcon.startsWith("/uploads/icons/")) {
         const oldPath = import_path3.default.join(config.dataDir, prevIcon);
-        if (import_fs3.default.existsSync(oldPath)) {
+        if (import_fs4.default.existsSync(oldPath)) {
           try {
-            import_fs3.default.unlinkSync(oldPath);
+            import_fs4.default.unlinkSync(oldPath);
           } catch (_) {
           }
         }
@@ -49884,9 +49902,9 @@ function createAdminRouter(io3) {
       const prevIcon = getSettingValue("pwa_icon_url", "");
       if (prevIcon && prevIcon.startsWith("/uploads/icons/")) {
         const oldPath = import_path3.default.join(config.dataDir, prevIcon);
-        if (import_fs3.default.existsSync(oldPath)) {
+        if (import_fs4.default.existsSync(oldPath)) {
           try {
-            import_fs3.default.unlinkSync(oldPath);
+            import_fs4.default.unlinkSync(oldPath);
           } catch (_) {
           }
         }
@@ -49906,9 +49924,9 @@ function createAdminRouter(io3) {
       const tempBackupPath = import_path3.default.join(config.dataDir, `backup-temp-${Date.now()}.db`);
       await db.backup(tempBackupPath);
       res.download(tempBackupPath, backupFileName, (err) => {
-        if (import_fs3.default.existsSync(tempBackupPath)) {
+        if (import_fs4.default.existsSync(tempBackupPath)) {
           try {
-            import_fs3.default.unlinkSync(tempBackupPath);
+            import_fs4.default.unlinkSync(tempBackupPath);
           } catch (_) {
           }
         }
@@ -49954,9 +49972,9 @@ function createAdminRouter(io3) {
       await uploadedDb.backup(config.dbPath);
       uploadedDb.close();
       db.pragma("wal_checkpoint(TRUNCATE)");
-      if (import_fs3.default.existsSync(uploadedFilePath)) {
+      if (import_fs4.default.existsSync(uploadedFilePath)) {
         try {
-          import_fs3.default.unlinkSync(uploadedFilePath);
+          import_fs4.default.unlinkSync(uploadedFilePath);
         } catch (_) {
         }
       }
@@ -49968,9 +49986,9 @@ function createAdminRouter(io3) {
         message: "Database restored successfully"
       });
     } catch (err) {
-      if (import_fs3.default.existsSync(uploadedFilePath)) {
+      if (import_fs4.default.existsSync(uploadedFilePath)) {
         try {
-          import_fs3.default.unlinkSync(uploadedFilePath);
+          import_fs4.default.unlinkSync(uploadedFilePath);
         } catch (_) {
         }
       }
@@ -50001,13 +50019,13 @@ function createAdminRouter(io3) {
 // src/routes/messages.ts
 var import_express3 = __toESM(require_express2());
 var import_path4 = __toESM(require("path"));
-var import_fs4 = __toESM(require("fs"));
+var import_fs5 = __toESM(require("fs"));
 var import_multer3 = __toESM(require_multer());
 function createMessagesRouter(io3) {
   const router = (0, import_express3.Router)();
   const chatUploadDir = import_path4.default.join(config.dataDir, "uploads", "chat");
-  if (!import_fs4.default.existsSync(chatUploadDir)) {
-    import_fs4.default.mkdirSync(chatUploadDir, { recursive: true });
+  if (!import_fs5.default.existsSync(chatUploadDir)) {
+    import_fs5.default.mkdirSync(chatUploadDir, { recursive: true });
   }
   const chatStorage = import_multer3.default.diskStorage({
     destination: (_req, _file, cb) => {
@@ -50252,8 +50270,8 @@ app.get("/api/health", (req, res) => {
   });
 });
 var uploadsDir = import_path5.default.join(config.dataDir, "uploads");
-if (!import_fs5.default.existsSync(uploadsDir)) {
-  import_fs5.default.mkdirSync(uploadsDir, { recursive: true });
+if (!import_fs6.default.existsSync(uploadsDir)) {
+  import_fs6.default.mkdirSync(uploadsDir, { recursive: true });
 }
 app.use("/uploads", import_express4.default.static(uploadsDir, {
   maxAge: "7d"
@@ -50327,7 +50345,7 @@ app.get("/manifest.json", (req, res) => {
 });
 var clientDistPath = import_path5.default.resolve(process.cwd(), "../client/dist");
 var localDistPath = import_path5.default.resolve(process.cwd(), "./client-dist");
-var staticDir = import_fs5.default.existsSync(clientDistPath) ? clientDistPath : import_fs5.default.existsSync(localDistPath) ? localDistPath : null;
+var staticDir = import_fs6.default.existsSync(clientDistPath) ? clientDistPath : import_fs6.default.existsSync(localDistPath) ? localDistPath : null;
 if (staticDir) {
   console.log(`[Server] Serving static client from: ${staticDir}`);
   app.use(import_express4.default.static(staticDir, {
@@ -50348,7 +50366,7 @@ if (staticDir) {
     res.setHeader("Expires", "0");
     res.setHeader("Content-Type", "application/javascript; charset=utf-8");
     const swPath = import_path5.default.join(staticDir, "sw.js");
-    if (import_fs5.default.existsSync(swPath)) {
+    if (import_fs6.default.existsSync(swPath)) {
       res.sendFile(swPath);
     } else {
       res.status(404).send("// Service worker not found");
@@ -50366,7 +50384,7 @@ if (staticDir) {
 }
 server.listen(config.port, "0.0.0.0", () => {
   console.log(`===============================================`);
-  console.log(`\u{1F680} XMessenger Server running on port ${config.port}`);
+  console.log(`\u{1F680} XMessenger Server v${config.appVersion} running on port ${config.port}`);
   console.log(`\u{1F512} Encryption: AES-256-GCM Enabled`);
   console.log(`\u23F1\uFE0F Default Message TTL: ${config.defaultTtlSeconds}s`);
   console.log(`\u{1F310} Environment: ${process.env.NODE_ENV || "development"}`);

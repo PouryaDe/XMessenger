@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { api } from '../../services/api.js';
+import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { getErrorMessage } from '../../utils/errors.js';
@@ -221,13 +222,13 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 <p className="text-[10px] text-slate-400 font-normal mt-0.5">{t('updateAppDesc')}</p>
               </div>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-500 font-mono shrink-0">
-              {isUpdatingApp ? t('updatingApp') : 'PWA'}
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-500 font-mono shrink-0 font-bold">
+              {isUpdatingApp ? t('updatingApp') : `v${APP_VERSION}`}
             </span>
           </button>
         </div>
 
-        {/* Footer Logout */}
+        {/* Footer Logout & App Version */}
         <div className="p-5 pb-safe border-t border-stone-200/50 dark:border-white/[0.06]">
           <button
             onClick={logout}
@@ -236,6 +237,9 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             <LogOut className="w-4 h-4" />
             <span>{t('logout')}</span>
           </button>
+          <div className="text-center text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-3 select-none">
+            XMessenger v{APP_VERSION}
+          </div>
         </div>
       </div>
 

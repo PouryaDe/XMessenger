@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { api, AdminUserItem } from '../../services/api.js';
+import { APP_VERSION } from '../../config/version.js';
 import { AdminSidebar } from './AdminSidebar.js';
 import { AdminSettingsModal } from './AdminSettingsModal.js';
 import { MessageItem } from '../common/MessageItem.js';
@@ -520,6 +521,9 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xs text-slate-400 max-w-[260px] mt-1.5 leading-relaxed">
               {t('selectConversationDesc')}
             </p>
+            <div className="mt-4 px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/[0.06] text-[11px] font-mono text-slate-400 select-none">
+              XMessenger v{APP_VERSION}
+            </div>
           </div>
         )}
       </div>

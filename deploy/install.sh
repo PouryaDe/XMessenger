@@ -14,6 +14,8 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
+APP_VERSION=$(cat "VERSION" 2>/dev/null || cat "/opt/xmessenger/VERSION" 2>/dev/null || echo "2.1.0")
+
 echo -e "${CYAN}${BOLD}"
 echo "=================================================================="
 echo "    __  ____  ___                                              "
@@ -22,7 +24,7 @@ echo "     \  / /\_/ / _ \/ ___/ ___/ _ \/ __ \/ __ \/ _ \/ ___/    "
 echo "     / / /  / /  __(__  |__  )  __/ / / / /_/ /  __/ /        "
 echo "    /_/_/  /_/\___/____/____/\___/_/ /_/\__, /\___/_/         "
 echo "                                       /____/                 "
-echo "   XMessenger - Multi-Domain Secure Messenger Installer        "
+echo "   XMessenger Multi-Domain Secure Messenger Installer (v${APP_VERSION})"
 echo "=================================================================="
 echo -e "${NC}"
 

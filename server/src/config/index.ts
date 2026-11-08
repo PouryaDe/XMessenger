@@ -1,15 +1,33 @@
 import dotenv from 'dotenv';
 import path from 'path';
 import crypto from 'crypto';
+import fs from 'fs';
 
 dotenv.config();
 
 const DATA_DIR = process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
 
+// Read app version from VERSION file
+const APP_VERSION = (() => {
+  try {
+    const candidates = [
+      path.resolve(process.cwd(), '../VERSION'),
+      path.resolve(process.cwd(), './VERSION'),
+      path.resolve(__dirname, '../../../VERSION'),
+      path.resolve(__dirname, '../../VERSION')
+    ];
+    for (const p of candidates) {
+      if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8').trim();
+    }
+  } catch {}
+  return '2.1.0';
+})();
+
 // Ensure a fallback 32-byte key if none provided in development
 const DEFAULT_KEY = process.env.ENCRYPTION_KEY || crypto.createHash('sha256').update(process.env.JWT_SECRET || 'xmessenger-default-secret-key-2026').digest('hex');
 
 export const config = {
+  appVersion: APP_VERSION,
   port: parseInt(process.env.PORT || '3001', 10),
   jwtSecret: process.env.JWT_SECRET || 'xmessenger-jwt-super-secret-key-change-in-prod-2026',
   encryptionKey: DEFAULT_KEY.substring(0, 64), // 32 bytes hex = 64 characters

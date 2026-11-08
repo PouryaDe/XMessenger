@@ -46,6 +46,9 @@ const resources = {
       save: 'ذخیره',
       // Admin specific
       registrationControl: 'کنترل ثبت‌نام کاربران',
+      systemVersion: 'نسخه سامانه',
+      systemVersionDesc: 'نسخه فعال هسته و رابط کاربری',
+      version: 'نسخه',
       allowRegistration: 'امکان ثبت‌نام کاربران جدید',
       allowRegistrationDesc: 'در صورت غیرفعال بودن، ثبت‌نام کاربران جدید مسدود می‌شود.',
       registrationApproval: 'تایید دستی ثبت‌نام توسط ادمین',
@@ -247,6 +250,9 @@ const resources = {
       save: 'Save',
       // Admin specific
       registrationControl: 'User Registration Control',
+      systemVersion: 'System Version',
+      systemVersionDesc: 'Active Core & Client Build',
+      version: 'Version',
       allowRegistration: 'Allow New User Registrations',
       allowRegistrationDesc: 'If disabled, no new accounts can be created.',
       registrationApproval: 'Manual Admin Approval Required',

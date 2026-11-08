@@ -1,6 +1,6 @@
 {
   "name": "xmessenger-root",
-  "version": "1.0.0",
+  "version": "2.1.0",
   "private": true,
   "description": "Secure One-Way (Hub-and-Spoke) Messenger with Ephemeral Messages and Linux Auto-Installer",
   "scripts": {

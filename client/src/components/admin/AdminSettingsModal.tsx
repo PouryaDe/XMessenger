@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api, AdminSettings } from '../../services/api.js';
 import { useAuthStore } from '../../stores/authStore.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { APP_VERSION } from '../../config/version.js';
 import { 
   X, 
   Sliders, 
@@ -189,10 +190,15 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <Sliders className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-extrabold text-sm text-slate-900 dark:text-white">
-                {t('settings')} - {t('adminPanel')}
-              </h3>
-              <p className="text-[11px] text-slate-400">
+              <div className="flex items-center gap-2">
+                <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
+                  {t('settings')} - {t('adminPanel')}
+                </h3>
+                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  v{APP_VERSION}
+                </span>
+              </div>
+              <p className="text-[11px] text-slate-400 mt-1">
                 {t('settingsSubtitle')}
               </p>
             </div>
@@ -265,6 +271,21 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {/* TAB 1: GENERAL & TTL */}
           {activeTab === 'general' && (
             <>
+              {/* System Version Card */}
+              <div className="flex items-center justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
+                <div>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block select-none">
+                    {t('systemVersion')}
+                  </span>
+                  <p className="text-[11px] text-slate-400 mt-0.5 select-none">
+                    {t('systemVersionDesc')}
+                  </p>
+                </div>
+                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  v{APP_VERSION}
+                </span>
+              </div>
+
               {/* 1. Registration Switch */}
               <div 
                 onClick={() => setSettings({ ...settings, registrationEnabled: !settings.registrationEnabled })}

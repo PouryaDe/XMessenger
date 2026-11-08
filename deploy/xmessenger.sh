@@ -47,8 +47,19 @@ if [ "$1" == "status" ] || [ "$1" == "ps" ]; then
   exit 0
 fi
 
+get_version() {
+  if [ -f "${BASE_DIR}/VERSION" ]; then
+    cat "${BASE_DIR}/VERSION" | tr -d '\r\n'
+  elif [ -f "VERSION" ]; then
+    cat "VERSION" | tr -d '\r\n'
+  else
+    echo "2.1.0"
+  fi
+}
+
 show_banner() {
   clear
+  local VER=$(get_version)
   echo -e "${CYAN}${BOLD}"
   echo "=================================================================="
   echo "    __  ____  ___                                              "
@@ -57,7 +68,7 @@ show_banner() {
   echo "     / / /  / /  __(__  |__  )  __/ / / / /_/ /  __/ /        "
   echo "    /_/_/  /_/\___/____/____/\___/_/ /_/\__, /\___/_/         "
   echo "                                       /____/                 "
-  echo "     XMessenger Multi-Instance Console (Version 2.0.0)         "
+  echo "     XMessenger Multi-Instance Console (v${VER})              "
   echo "=================================================================="
   echo -e "${NC}"
 }

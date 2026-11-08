@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { AdminUserItem } from '../../services/api.js';
+import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { 
@@ -48,9 +49,14 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-white/[0.08] text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] shrink-0">
             <Users className="w-5 h-5" />
           </div>
-          <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
-            {t('adminPanel')}
-          </h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
+              {t('adminPanel')}
+            </h2>
+            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/[0.08] text-slate-500 dark:text-slate-400">
+              v{APP_VERSION}
+            </span>
+          </div>
         </div>
 
         <div className="flex items-center gap-1.5">
@@ -239,6 +245,14 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             );
           })
         )}
+      </div>
+
+      {/* Sidebar Footer with Version */}
+      <div className="p-3.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 select-none shrink-0 bg-black/[0.01] dark:bg-white/[0.01]">
+        <span className="font-semibold tracking-tight text-slate-600 dark:text-slate-400">XMessenger</span>
+        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 font-bold">
+          v{APP_VERSION}
+        </span>
       </div>
     </aside>
   );

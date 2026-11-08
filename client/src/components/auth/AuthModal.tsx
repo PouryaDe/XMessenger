@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { api, AppMeta } from '../../services/api.js';
+import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { getErrorMessage } from '../../utils/errors.js';
@@ -195,6 +196,11 @@ export const AuthModal: React.FC = () => {
               </p>
             )
           )}
+        </div>
+
+        {/* Footer Version */}
+        <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-4 select-none">
+          XMessenger v{appMeta?.version || APP_VERSION}
         </div>
       </div>
     </div>

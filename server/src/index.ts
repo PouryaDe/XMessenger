@@ -188,7 +188,7 @@ if (staticDir) {
 // 8. Start Listening
 server.listen(config.port, '0.0.0.0', () => {
   console.log(`===============================================`);
-  console.log(`🚀 XMessenger Server running on port ${config.port}`);
+  console.log(`🚀 XMessenger Server v${config.appVersion} running on port ${config.port}`);
   console.log(`🔒 Encryption: AES-256-GCM Enabled`);
   console.log(`⏱️ Default Message TTL: ${config.defaultTtlSeconds}s`);
   console.log(`🌐 Environment: ${process.env.NODE_ENV || 'development'}`);
