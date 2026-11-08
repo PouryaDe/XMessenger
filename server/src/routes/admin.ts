@@ -69,23 +69,26 @@ export function createAdminRouter(io?: Server) {
         avatar_url?: string;
       }>;
 
+      const now = new Date().toISOString();
+
       // Enhance with conversation summary
       const usersWithMeta = users.map(user => {
-        // Count unread messages sent by user to admin
+        // Count unread non-expired messages sent by user to admin
         const unreadCount = db.prepare(`
           SELECT COUNT(*) as count
           FROM messages
-          WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
-        `).get(user.id, req.user!.id) as { count: number };
+          WHERE sender_id = ? AND recipient_id = ? AND is_read = 0 AND expires_at > ?
+        `).get(user.id, req.user!.id, now) as { count: number } | undefined;
 
-        // Get last message
+        // Get last non-expired message
         const lastMsgRow = db.prepare(`
           SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at
           FROM messages
-          WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+          WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
+            AND expires_at > ?
           ORDER BY created_at DESC
           LIMIT 1
-        `).get(user.id, req.user!.id, req.user!.id, user.id) as {
+        `).get(user.id, req.user!.id, req.user!.id, user.id, now) as {
           id: string;
           sender_id: string;
           recipient_id: string;

@@ -6,9 +6,6 @@ import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
 import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
-import { getSocket } from '../../services/socket.js';
-import type { Socket } from 'socket.io-client';
-import { playReceiveSound } from '../../utils/sound.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { api, Message } from '../../services/api.js';
 import { 
@@ -38,21 +35,13 @@ export const UserChatView: React.FC = () => {
     loadMessages, 
     sendMessage, 
     deleteMessage, 
-    addMessage, 
-    removeMessage,
-    clearMessages,
     isAdminOnline,
     adminLastSeen,
-    setAdminOnline,
-    setAdminLastSeen,
     syncMessages,
     typingUsers,
-    setTyping,
     sendTyping,
     markConversationAsRead,
-    markMessagesReadByRecipient,
-    toggleReaction,
-    updateMessageReactions
+    toggleReaction
   } = useChatStore();
 
   const [inputText, setInputText] = useState('');
@@ -196,93 +185,16 @@ export const UserChatView: React.FC = () => {
     localStorage.setItem('xmessenger_dismiss_push_prompt', 'true');
   };
 
-  // Socket event listeners (resilient to initial mount & reconnections)
+  // Re-sync messages on socket reconnection
   useEffect(() => {
-    let activeSocket = getSocket();
-
-    const registerSocketHandlers = (sock: Socket) => {
-      sock.off('message:new');
-      sock.off('message:sent');
-      sock.off('message:deleted');
-      sock.off('conversation:cleared');
-      sock.off('messages:read');
-      sock.off('message:reaction');
-      sock.off('admin:online_status');
-      sock.off('typing');
-
-      sock.on('message:new', (msg) => {
-        addMessage({ ...msg, isOwn: msg.senderId === user?.id });
-        if (!msg.isOwn && msg.senderId !== user?.id) {
-          playReceiveSound();
-        }
-        // Mark as read immediately since user is actively viewing this chat
-        if (msg.senderId) {
-          markConversationAsRead(msg.senderId);
-        }
-      });
-
-      sock.on('message:sent', (msg) => {
-        addMessage({ ...msg, isOwn: true });
-      });
-
-      sock.on('message:deleted', ({ messageId }) => {
-        removeMessage(messageId);
-      });
-
-      sock.on('conversation:cleared', () => {
-        clearMessages();
-      });
-
-      sock.on('messages:read', ({ readerId }: { readerId: string }) => {
-        markMessagesReadByRecipient(readerId);
-      });
-
-      sock.on('message:reaction', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
-        updateMessageReactions(messageId, reactions);
-      });
-
-      sock.on('admin:online_status', ({ isOnline, lastSeen }) => {
-        setAdminOnline(isOnline);
-        if (lastSeen) setAdminLastSeen(lastSeen);
-      });
-
-      sock.on('typing', ({ username, isTyping }) => {
-        if (adminInfo && (username === adminInfo.username || username === 'admin')) {
-          setTyping(adminInfo.id, isTyping);
-        }
-      });
+    const handleConnect = () => {
+      syncMessages();
     };
-
-    if (activeSocket) {
-      registerSocketHandlers(activeSocket);
-    }
-
-    const onSocketReady = (e: any) => {
-      const sock = e.detail || getSocket();
-      if (sock) {
-        activeSocket = sock;
-        registerSocketHandlers(sock);
-      }
-    };
-
-    window.addEventListener('socket:ready', onSocketReady);
-    window.addEventListener('socket:connect', onSocketReady);
-
+    window.addEventListener('socket:connect', handleConnect);
     return () => {
-      window.removeEventListener('socket:ready', onSocketReady);
-      window.removeEventListener('socket:connect', onSocketReady);
-      if (activeSocket) {
-        activeSocket.off('message:new');
-        activeSocket.off('message:sent');
-        activeSocket.off('message:deleted');
-        activeSocket.off('conversation:cleared');
-        activeSocket.off('messages:read');
-        activeSocket.off('message:reaction');
-        activeSocket.off('admin:online_status');
-        activeSocket.off('typing');
-      }
+      window.removeEventListener('socket:connect', handleConnect);
     };
-  }, [adminInfo, user?.id]);
+  }, [syncMessages]);
 
   // Periodic heartbeat sync to ensure zero missed messages
   useEffect(() => {

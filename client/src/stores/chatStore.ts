@@ -279,14 +279,34 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => {
       let changed = false;
       const updatedMessages = state.messages.map((m) => {
-        if ((m.recipientId === readerId || m.isOwn) && !m.isRead) {
+        if (m.recipientId === readerId && !m.isRead) {
           changed = true;
           return { ...m, isRead: true };
         }
         return m;
       });
-      if (!changed) return state;
-      return { messages: updatedMessages };
+
+      // Also update messages in conversation cache
+      const cached = state.messagesByConversation[readerId];
+      let updatedCache: Message[] | null = null;
+      if (cached) {
+        updatedCache = cached.map((m) => {
+          if (m.recipientId === readerId && !m.isRead) {
+            return { ...m, isRead: true };
+          }
+          return m;
+        });
+      }
+
+      if (!changed && !updatedCache) return state;
+
+      return {
+        messages: updatedMessages,
+        messagesByConversation: updatedCache ? {
+          ...state.messagesByConversation,
+          [readerId]: updatedCache
+        } : state.messagesByConversation
+      };
     });
   },
 
@@ -515,8 +535,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
       // 1. Target conversation message list
       const targetList = state.messagesByConversation[convPartnerId] || (isActive ? state.messages : []);
 
-      // If message already exists by id, check if changed
+      // Check if message already exists by id or matches a pending optimistic message
       const existingIdx = targetList.findIndex((m) => m.id === msg.id);
+      const pendingIdx = targetList.findIndex(
+        (m) =>
+          (m.id.startsWith('temp_') || m.status === 'sending') &&
+          m.text === msg.text &&
+          (m.isOwn || m.senderId === msg.senderId)
+      );
       let updatedTargetList: Message[];
 
       if (existingIdx !== -1) {
@@ -531,30 +557,24 @@ export const useChatStore = create<ChatState>((set, get) => ({
         }
         updatedTargetList = [...targetList];
         updatedTargetList[existingIdx] = { ...cur, ...msg };
-      } else {
+      } else if (pendingIdx !== -1) {
         // If it's a confirmed message matching a pending optimistic message, replace in-place!
-        const pendingIdx = targetList.findIndex(
-          (m) =>
-            (m.id.startsWith('temp_') || m.status === 'sending') &&
-            m.text === msg.text &&
-            (m.isOwn || m.senderId === msg.senderId)
-        );
-
-        if (pendingIdx !== -1) {
-          updatedTargetList = [...targetList];
-          updatedTargetList[pendingIdx] = { ...msg, isOwn: true, status: 'sent' };
-        } else {
-          updatedTargetList = [...targetList, msg];
-        }
+        updatedTargetList = [...targetList];
+        updatedTargetList[pendingIdx] = { ...msg, isOwn: true, status: 'sent' };
+      } else {
+        updatedTargetList = [...targetList, msg];
       }
 
       // 2. Update adminUsers lastMessage and unreadCount in real time (for Admin)
       let updatedAdminUsers = state.adminUsers;
       if (isCurrentUserAdmin) {
+        const isBrandNewMessage = existingIdx === -1 && pendingIdx === -1;
+        let found = false;
         updatedAdminUsers = state.adminUsers.map((u) => {
           if (u.id === convPartnerId) {
+            found = true;
             const isSender = u.id === msg.senderId;
-            const newUnread = isActive ? 0 : (isSender ? (u.unreadCount || 0) + 1 : u.unreadCount || 0);
+            const newUnread = isActive ? 0 : (isBrandNewMessage && isSender ? (u.unreadCount || 0) + 1 : (u.unreadCount || 0));
             return {
               ...u,
               unreadCount: newUnread,
@@ -569,6 +589,30 @@ export const useChatStore = create<ChatState>((set, get) => ({
           }
           return u;
         });
+
+        // If user is not yet in adminUsers list (e.g. freshly registered), add them dynamically
+        if (!found && convPartnerId && convPartnerId !== 'main') {
+          const isSender = convPartnerId === msg.senderId;
+          const dynamicUser: AdminUserItem = {
+            id: convPartnerId,
+            username: (msg as any).senderUsername || `user_${convPartnerId.substring(0, 6)}`,
+            role: 'user',
+            status: 'active',
+            created_at: msg.createdAt,
+            last_seen: msg.createdAt,
+            unreadCount: isActive ? 0 : (isSender ? 1 : 0),
+            isOnline: true,
+            lastMessage: {
+              id: msg.id,
+              text: msg.text,
+              createdAt: msg.createdAt,
+              expiresAt: msg.expiresAt,
+              isFromAdmin: !isSender
+            }
+          };
+          updatedAdminUsers = [dynamicUser, ...updatedAdminUsers];
+        }
+
         updatedAdminUsers = sortAdminUsersByLastMessage(updatedAdminUsers);
       }
 

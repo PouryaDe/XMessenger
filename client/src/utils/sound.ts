@@ -16,6 +16,31 @@ function getAudioContext(): AudioContext | null {
   return audioCtx;
 }
 
+// User-interaction unlock for mobile browsers (iOS Safari & Android Chrome auto-play policy)
+if (typeof window !== 'undefined') {
+  const unlockAudio = () => {
+    try {
+      const ctx = getAudioContext();
+      if (ctx && ctx.state === 'suspended') {
+        ctx.resume().then(() => {
+          // Play silent 1-sample buffer to permanently unlock iOS audio hardware pipe
+          const buffer = ctx.createBuffer(1, 1, 22050);
+          const source = ctx.createBufferSource();
+          source.buffer = buffer;
+          source.connect(ctx.destination);
+          source.start(0);
+        }).catch(() => {});
+      }
+    } catch {}
+    window.removeEventListener('click', unlockAudio);
+    window.removeEventListener('touchstart', unlockAudio);
+    window.removeEventListener('keydown', unlockAudio);
+  };
+  window.addEventListener('click', unlockAudio, { passive: true });
+  window.addEventListener('touchstart', unlockAudio, { passive: true });
+  window.addEventListener('keydown', unlockAudio, { passive: true });
+}
+
 /**
  * Pleasant soft send sound
  */

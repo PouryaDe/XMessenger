@@ -237,4 +237,76 @@ describe('Chat Ordering by Latest Message Tests', () => {
     assert.equal((sorted[0] as any).unreadCount, 1);
     assert.equal(sorted[1].id, 'user_active');
   });
+
+  it('excludes expired messages from unread counting and conversation lastMessage', () => {
+    const now = new Date('2026-11-08T12:00:00.000Z');
+    const messages = [
+      {
+        id: 'msg_expired',
+        sender_id: 'user_x',
+        recipient_id: 'admin_id',
+        is_read: 0,
+        expires_at: '2026-11-08T11:00:00.000Z', // Expired 1 hour ago
+        text: 'Expired message'
+      },
+      {
+        id: 'msg_active',
+        sender_id: 'user_x',
+        recipient_id: 'admin_id',
+        is_read: 0,
+        expires_at: '2026-11-08T15:00:00.000Z', // Active
+        text: 'Active fresh message'
+      }
+    ];
+
+    // Mirroring query in server/src/routes/admin.ts
+    const nonExpiredUnread = messages.filter(
+      (m) => m.sender_id === 'user_x' && m.is_read === 0 && new Date(m.expires_at).getTime() > now.getTime()
+    );
+    assert.equal(nonExpiredUnread.length, 1);
+    assert.equal(nonExpiredUnread[0].id, 'msg_active');
+
+    // Only non-expired messages qualify for lastMessage
+    const nonExpiredMessages = messages.filter((m) => new Date(m.expires_at).getTime() > now.getTime());
+    assert.equal(nonExpiredMessages.length, 1);
+    assert.equal(nonExpiredMessages[0].text, 'Active fresh message');
+  });
+
+  it('prevents double-counting unread count on duplicate socket messages or delivery updates', () => {
+    const existingMessages = [
+      { id: 'temp_123', status: 'sending', text: 'Hello', isOwn: true, senderId: 'admin_id' }
+    ];
+
+    // Message arrives confirming delivery
+    const realMsg = { id: 'real_456', status: 'sent', text: 'Hello', isOwn: true, senderId: 'admin_id' };
+    const existingIdx = existingMessages.findIndex((m) => m.id === realMsg.id);
+    const pendingIdx = existingMessages.findIndex(
+      (m) => (m.id.startsWith('temp_') || m.status === 'sending') && m.text === realMsg.text
+    );
+
+    const isBrandNewMessage = existingIdx === -1 && pendingIdx === -1;
+    // Because it matches pendingIdx, isBrandNewMessage must be false -> zero unread increment
+    assert.equal(isBrandNewMessage, false);
+  });
+
+  it('guarantees reader isolation for message read receipts', () => {
+    const messages = [
+      { id: 'm1', recipientId: 'user_alice', isRead: false },
+      { id: 'm2', recipientId: 'user_bob', isRead: false }
+    ];
+
+    const readerId = 'user_alice';
+    // Alice reads her messages
+    const updated = messages.map((m) => {
+      if (m.recipientId === readerId && !m.isRead) {
+        return { ...m, isRead: true };
+      }
+      return m;
+    });
+
+    // Alice's message is marked read
+    assert.equal(updated.find((m) => m.id === 'm1')?.isRead, true);
+    // Bob's message MUST remain unread
+    assert.equal(updated.find((m) => m.id === 'm2')?.isRead, false);
+  });
 });

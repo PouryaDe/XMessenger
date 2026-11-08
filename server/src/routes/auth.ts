@@ -149,6 +149,7 @@ authRouter.post('/register', async (req, res) => {
         unreadCount: 0,
         isOnline: false
       };
+      // Broadcast new user to admin room (contains status: 'pending' | 'active')
       io.to('room:admin').emit('user:registered', adminUserItem);
       if (initialStatus === 'pending') {
         io.to('room:admin').emit('user:pending_approval', adminUserItem);

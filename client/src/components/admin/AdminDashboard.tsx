@@ -8,9 +8,6 @@ import { AdminSidebar } from './AdminSidebar.js';
 import { AdminSettingsModal } from './AdminSettingsModal.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
-import { getSocket } from '../../services/socket.js';
-import type { Socket } from 'socket.io-client';
-import { playReceiveSound } from '../../utils/sound.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { 
@@ -36,26 +33,16 @@ export const AdminDashboard: React.FC = () => {
     setActiveUserId, 
     adminUsers, 
     setAdminUsers, 
-    addAdminUser,
-    updateAdminUserStatus,
-    removeAdminUser,
     sendMessage, 
     deleteMessage, 
-    addMessage, 
-    removeMessage, 
     clearMessages, 
     onlineUsers, 
     lastSeenUsers,
-    setOnlineStatus,
     typingUsers,
-    setTyping,
     sendTyping,
     syncMessages,
-    markMessagesReadByRecipient,
-    syncReadUser,
     isLoadingMessages,
-    toggleReaction,
-    updateMessageReactions
+    toggleReaction
   } = useChatStore();
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -159,132 +146,16 @@ export const AdminDashboard: React.FC = () => {
     refreshUsers();
   }, []);
 
-  // Socket events for Admin (resilient to initial mount & reconnections)
+  // Re-sync admin users on socket reconnection
   useEffect(() => {
-    let activeSocket = getSocket();
-
-    const registerSocketHandlers = (sock: Socket) => {
-      sock.off('message:new');
-      sock.off('message:sent');
-      sock.off('message:deleted');
-      sock.off('conversation:cleared');
-      sock.off('presence:init');
-      sock.off('user:online_status');
-      sock.off('typing');
-      sock.off('messages:read');
-      sock.off('message:reaction');
-      sock.off('conversation:read_sync');
-      sock.off('user:registered');
-      sock.off('user:pending_approval');
-      sock.off('user:status_changed');
-      sock.off('user:deleted');
-
-      sock.on('message:new', (msg) => {
-        addMessage({ ...msg, isOwn: msg.senderId === user?.id });
-        if (!msg.isOwn && msg.senderId !== user?.id) {
-          playReceiveSound();
-        }
-        refreshUsers();
-      });
-
-      sock.on('message:sent', (msg) => {
-        addMessage({ ...msg, isOwn: true });
-        refreshUsers();
-      });
-
-      sock.on('message:deleted', ({ messageId }) => {
-        removeMessage(messageId);
-        refreshUsers();
-      });
-
-      sock.on('conversation:cleared', ({ userId }) => {
-        if (activeUserId === userId) {
-          clearMessages();
-        }
-        refreshUsers();
-      });
-
-      sock.on('presence:init', ({ onlineUserIds }: { onlineUserIds: string[] }) => {
-        onlineUserIds.forEach((id) => setOnlineStatus(id, true));
-      });
-
-      sock.on('user:online_status', ({ userId, isOnline, lastSeen }) => {
-        setOnlineStatus(userId, isOnline, lastSeen);
-      });
-
-      sock.on('typing', ({ userId, isTyping }) => {
-        setTyping(userId, isTyping);
-      });
-
-      sock.on('messages:read', ({ readerId }: { readerId: string }) => {
-        markMessagesReadByRecipient(readerId);
-      });
-
-      sock.on('message:reaction', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
-        updateMessageReactions(messageId, reactions);
-      });
-
-      sock.on('conversation:read_sync', ({ userId }: { userId: string }) => {
-        syncReadUser(userId);
-      });
-
-      sock.on('user:registered', (newUser: AdminUserItem) => {
-        addAdminUser(newUser);
-        refreshUsers();
-      });
-
-      sock.on('user:pending_approval', (newUser: AdminUserItem) => {
-        addAdminUser(newUser);
-        refreshUsers();
-      });
-
-      sock.on('user:status_changed', ({ userId, status }: { userId: string; status: 'active' | 'pending' | 'banned' }) => {
-        updateAdminUserStatus(userId, status);
-        refreshUsers();
-      });
-
-      sock.on('user:deleted', ({ userId }: { userId: string }) => {
-        removeAdminUser(userId);
-        refreshUsers();
-      });
+    const handleConnect = () => {
+      refreshUsers();
     };
-
-    if (activeSocket) {
-      registerSocketHandlers(activeSocket);
-    }
-
-    const onSocketReady = (e: any) => {
-      const sock = e.detail || getSocket();
-      if (sock) {
-        activeSocket = sock;
-        registerSocketHandlers(sock);
-      }
-    };
-
-    window.addEventListener('socket:ready', onSocketReady);
-    window.addEventListener('socket:connect', onSocketReady);
-
+    window.addEventListener('socket:connect', handleConnect);
     return () => {
-      window.removeEventListener('socket:ready', onSocketReady);
-      window.removeEventListener('socket:connect', onSocketReady);
-      if (activeSocket) {
-        activeSocket.off('message:new');
-        activeSocket.off('message:sent');
-        activeSocket.off('message:deleted');
-        activeSocket.off('conversation:cleared');
-        activeSocket.off('presence:init');
-        activeSocket.off('user:online_status');
-        activeSocket.off('typing');
-        activeSocket.off('messages:read');
-        activeSocket.off('message:reaction');
-        activeSocket.off('conversation:read_sync');
-        activeSocket.off('user:registered');
-        activeSocket.off('user:pending_approval');
-        activeSocket.off('user:status_changed');
-        activeSocket.off('user:deleted');
-      }
+      window.removeEventListener('socket:connect', handleConnect);
     };
-  }, [activeUserId, user?.id]);
+  }, []);
 
   // Periodic heartbeat message sync to guarantee zero missed messages
   useEffect(() => {

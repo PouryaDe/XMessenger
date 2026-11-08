@@ -1,5 +1,9 @@
 import { io, Socket } from 'socket.io-client';
 import { useChatStore } from '../stores/chatStore.js';
+import { useAuthStore } from '../stores/authStore.js';
+import { playReceiveSound } from '../utils/sound.js';
+import { notifyIncomingMessage } from '../utils/notifications.js';
+import { AdminUserItem } from './api.js';
 
 let socket: Socket | null = null;
 let currentToken: string | null = null;
@@ -58,6 +62,82 @@ export function initSocket(token: string): Socket {
     if (reason === 'io server disconnect') {
       socket?.connect();
     }
+  });
+
+  // Global Real-time Message Handler (Permanent, zero listener churn on navigation)
+  socket.on('message:new', (msg) => {
+    const authStore = useAuthStore.getState();
+    const currentUserId = authStore.user?.id || '';
+    const isOwn = msg.senderId === currentUserId;
+
+    useChatStore.getState().addMessage({ ...msg, isOwn });
+
+    if (!isOwn && msg.senderId !== currentUserId) {
+      playReceiveSound();
+      const senderName = authStore.user?.role === 'admin'
+        ? (msg.senderUsername || 'کاربر')
+        : (authStore.adminInfo?.username || 'مدیریت');
+      notifyIncomingMessage(senderName, msg.text);
+    }
+  });
+
+  socket.on('message:sent', (msg) => {
+    useChatStore.getState().addMessage({ ...msg, isOwn: true });
+  });
+
+  socket.on('message:deleted', ({ messageId }) => {
+    useChatStore.getState().removeMessage(messageId);
+  });
+
+  socket.on('conversation:cleared', () => {
+    useChatStore.getState().clearMessages();
+  });
+
+  socket.on('messages:read', ({ readerId }: { readerId: string }) => {
+    useChatStore.getState().markMessagesReadByRecipient(readerId);
+  });
+
+  socket.on('conversation:read_sync', ({ userId }: { userId: string }) => {
+    useChatStore.getState().syncReadUser(userId);
+  });
+
+  socket.on('message:reaction', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
+    useChatStore.getState().updateMessageReactions(messageId, reactions);
+  });
+
+  socket.on('presence:init', ({ onlineUserIds }: { onlineUserIds: string[] }) => {
+    onlineUserIds.forEach((id) => useChatStore.getState().setOnlineStatus(id, true));
+  });
+
+  socket.on('user:online_status', ({ userId, isOnline, lastSeen }) => {
+    useChatStore.getState().setOnlineStatus(userId, isOnline, lastSeen);
+  });
+
+  socket.on('admin:online_status', ({ isOnline, lastSeen }) => {
+    useChatStore.getState().setAdminOnline(isOnline);
+    if (lastSeen) useChatStore.getState().setAdminLastSeen(lastSeen);
+  });
+
+  socket.on('typing', ({ userId, isTyping }) => {
+    if (userId) {
+      useChatStore.getState().setTyping(userId, isTyping);
+    }
+  });
+
+  socket.on('user:registered', (newUser: AdminUserItem) => {
+    useChatStore.getState().addAdminUser(newUser);
+  });
+
+  socket.on('user:pending_approval', (newUser: AdminUserItem) => {
+    useChatStore.getState().addAdminUser(newUser);
+  });
+
+  socket.on('user:status_changed', ({ userId, status }: { userId: string; status: 'active' | 'pending' | 'banned' }) => {
+    useChatStore.getState().updateAdminUserStatus(userId, status);
+  });
+
+  socket.on('user:deleted', ({ userId }: { userId: string }) => {
+    useChatStore.getState().removeAdminUser(userId);
   });
 
   // Re-sync messages and reconnect if needed when returning to the tab or unlocking phone

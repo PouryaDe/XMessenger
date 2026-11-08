@@ -63,9 +63,13 @@ This document outlines the architectural layers, data contracts, and component r
 - Client Socket Lifecycle Standard:
   - Immediate socket initialization from `localStorage` token upon app load.
   - Socket instance reuse: prevents socket teardown when `checkAuth` verifies identical token.
-  - Dual-phase listener registration: components bind to both active socket and `socket:ready`/`socket:connect` events.
-  - Real-time conversation bubbling: active and background chats immediately re-sort to the top of the sidebar upon new message.
-  - Synthesized Web Audio chimes for send (`playSendSound`) and receive (`playReceiveSound`).
+  - Global socket event binding: core handlers (`message:new`, `message:sent`, `message:deleted`, `messages:read`, `conversation:read_sync`, `presence`, `typing`, `user:registered`) are bound permanently on the socket instance in `socket.ts`, completely decoupling real-time event processing from React component mount/unmount lifecycles and navigation churn.
+  - Emission deduplication: when a regular user sends to Admin, emit once to `room:admin` (avoiding redundant duplicate emission to `user:${adminId}`).
+  - Conversation summary TTL filter: queries for `unreadCount` and `lastMessage` in `admin.ts` strictly enforce `expires_at > now` to prevent expired messages from cluttering the conversation list or showing false unread badges.
+  - Reader isolation: `messages:read` receipts strictly match `m.recipientId === readerId` to prevent reading one conversation from marking another conversation's messages as read.
+  - Real-time conversation bubbling: active and background chats immediately re-sort to the top of the sidebar upon new message (`existingIdx === -1 && pendingIdx === -1` guard prevents false unread increments).
+  - Synthesized Web Audio chimes for send (`playSendSound`) and receive (`playReceiveSound`) with user-interaction auto-unlock for iOS Safari and Android Chrome auto-play policy.
+  - Desktop background notifications and document title counter: updates title with `(${unreadCount})` and displays desktop notification when window is backgrounded/hidden.
 
 ---
 

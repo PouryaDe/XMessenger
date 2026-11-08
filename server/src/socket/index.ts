@@ -201,9 +201,11 @@ export function setupSocketServer(io: Server) {
           // Broadcast to admin's active sockets
           io.to('room:admin').emit('message:sent', messagePayload);
         } else {
-          // Regular user sending to admin
-          io.to(`user:${recipientId}`).emit('message:new', messagePayload);
-          io.to('room:admin').emit('message:new', messagePayload);
+          // Regular user sending to admin: emit once to room:admin (which includes all admin sessions)
+          io.to('room:admin').emit('message:new', {
+            ...messagePayload,
+            senderUsername: user.username
+          });
           // Broadcast to user's active sockets
           io.to(userRoom).emit('message:sent', messagePayload);
         }

@@ -225,8 +225,11 @@ export function createMessagesRouter(io?: Server) {
           io.to(`user:${recipientId}`).emit('message:new', messagePayload);
           io.to('room:admin').emit('message:sent', messagePayload);
         } else {
-          io.to(`user:${recipientId}`).emit('message:new', messagePayload);
-          io.to('room:admin').emit('message:new', messagePayload);
+          // Regular user sending to admin: emit once to room:admin (which includes all admin sessions)
+          io.to('room:admin').emit('message:new', {
+            ...messagePayload,
+            senderUsername: currentUser.username
+          });
           io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
         }
       }

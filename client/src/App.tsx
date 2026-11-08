@@ -9,6 +9,8 @@ import { AdminDashboard } from './components/admin/AdminDashboard.js';
 import { Shield, ShieldAlert, LogOut, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
+import { setOriginalDocumentTitle } from './utils/notifications.js';
+
 export const App: React.FC = () => {
   const { t } = useTranslation();
   const { user, token, isLoading, checkAuth, logout, theme } = useAuthStore();
@@ -32,6 +34,7 @@ export const App: React.FC = () => {
     api.getMeta().then((meta) => {
       if (meta.appName) {
         document.title = meta.appName;
+        setOriginalDocumentTitle(meta.appName);
       }
       if (meta.pwaIconUrl) {
         const linkIcon = document.querySelector('link[rel="icon"]');
