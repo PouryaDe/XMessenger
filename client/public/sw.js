@@ -69,24 +69,35 @@ self.addEventListener('push', (event) => {
   }
 
   const title = data.title || 'XMessenger';
+
+  // Detect iOS WebKit environment to prevent unsupported NotificationOptions errors
+  const isIOS = (typeof navigator !== 'undefined' && /iPad|iPhone|iPod/.test(navigator.userAgent)) ||
+                (typeof navigator !== 'undefined' && navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
   const options = {
     body: data.body || 'شما یک پیام جدید دارید',
     icon: data.icon || '/icon-192.png',
-    badge: data.badge || '/icon-192.png',
     data: data.data || { url: '/' },
-    vibrate: [150, 80, 150],
     tag: data.tag || 'xmessenger-new-message',
     renotify: true
   };
 
+  // Only apply vibrate & badge on non-iOS browsers (iOS WebKit throws or degrades if present)
+  if (!isIOS) {
+    if (typeof navigator !== 'undefined' && 'vibrate' in navigator) {
+      options.vibrate = [150, 80, 150];
+    }
+    if (data.badge) {
+      options.badge = data.badge;
+    }
+  }
+
   event.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then((clientList) => {
-      // Check if user is currently viewing the active chat window
-      const isFocused = clientList.some((c) => c.focused);
-      if (isFocused && data.silentIfFocused) {
-        return;
-      }
-      return self.registration.showNotification(title, options);
+    self.registration.showNotification(title, options).catch((err) => {
+      console.warn('[SW] showNotification fallback triggered:', err);
+      return self.registration.showNotification(title, {
+        body: data.body || 'شما یک پیام جدید دارید'
+      });
     })
   );
 });

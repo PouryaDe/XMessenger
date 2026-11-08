@@ -55723,7 +55723,11 @@ function initVapid() {
   if (vapidConfigured) return;
   let publicKey = process.env.VAPID_PUBLIC_KEY || getSettingValue("vapid_public_key", "");
   let privateKey = process.env.VAPID_PRIVATE_KEY || getSettingValue("vapid_private_key", "");
-  const subject = process.env.VAPID_SUBJECT || "mailto:admin@xmessenger.local";
+  let subject = process.env.VAPID_SUBJECT || getSettingValue("vapid_subject", "") || "mailto:support@xmessenger.app";
+  if (subject.includes(".local") || subject.includes("localhost") || !subject.startsWith("mailto:")) {
+    subject = "mailto:support@xmessenger.app";
+    updateSettingValue("vapid_subject", subject);
+  }
   if (!publicKey || !privateKey) {
     console.log("[Push] Generating new VAPID keys for Web Push...");
     const keys = generateVAPIDKeys();
@@ -55731,12 +55735,13 @@ function initVapid() {
     privateKey = keys.privateKey;
     updateSettingValue("vapid_public_key", publicKey);
     updateSettingValue("vapid_private_key", privateKey);
+    updateSettingValue("vapid_subject", subject);
     console.log("[Push] VAPID keys generated and persisted successfully.");
   }
   try {
     setVapidDetails(subject, publicKey, privateKey);
     vapidConfigured = true;
-    console.log("[Push] Web Push initialized with VAPID public key:", publicKey.substring(0, 16) + "...");
+    console.log("[Push] Web Push initialized with VAPID subject:", subject);
   } catch (err) {
     console.error("[Push] Failed to configure VAPID details:", err);
   }
@@ -55750,7 +55755,7 @@ function saveSubscription(userId, subscription, userAgent) {
   if (!endpoint || typeof endpoint !== "string" || !keys || !keys.p256dh || !keys.auth) {
     throw new Error("INVALID_SUBSCRIPTION");
   }
-  if (!endpoint.startsWith("https://") || endpoint.length > 2048) {
+  if (!endpoint.startsWith("https://") || endpoint.length > 8192) {
     throw new Error("INVALID_ENDPOINT");
   }
   const existing = db.prepare("SELECT id FROM push_subscriptions WHERE endpoint = ?").get(endpoint);
@@ -55786,6 +55791,11 @@ async function sendPushToUser(userId, payload) {
     return;
   }
   const stringified = JSON.stringify(payload);
+  const pushOptions = {
+    TTL: 86400,
+    urgency: "high",
+    topic: "messages"
+  };
   for (const sub of subscriptions) {
     const pushSubscription = {
       endpoint: sub.endpoint,
@@ -55795,7 +55805,7 @@ async function sendPushToUser(userId, payload) {
       }
     };
     try {
-      await sendNotification(pushSubscription, stringified);
+      await sendNotification(pushSubscription, stringified, pushOptions);
     } catch (err) {
       if (err.statusCode === 410 || err.statusCode === 404) {
         removeSubscription(sub.endpoint);
@@ -55828,7 +55838,6 @@ async function dispatchPushForMessage(sender, recipientId, rawText) {
       body: preview,
       icon: pwaIconUrl || "/icon-192.png",
       badge: "/icon-192.png",
-      silentIfFocused: true,
       tag: `msg-${sender.id}`,
       data: {
         url: "/",

@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { useAuthStore } from './stores/authStore.js';
 import { api } from './services/api.js';
+import { syncPushSubscription } from './services/push.js';
 import { AuthModal } from './components/auth/AuthModal.js';
 import { PendingApprovalScreen } from './components/auth/PendingApprovalScreen.js';
 import { UserChatView } from './components/user/UserChatView.js';
@@ -57,6 +58,13 @@ export const App: React.FC = () => {
       metaTheme.setAttribute('content', theme === 'dark' ? '#0E1218' : '#DFDDD6');
     }
   }, [theme]);
+
+  // Synchronize Push Notifications subscription with backend on active session
+  useEffect(() => {
+    if (token && user && user.status === 'active') {
+      syncPushSubscription().catch(() => {});
+    }
+  }, [token, user]);
 
   // 1. Loading state
   if (isLoading) {

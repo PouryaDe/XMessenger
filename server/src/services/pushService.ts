@@ -9,7 +9,13 @@ export function initVapid(): void {
 
   let publicKey = process.env.VAPID_PUBLIC_KEY || getSettingValue('vapid_public_key', '');
   let privateKey = process.env.VAPID_PRIVATE_KEY || getSettingValue('vapid_private_key', '');
-  const subject = process.env.VAPID_SUBJECT || 'mailto:admin@xmessenger.local';
+  let subject = process.env.VAPID_SUBJECT || getSettingValue('vapid_subject', '') || 'mailto:support@xmessenger.app';
+
+  // Apple APNs strictly rejects .local or localhost contact domains with BadJwtToken
+  if (subject.includes('.local') || subject.includes('localhost') || !subject.startsWith('mailto:')) {
+    subject = 'mailto:support@xmessenger.app';
+    updateSettingValue('vapid_subject', subject);
+  }
 
   if (!publicKey || !privateKey) {
     console.log('[Push] Generating new VAPID keys for Web Push...');
@@ -18,13 +24,14 @@ export function initVapid(): void {
     privateKey = keys.privateKey;
     updateSettingValue('vapid_public_key', publicKey);
     updateSettingValue('vapid_private_key', privateKey);
+    updateSettingValue('vapid_subject', subject);
     console.log('[Push] VAPID keys generated and persisted successfully.');
   }
 
   try {
     webpush.setVapidDetails(subject, publicKey, privateKey);
     vapidConfigured = true;
-    console.log('[Push] Web Push initialized with VAPID public key:', publicKey.substring(0, 16) + '...');
+    console.log('[Push] Web Push initialized with VAPID subject:', subject);
   } catch (err) {
     console.error('[Push] Failed to configure VAPID details:', err);
   }
@@ -50,7 +57,7 @@ export function saveSubscription(userId: string, subscription: PushSubscriptionI
   }
 
   // Strict URL validation: must be an HTTPS push endpoint
-  if (!endpoint.startsWith('https://') || endpoint.length > 2048) {
+  if (!endpoint.startsWith('https://') || endpoint.length > 8192) {
     throw new Error('INVALID_ENDPOINT');
   }
 
@@ -105,6 +112,13 @@ export async function sendPushToUser(
 
   const stringified = JSON.stringify(payload);
 
+  // High urgency is mandatory for Apple APNs (iOS 16.4+) to wake device & deliver immediately
+  const pushOptions: webpush.RequestOptions = {
+    TTL: 86400,
+    urgency: 'high',
+    topic: 'messages'
+  };
+
   for (const sub of subscriptions) {
     const pushSubscription = {
       endpoint: sub.endpoint,
@@ -115,7 +129,7 @@ export async function sendPushToUser(
     };
 
     try {
-      await webpush.sendNotification(pushSubscription, stringified);
+      await webpush.sendNotification(pushSubscription, stringified, pushOptions);
     } catch (err: any) {
       if (err.statusCode === 410 || err.statusCode === 404) {
         // Subscription is no longer valid or unsubscribed by browser
@@ -162,7 +176,6 @@ export async function dispatchPushForMessage(
       body: preview,
       icon: pwaIconUrl || '/icon-192.png',
       badge: '/icon-192.png',
-      silentIfFocused: true,
       tag: `msg-${sender.id}`,
       data: {
         url: '/',

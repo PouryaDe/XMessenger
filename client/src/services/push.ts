@@ -128,3 +128,20 @@ export async function sendTestNotification(): Promise<boolean> {
     return false;
   }
 }
+
+/**
+ * Automatically synchronizes existing active browser push subscriptions with backend.
+ * Ensures subscriptions are kept alive across database updates or user sessions.
+ */
+export async function syncPushSubscription(): Promise<void> {
+  if (!isPushSupported() || Notification.permission !== 'granted') return;
+  try {
+    const registration = await navigator.serviceWorker.ready;
+    const subscription = await registration.pushManager.getSubscription();
+    if (subscription) {
+      await api.savePushSubscription(subscription.toJSON());
+    }
+  } catch (err) {
+    console.warn('[Push] Auto-sync push subscription non-fatal warning:', err);
+  }
+}

@@ -48,7 +48,12 @@ function initVapid() {
         return;
     let publicKey = process.env.VAPID_PUBLIC_KEY || (0, index_js_1.getSettingValue)('vapid_public_key', '');
     let privateKey = process.env.VAPID_PRIVATE_KEY || (0, index_js_1.getSettingValue)('vapid_private_key', '');
-    const subject = process.env.VAPID_SUBJECT || 'mailto:admin@xmessenger.local';
+    let subject = process.env.VAPID_SUBJECT || (0, index_js_1.getSettingValue)('vapid_subject', '') || 'mailto:support@xmessenger.app';
+    // Apple APNs strictly rejects .local or localhost contact domains with BadJwtToken
+    if (subject.includes('.local') || subject.includes('localhost') || !subject.startsWith('mailto:')) {
+        subject = 'mailto:support@xmessenger.app';
+        (0, index_js_1.updateSettingValue)('vapid_subject', subject);
+    }
     if (!publicKey || !privateKey) {
         console.log('[Push] Generating new VAPID keys for Web Push...');
         const keys = webpush.generateVAPIDKeys();
@@ -56,12 +61,13 @@ function initVapid() {
         privateKey = keys.privateKey;
         (0, index_js_1.updateSettingValue)('vapid_public_key', publicKey);
         (0, index_js_1.updateSettingValue)('vapid_private_key', privateKey);
+        (0, index_js_1.updateSettingValue)('vapid_subject', subject);
         console.log('[Push] VAPID keys generated and persisted successfully.');
     }
     try {
         webpush.setVapidDetails(subject, publicKey, privateKey);
         vapidConfigured = true;
-        console.log('[Push] Web Push initialized with VAPID public key:', publicKey.substring(0, 16) + '...');
+        console.log('[Push] Web Push initialized with VAPID subject:', subject);
     }
     catch (err) {
         console.error('[Push] Failed to configure VAPID details:', err);
@@ -77,7 +83,7 @@ function saveSubscription(userId, subscription, userAgent) {
         throw new Error('INVALID_SUBSCRIPTION');
     }
     // Strict URL validation: must be an HTTPS push endpoint
-    if (!endpoint.startsWith('https://') || endpoint.length > 2048) {
+    if (!endpoint.startsWith('https://') || endpoint.length > 8192) {
         throw new Error('INVALID_ENDPOINT');
     }
     const existing = index_js_1.db.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?').get(endpoint);
@@ -116,6 +122,12 @@ async function sendPushToUser(userId, payload) {
         return;
     }
     const stringified = JSON.stringify(payload);
+    // High urgency is mandatory for Apple APNs (iOS 16.4+) to wake device & deliver immediately
+    const pushOptions = {
+        TTL: 86400,
+        urgency: 'high',
+        topic: 'messages'
+    };
     for (const sub of subscriptions) {
         const pushSubscription = {
             endpoint: sub.endpoint,
@@ -125,7 +137,7 @@ async function sendPushToUser(userId, payload) {
             }
         };
         try {
-            await webpush.sendNotification(pushSubscription, stringified);
+            await webpush.sendNotification(pushSubscription, stringified, pushOptions);
         }
         catch (err) {
             if (err.statusCode === 410 || err.statusCode === 404) {
@@ -164,7 +176,6 @@ async function dispatchPushForMessage(sender, recipientId, rawText) {
             body: preview,
             icon: pwaIconUrl || '/icon-192.png',
             badge: '/icon-192.png',
-            silentIfFocused: true,
             tag: `msg-${sender.id}`,
             data: {
                 url: '/',

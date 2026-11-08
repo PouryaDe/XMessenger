@@ -61,6 +61,27 @@ describe('Push Service & VAPID Unit Tests', () => {
       });
     }, /INVALID_SUBSCRIPTION/);
 
+    // 4. Oversized endpoint exceeding 8192 chars
+    assert.throws(() => {
+      saveSubscription(userId, {
+        endpoint: 'https://web.push.apple.com/' + 'a'.repeat(8200),
+        keys: { p256dh: 'dummy-p256dh', auth: 'dummy-auth' }
+      });
+    }, /INVALID_ENDPOINT/);
+
+    cleanupTestUser(userId);
+  });
+
+  it('supports long Apple APNs push endpoints (up to 8192 characters)', () => {
+    const userId = createTestUser();
+    const longAppleEndpoint = 'https://web.push.apple.com/QN' + 'x'.repeat(3000);
+    const keys = { p256dh: 'dummy-p256dh', auth: 'dummy-auth' };
+
+    saveSubscription(userId, { endpoint: longAppleEndpoint, keys });
+    const row = db.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?').get(longAppleEndpoint) as any;
+    assert.ok(row, 'Long Apple APNs endpoint should be saved successfully');
+
+    removeSubscription(longAppleEndpoint);
     cleanupTestUser(userId);
   });
 
