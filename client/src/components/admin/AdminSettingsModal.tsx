@@ -266,39 +266,65 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           {activeTab === 'general' && (
             <>
               {/* 1. Registration Switch */}
-              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
+              <div 
+                onClick={() => setSettings({ ...settings, registrationEnabled: !settings.registrationEnabled })}
+                className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] cursor-pointer group transition-all"
+              >
                 <div>
-                  <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block">
+                  <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block select-none">
                     {t('allowRegistration')}
                   </label>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-400 mt-0.5 select-none">
                     {t('allowRegistrationDesc')}
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={settings.registrationEnabled}
-                  onChange={(e) => setSettings({ ...settings, registrationEnabled: e.target.checked })}
-                  className="w-5 h-5 accent-slate-900 dark:accent-amber-400 rounded cursor-pointer mt-1"
-                />
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={settings.registrationEnabled}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSettings({ ...settings, registrationEnabled: !settings.registrationEnabled });
+                  }}
+                  className={`w-6 h-6 rounded-[8px] flex items-center justify-center transition-all duration-200 mt-0.5 shrink-0 border ${
+                    settings.registrationEnabled
+                      ? 'bg-slate-900 dark:bg-amber-400 border-slate-900 dark:border-amber-400 text-white dark:text-slate-950 shadow-xs'
+                      : 'bg-stone-100 dark:bg-white/[0.06] border-black/15 dark:border-white/15 text-transparent hover:border-black/30 dark:hover:border-white/30'
+                  }`}
+                >
+                  <Check className={`w-3.5 h-3.5 stroke-[3] transition-transform duration-150 ${settings.registrationEnabled ? 'scale-100' : 'scale-0'}`} />
+                </button>
               </div>
 
               {/* 2. Manual Approval Switch */}
-              <div className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
+              <div 
+                onClick={() => setSettings({ ...settings, requireApproval: !settings.requireApproval })}
+                className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] cursor-pointer group transition-all"
+              >
                 <div>
-                  <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block">
+                  <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block select-none">
                     {t('registrationApproval')}
                   </label>
-                  <p className="text-[11px] text-slate-400 mt-0.5">
+                  <p className="text-[11px] text-slate-400 mt-0.5 select-none">
                     {t('registrationApprovalDesc')}
                   </p>
                 </div>
-                <input
-                  type="checkbox"
-                  checked={settings.requireApproval}
-                  onChange={(e) => setSettings({ ...settings, requireApproval: e.target.checked })}
-                  className="w-5 h-5 accent-slate-900 dark:accent-amber-400 rounded cursor-pointer mt-1"
-                />
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={settings.requireApproval}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSettings({ ...settings, requireApproval: !settings.requireApproval });
+                  }}
+                  className={`w-6 h-6 rounded-[8px] flex items-center justify-center transition-all duration-200 mt-0.5 shrink-0 border ${
+                    settings.requireApproval
+                      ? 'bg-slate-900 dark:bg-amber-400 border-slate-900 dark:border-amber-400 text-white dark:text-slate-950 shadow-xs'
+                      : 'bg-stone-100 dark:bg-white/[0.06] border-black/15 dark:border-white/15 text-transparent hover:border-black/30 dark:hover:border-white/30'
+                  }`}
+                >
+                  <Check className={`w-3.5 h-3.5 stroke-[3] transition-transform duration-150 ${settings.requireApproval ? 'scale-100' : 'scale-0'}`} />
+                </button>
               </div>
 
               {/* 3. Disappearing TTL */}
