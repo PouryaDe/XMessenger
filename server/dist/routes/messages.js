@@ -195,11 +195,20 @@ function createMessagesRouter(io) {
                 replyToId: validReplyToId,
                 reactions: []
             };
-            // Emit to sockets
+            // Emit to sockets (strictly matching server/src/socket/index.ts room logic)
             if (io) {
-                io.to(`user:${recipientId}`).emit('message:new', messagePayload);
-                io.to('room:admin').emit('message:new', messagePayload);
-                io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
+                if (currentUser.role === 'admin') {
+                    io.to(`user:${recipientId}`).emit('message:new', messagePayload);
+                    io.to('room:admin').emit('message:sent', messagePayload);
+                }
+                else {
+                    // Regular user sending to admin: emit once to room:admin (which includes all admin sessions)
+                    io.to('room:admin').emit('message:new', {
+                        ...messagePayload,
+                        senderUsername: currentUser.username
+                    });
+                    io.to(`user:${currentUser.id}`).emit('message:sent', messagePayload);
+                }
             }
             // Dispatch Web Push notification for background/PWA users
             (0, pushService_js_1.dispatchPushForMessage)(currentUser, recipientId, text.trim()).catch(() => { });

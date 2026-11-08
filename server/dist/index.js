@@ -56002,8 +56002,10 @@ function setupSocketServer(io3) {
           io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
           io3.to("room:admin").emit("message:sent", messagePayload);
         } else {
-          io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
-          io3.to("room:admin").emit("message:new", messagePayload);
+          io3.to("room:admin").emit("message:new", {
+            ...messagePayload,
+            senderUsername: user.username
+          });
           io3.to(userRoom).emit("message:sent", messagePayload);
         }
         dispatchPushForMessage(user, recipientId, text.trim()).catch(() => {
@@ -56126,233 +56128,261 @@ function setupSocketServer(io3) {
 }
 
 // src/routes/auth.ts
-var authRouter = (0, import_express.Router)();
-var avatarsDir = import_path2.default.join(config.dataDir, "uploads", "avatars");
-if (!import_fs3.default.existsSync(avatarsDir)) {
-  import_fs3.default.mkdirSync(avatarsDir, { recursive: true });
-}
-var avatarStorage = import_multer.default.diskStorage({
-  destination: (_req, _file, cb) => {
-    cb(null, avatarsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = import_path2.default.extname(file.originalname).toLowerCase() || ".png";
-    cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`);
+function createAuthRouter(io3) {
+  const authRouter2 = (0, import_express.Router)();
+  const avatarsDir = import_path2.default.join(config.dataDir, "uploads", "avatars");
+  if (!import_fs3.default.existsSync(avatarsDir)) {
+    import_fs3.default.mkdirSync(avatarsDir, { recursive: true });
   }
-});
-var uploadAvatar = (0, import_multer.default)({
-  storage: avatarStorage,
-  limits: { fileSize: 5 * 1024 * 1024 },
-  // 5MB limit
-  fileFilter: (_req, file, cb) => {
-    if (file.mimetype.startsWith("image/")) {
-      cb(null, true);
-    } else {
-      cb(new Error("Only image files are allowed"));
+  const avatarStorage = import_multer.default.diskStorage({
+    destination: (_req, _file, cb) => {
+      cb(null, avatarsDir);
+    },
+    filename: (req, file, cb) => {
+      const ext = import_path2.default.extname(file.originalname).toLowerCase() || ".png";
+      cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`);
     }
-  }
-});
-authRouter.get("/meta", (req, res) => {
-  const regEnabled = getSettingValue("registration_enabled", "true") === "true";
-  const requireApproval = getSettingValue("require_approval", "true") === "true";
-  const defaultTtl = parseInt(getSettingValue("default_ttl_seconds", "86400"), 10);
-  const appName = getSettingValue("app_name", "XMessenger");
-  const pwaShortName = getSettingValue("pwa_short_name", "XMessenger");
-  const pwaIconUrl = getSettingValue("pwa_icon_url", "");
-  let buildVersion = "";
-  try {
-    const v1 = import_path2.default.resolve(process.cwd(), "../client/dist/version.json");
-    const v2 = import_path2.default.resolve(process.cwd(), "./client-dist/version.json");
-    const target = import_fs3.default.existsSync(v1) ? v1 : import_fs3.default.existsSync(v2) ? v2 : null;
-    if (target) {
-      const data = JSON.parse(import_fs3.default.readFileSync(target, "utf-8"));
-      buildVersion = data.buildVersion || "";
-    }
-  } catch (e) {
-  }
-  res.json({
-    registrationEnabled: regEnabled,
-    requireApproval,
-    defaultTtl,
-    appName,
-    pwaShortName,
-    pwaIconUrl,
-    version: config.appVersion,
-    buildVersion
   });
-});
-authRouter.post("/register", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password || typeof username !== "string" || typeof password !== "string") {
-      return res.status(400).json({ error: "INVALID_INPUT", message: "Username and password are required" });
+  const uploadAvatar = (0, import_multer.default)({
+    storage: avatarStorage,
+    limits: { fileSize: 5 * 1024 * 1024 },
+    // 5MB limit
+    fileFilter: (_req, file, cb) => {
+      if (file.mimetype.startsWith("image/")) {
+        cb(null, true);
+      } else {
+        cb(new Error("Only image files are allowed"));
+      }
     }
-    const trimmedUsername = username.trim().toLowerCase();
-    if (trimmedUsername.length < 3 || trimmedUsername.length > 32) {
-      return res.status(400).json({ error: "INVALID_USERNAME", message: "Username must be between 3 and 32 characters" });
-    }
-    if (password.length < 6) {
-      return res.status(400).json({ error: "WEAK_PASSWORD", message: "Password must be at least 6 characters" });
-    }
+  });
+  authRouter2.get("/meta", (req, res) => {
     const regEnabled = getSettingValue("registration_enabled", "true") === "true";
-    if (!regEnabled) {
-      return res.status(403).json({ error: "REGISTRATION_DISABLED", message: "Registration is currently disabled by administrator" });
-    }
-    const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(trimmedUsername);
-    if (existing) {
-      return res.status(409).json({ error: "USERNAME_TAKEN", message: "Username already in use" });
-    }
     const requireApproval = getSettingValue("require_approval", "true") === "true";
-    const initialStatus = requireApproval ? "pending" : "active";
-    const userId = v4_default();
-    const passwordHash = await hashPassword(password);
-    const now = (/* @__PURE__ */ new Date()).toISOString();
-    db.prepare(`
+    const defaultTtl = parseInt(getSettingValue("default_ttl_seconds", "86400"), 10);
+    const appName = getSettingValue("app_name", "XMessenger");
+    const pwaShortName = getSettingValue("pwa_short_name", "XMessenger");
+    const pwaIconUrl = getSettingValue("pwa_icon_url", "");
+    let buildVersion = "";
+    try {
+      const v1 = import_path2.default.resolve(process.cwd(), "../client/dist/version.json");
+      const v2 = import_path2.default.resolve(process.cwd(), "./client-dist/version.json");
+      const target = import_fs3.default.existsSync(v1) ? v1 : import_fs3.default.existsSync(v2) ? v2 : null;
+      if (target) {
+        const data = JSON.parse(import_fs3.default.readFileSync(target, "utf-8"));
+        buildVersion = data.buildVersion || "";
+      }
+    } catch (e) {
+    }
+    res.json({
+      registrationEnabled: regEnabled,
+      requireApproval,
+      defaultTtl,
+      appName,
+      pwaShortName,
+      pwaIconUrl,
+      version: config.appVersion,
+      buildVersion
+    });
+  });
+  authRouter2.post("/register", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password || typeof username !== "string" || typeof password !== "string") {
+        return res.status(400).json({ error: "INVALID_INPUT", message: "Username and password are required" });
+      }
+      const trimmedUsername = username.trim().toLowerCase();
+      if (trimmedUsername.length < 3 || trimmedUsername.length > 32) {
+        return res.status(400).json({ error: "INVALID_USERNAME", message: "Username must be between 3 and 32 characters" });
+      }
+      if (trimmedUsername.includes("@") || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedUsername)) {
+        return res.status(400).json({ error: "USERNAME_EMAIL_NOT_ALLOWED", message: "Username cannot be an email format" });
+      }
+      if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(trimmedUsername)) {
+        return res.status(400).json({ error: "USERNAME_ALL_NUMERIC", message: "Username cannot be all numbers" });
+      }
+      if (password.length < 6) {
+        return res.status(400).json({ error: "WEAK_PASSWORD", message: "Password must be at least 6 characters" });
+      }
+      const regEnabled = getSettingValue("registration_enabled", "true") === "true";
+      if (!regEnabled) {
+        return res.status(403).json({ error: "REGISTRATION_DISABLED", message: "Registration is currently disabled by administrator" });
+      }
+      const existing = db.prepare("SELECT id FROM users WHERE username = ?").get(trimmedUsername);
+      if (existing) {
+        return res.status(409).json({ error: "USERNAME_TAKEN", message: "Username already in use" });
+      }
+      const requireApproval = getSettingValue("require_approval", "true") === "true";
+      const initialStatus = requireApproval ? "pending" : "active";
+      const userId = v4_default();
+      const passwordHash = await hashPassword(password);
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      db.prepare(`
       INSERT INTO users (id, username, password_hash, role, status, created_at, last_seen)
       VALUES (?, ?, ?, 'user', ?, ?, ?)
     `).run(userId, trimmedUsername, passwordHash, initialStatus, now, now);
-    const newUser = {
-      id: userId,
-      username: trimmedUsername,
-      role: "user",
-      status: initialStatus
-    };
-    const token = generateToken(newUser);
-    res.status(201).json({
-      token,
-      user: newUser,
-      message: initialStatus === "pending" ? "Account registered and awaiting admin approval" : "Account created successfully"
-    });
-  } catch (err) {
-    console.error("Registration error:", err);
-    res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to register account" });
-  }
-});
-authRouter.post("/login", async (req, res) => {
-  try {
-    const { username, password } = req.body;
-    if (!username || !password) {
-      return res.status(400).json({ error: "INVALID_INPUT", message: "Username and password are required" });
+      const newUser = {
+        id: userId,
+        username: trimmedUsername,
+        role: "user",
+        status: initialStatus
+      };
+      const token = generateToken(newUser);
+      if (io3) {
+        const adminUserItem = {
+          id: userId,
+          username: trimmedUsername,
+          role: "user",
+          status: initialStatus,
+          avatarUrl: void 0,
+          created_at: now,
+          last_seen: now,
+          lastMessage: null,
+          unreadCount: 0,
+          isOnline: false
+        };
+        io3.to("room:admin").emit("user:registered", adminUserItem);
+        if (initialStatus === "pending") {
+          io3.to("room:admin").emit("user:pending_approval", adminUserItem);
+        }
+      }
+      res.status(201).json({
+        token,
+        user: newUser,
+        message: initialStatus === "pending" ? "Account registered and awaiting admin approval" : "Account created successfully"
+      });
+    } catch (err) {
+      console.error("Registration error:", err);
+      res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to register account" });
     }
-    const trimmedUsername = username.trim().toLowerCase();
-    const user = db.prepare("SELECT id, username, password_hash, role, status FROM users WHERE username = ?").get(trimmedUsername);
-    if (!user) {
-      return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "Invalid username or password" });
-    }
-    const passwordValid = await comparePassword(password, user.password_hash);
-    if (!passwordValid) {
-      return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "Invalid username or password" });
-    }
-    const now = (/* @__PURE__ */ new Date()).toISOString();
-    db.prepare("UPDATE users SET last_seen = ? WHERE id = ?").run(now, user.id);
-    const authUser = {
-      id: user.id,
-      username: user.username,
-      role: user.role,
-      status: user.status
-    };
-    const token = generateToken(authUser);
-    res.json({
-      token,
-      user: authUser
-    });
-  } catch (err) {
-    console.error("Login error:", err);
-    res.status(500).json({ error: "INTERNAL_ERROR", message: "Login failed" });
-  }
-});
-authRouter.get("/me", authenticate, (req, res) => {
-  const userRow = db.prepare("SELECT id, username, role, status, avatar_url FROM users WHERE id = ?").get(req.user.id);
-  const adminRow = db.prepare("SELECT id, username, last_seen, avatar_url FROM users WHERE role = 'admin'").get();
-  const adminAvatarSetting = getSettingValue("admin_avatar_url", "");
-  res.json({
-    user: userRow ? {
-      id: userRow.id,
-      username: userRow.username,
-      role: userRow.role,
-      status: userRow.status,
-      avatarUrl: userRow.avatar_url || void 0
-    } : req.user,
-    adminInfo: req.user.role === "user" && adminRow ? {
-      id: adminRow.id,
-      username: adminRow.username,
-      lastSeen: adminRow.last_seen,
-      isOnline: isAnyAdminOnline(),
-      avatarUrl: adminRow.avatar_url || adminAvatarSetting || void 0
-    } : null
   });
-});
-authRouter.post("/avatar", authenticate, uploadAvatar.single("avatar"), (req, res) => {
-  try {
-    if (!req.file) {
-      return res.status(400).json({ error: "NO_FILE", message: "No image file uploaded" });
-    }
-    const avatarUrl = `/uploads/avatars/${req.file.filename}`;
-    const userId = req.user.id;
-    const prev = db.prepare("SELECT avatar_url FROM users WHERE id = ?").get(userId);
-    if (prev?.avatar_url && prev.avatar_url.startsWith("/uploads/avatars/")) {
-      const oldPath = import_path2.default.join(config.dataDir, prev.avatar_url);
-      if (import_fs3.default.existsSync(oldPath)) {
-        try {
-          import_fs3.default.unlinkSync(oldPath);
-        } catch (_) {
-        }
+  authRouter2.post("/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      if (!username || !password) {
+        return res.status(400).json({ error: "INVALID_INPUT", message: "Username and password are required" });
       }
+      const trimmedUsername = username.trim().toLowerCase();
+      const user = db.prepare("SELECT id, username, password_hash, role, status FROM users WHERE username = ?").get(trimmedUsername);
+      if (!user) {
+        return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "Invalid username or password" });
+      }
+      const passwordValid = await comparePassword(password, user.password_hash);
+      if (!passwordValid) {
+        return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "Invalid username or password" });
+      }
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      db.prepare("UPDATE users SET last_seen = ? WHERE id = ?").run(now, user.id);
+      const authUser = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        status: user.status
+      };
+      const token = generateToken(authUser);
+      res.json({
+        token,
+        user: authUser
+      });
+    } catch (err) {
+      console.error("Login error:", err);
+      res.status(500).json({ error: "INTERNAL_ERROR", message: "Login failed" });
     }
-    db.prepare("UPDATE users SET avatar_url = ? WHERE id = ?").run(avatarUrl, userId);
-    if (req.user.role === "admin") {
-      updateSettingValue("admin_avatar_url", avatarUrl);
-    }
+  });
+  authRouter2.get("/me", authenticate, (req, res) => {
+    const userRow = db.prepare("SELECT id, username, role, status, avatar_url FROM users WHERE id = ?").get(req.user.id);
+    const adminRow = db.prepare("SELECT id, username, last_seen, avatar_url FROM users WHERE role = 'admin'").get();
+    const adminAvatarSetting = getSettingValue("admin_avatar_url", "");
     res.json({
-      success: true,
-      avatarUrl,
-      message: "Avatar updated successfully"
+      user: userRow ? {
+        id: userRow.id,
+        username: userRow.username,
+        role: userRow.role,
+        status: userRow.status,
+        avatarUrl: userRow.avatar_url || void 0
+      } : req.user,
+      adminInfo: req.user.role === "user" && adminRow ? {
+        id: adminRow.id,
+        username: adminRow.username,
+        lastSeen: adminRow.last_seen,
+        isOnline: isAnyAdminOnline(),
+        avatarUrl: adminRow.avatar_url || adminAvatarSetting || void 0
+      } : null
     });
-  } catch (err) {
-    console.error("Error uploading avatar:", err);
-    res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || "Failed to upload avatar" });
-  }
-});
-authRouter.delete("/avatar", authenticate, (req, res) => {
-  try {
-    const userId = req.user.id;
-    const prev = db.prepare("SELECT avatar_url FROM users WHERE id = ?").get(userId);
-    if (prev?.avatar_url && prev.avatar_url.startsWith("/uploads/avatars/")) {
-      const oldPath = import_path2.default.join(config.dataDir, prev.avatar_url);
-      if (import_fs3.default.existsSync(oldPath)) {
-        try {
-          import_fs3.default.unlinkSync(oldPath);
-        } catch (_) {
+  });
+  authRouter2.post("/avatar", authenticate, uploadAvatar.single("avatar"), (req, res) => {
+    try {
+      if (!req.file) {
+        return res.status(400).json({ error: "NO_FILE", message: "No image file uploaded" });
+      }
+      const avatarUrl = `/uploads/avatars/${req.file.filename}`;
+      const userId = req.user.id;
+      const prev = db.prepare("SELECT avatar_url FROM users WHERE id = ?").get(userId);
+      if (prev?.avatar_url && prev.avatar_url.startsWith("/uploads/avatars/")) {
+        const oldPath = import_path2.default.join(config.dataDir, prev.avatar_url);
+        if (import_fs3.default.existsSync(oldPath)) {
+          try {
+            import_fs3.default.unlinkSync(oldPath);
+          } catch (_) {
+          }
         }
       }
+      db.prepare("UPDATE users SET avatar_url = ? WHERE id = ?").run(avatarUrl, userId);
+      if (req.user.role === "admin") {
+        updateSettingValue("admin_avatar_url", avatarUrl);
+      }
+      res.json({
+        success: true,
+        avatarUrl,
+        message: "Avatar updated successfully"
+      });
+    } catch (err) {
+      console.error("Error uploading avatar:", err);
+      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || "Failed to upload avatar" });
     }
-    db.prepare("UPDATE users SET avatar_url = NULL WHERE id = ?").run(userId);
-    if (req.user.role === "admin") {
-      updateSettingValue("admin_avatar_url", "");
+  });
+  authRouter2.delete("/avatar", authenticate, (req, res) => {
+    try {
+      const userId = req.user.id;
+      const prev = db.prepare("SELECT avatar_url FROM users WHERE id = ?").get(userId);
+      if (prev?.avatar_url && prev.avatar_url.startsWith("/uploads/avatars/")) {
+        const oldPath = import_path2.default.join(config.dataDir, prev.avatar_url);
+        if (import_fs3.default.existsSync(oldPath)) {
+          try {
+            import_fs3.default.unlinkSync(oldPath);
+          } catch (_) {
+          }
+        }
+      }
+      db.prepare("UPDATE users SET avatar_url = NULL WHERE id = ?").run(userId);
+      if (req.user.role === "admin") {
+        updateSettingValue("admin_avatar_url", "");
+      }
+      res.json({ success: true, message: "Avatar removed" });
+    } catch (err) {
+      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || "Failed to remove avatar" });
     }
-    res.json({ success: true, message: "Avatar removed" });
-  } catch (err) {
-    res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || "Failed to remove avatar" });
-  }
-});
-authRouter.post("/change-password", authenticate, async (req, res) => {
-  try {
-    const { currentPassword, newPassword } = req.body;
-    if (!currentPassword || !newPassword || newPassword.length < 6) {
-      return res.status(400).json({ error: "INVALID_INPUT", message: "Valid new password is required (min 6 characters)" });
+  });
+  authRouter2.post("/change-password", authenticate, async (req, res) => {
+    try {
+      const { currentPassword, newPassword } = req.body;
+      if (!currentPassword || !newPassword || newPassword.length < 6) {
+        return res.status(400).json({ error: "INVALID_INPUT", message: "Valid new password is required (min 6 characters)" });
+      }
+      const row = db.prepare("SELECT password_hash FROM users WHERE id = ?").get(req.user.id);
+      const valid = await comparePassword(currentPassword, row.password_hash);
+      if (!valid) {
+        return res.status(401).json({ error: "INVALID_PASSWORD", message: "Current password is incorrect" });
+      }
+      const newHash = await hashPassword(newPassword);
+      db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(newHash, req.user.id);
+      res.json({ success: true, message: "Password updated successfully" });
+    } catch (err) {
+      res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to update password" });
     }
-    const row = db.prepare("SELECT password_hash FROM users WHERE id = ?").get(req.user.id);
-    const valid = await comparePassword(currentPassword, row.password_hash);
-    if (!valid) {
-      return res.status(401).json({ error: "INVALID_PASSWORD", message: "Current password is incorrect" });
-    }
-    const newHash = await hashPassword(newPassword);
-    db.prepare("UPDATE users SET password_hash = ? WHERE id = ?").run(newHash, req.user.id);
-    res.json({ success: true, message: "Password updated successfully" });
-  } catch (err) {
-    res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to update password" });
-  }
-});
+  });
+  return authRouter2;
+}
+var authRouter = createAuthRouter();
 
 // src/routes/admin.ts
 var import_express2 = __toESM(require_express2());
@@ -56402,19 +56432,21 @@ function createAdminRouter(io3) {
         WHERE role = 'user'
         ORDER BY last_seen DESC
       `).all();
+      const now = (/* @__PURE__ */ new Date()).toISOString();
       const usersWithMeta = users.map((user) => {
         const unreadCount = db.prepare(`
           SELECT COUNT(*) as count
           FROM messages
-          WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
-        `).get(user.id, req.user.id);
+          WHERE sender_id = ? AND recipient_id = ? AND is_read = 0 AND expires_at > ?
+        `).get(user.id, req.user.id, now);
         const lastMsgRow = db.prepare(`
           SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at
           FROM messages
-          WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+          WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
+            AND expires_at > ?
           ORDER BY created_at DESC
           LIMIT 1
-        `).get(user.id, req.user.id, req.user.id, user.id);
+        `).get(user.id, req.user.id, req.user.id, user.id, now);
         let lastMessage = null;
         if (lastMsgRow) {
           lastMessage = {
@@ -56439,6 +56471,18 @@ function createAdminRouter(io3) {
           lastMessage
         };
       });
+      usersWithMeta.sort((a, b) => {
+        const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+        const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+        if (timeA > 0 && timeB > 0) {
+          return timeB - timeA;
+        }
+        if (timeA > 0 && timeB === 0) return -1;
+        if (timeA === 0 && timeB > 0) return 1;
+        const fallbackA = a.created_at ? new Date(a.created_at).getTime() : a.last_seen ? new Date(a.last_seen).getTime() : 0;
+        const fallbackB = b.created_at ? new Date(b.created_at).getTime() : b.last_seen ? new Date(b.last_seen).getTime() : 0;
+        return fallbackB - fallbackA;
+      });
       res.json({ users: usersWithMeta });
     } catch (err) {
       console.error("Error fetching admin users:", err);
@@ -56458,6 +56502,7 @@ function createAdminRouter(io3) {
       }
       if (io3) {
         io3.to(`user:${id}`).emit("user:status_changed", { status });
+        io3.to("room:admin").emit("user:status_changed", { userId: id, status });
       }
       res.json({ success: true, status });
     } catch (err) {
@@ -56475,6 +56520,7 @@ function createAdminRouter(io3) {
       db.prepare("DELETE FROM users WHERE id = ?").run(id);
       if (io3) {
         io3.to(`user:${id}`).emit("user:deleted");
+        io3.to("room:admin").emit("user:deleted", { userId: id });
       }
       res.json({ success: true, message: "User and all conversation history deleted" });
     } catch (err) {
@@ -56839,9 +56885,16 @@ function createMessagesRouter(io3) {
         reactions: []
       };
       if (io3) {
-        io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
-        io3.to("room:admin").emit("message:new", messagePayload);
-        io3.to(`user:${currentUser.id}`).emit("message:sent", messagePayload);
+        if (currentUser.role === "admin") {
+          io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
+          io3.to("room:admin").emit("message:sent", messagePayload);
+        } else {
+          io3.to("room:admin").emit("message:new", {
+            ...messagePayload,
+            senderUsername: currentUser.username
+          });
+          io3.to(`user:${currentUser.id}`).emit("message:sent", messagePayload);
+        }
       }
       dispatchPushForMessage(currentUser, recipientId, text.trim()).catch(() => {
       });
@@ -57086,7 +57139,7 @@ setupSocketServer(io2);
 startTtlWorker(io2);
 app.use((0, import_cors.default)());
 app.use(import_express5.default.json({ limit: "5mb" }));
-app.use("/api/auth", authRouter);
+app.use("/api/auth", createAuthRouter(io2));
 app.use("/api/admin", createAdminRouter(io2));
 app.use("/api/messages", createMessagesRouter(io2));
 app.use("/api/push", pushRouter);

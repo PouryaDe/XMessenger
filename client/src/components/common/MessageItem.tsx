@@ -1,8 +1,10 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { Message, User } from '../../services/api.js';
 import { useTranslation } from 'react-i18next';
 import { FormattedMessageText } from './FormattedMessageText.js';
 import { formatMessageTime } from '../../utils/date.js';
+import { calculateMessageMenuPosition } from '../../utils/menuPosition.js';
 import { 
   Trash2, 
   Check, 
@@ -43,10 +45,14 @@ const MessageItemComponent: React.FC<Props> = ({
   onScrollToMessage,
   isHighlighted = false
 }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
-  const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('up');
+  const [menuPosition, setMenuPosition] = useState<{
+    top: number;
+    left: number;
+    transformOrigin: string;
+  } | null>(null);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showReactionAnim, setShowReactionAnim] = useState(false);
@@ -76,18 +82,71 @@ const MessageItemComponent: React.FC<Props> = ({
         : repliedMessage.text)
     : '';
 
-  // Close context menu on click outside
+  // Calculate pixel-perfect, collision-free menu position clamped to viewport & active chat container
+  const computePosition = (bubbleEl: HTMLElement, menuEl?: HTMLElement | null) => {
+    const scrollParent = bubbleEl.closest('main');
+    return calculateMessageMenuPosition({
+      bubbleRect: bubbleEl.getBoundingClientRect(),
+      menuWidth: menuEl?.offsetWidth,
+      menuHeight: menuEl?.offsetHeight,
+      containerRect: scrollParent ? scrollParent.getBoundingClientRect() : null,
+      viewportWidth: window.innerWidth,
+      viewportHeight: window.innerHeight,
+      isOwn
+    });
+  };
+
+  const openMenu = () => {
+    if (!bubbleRef.current) return;
+    const pos = computePosition(bubbleRef.current, menuRef.current);
+    setMenuPosition(pos);
+    setShowMenu(true);
+  };
+
+  // Re-adjust exact position synchronously before paint once menu element mounts
+  useLayoutEffect(() => {
+    if (showMenu && bubbleRef.current && menuRef.current) {
+      const pos = computePosition(bubbleRef.current, menuRef.current);
+      setMenuPosition((prev) => {
+        if (!prev || prev.top !== pos.top || prev.left !== pos.left || prev.transformOrigin !== pos.transformOrigin) {
+          return pos;
+        }
+        return prev;
+      });
+    }
+  }, [showMenu, isOwn]);
+
+  // Close context menu on outside click, window resize, scroll, or Escape key
   useEffect(() => {
-    function handleClickOutside(event: MouseEvent) {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+    if (!showMenu) return;
+
+    function handleDismiss(event: Event) {
+      const target = event.target as Node | null;
+      if (
+        (menuRef.current && target && menuRef.current.contains(target)) ||
+        (bubbleRef.current && target && bubbleRef.current.contains(target))
+      ) {
+        return;
+      }
+      setShowMenu(false);
+    }
+
+    function handleKeyDown(event: KeyboardEvent) {
+      if (event.key === 'Escape') {
         setShowMenu(false);
       }
     }
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
-    }
+
+    window.addEventListener('scroll', handleDismiss, true);
+    window.addEventListener('resize', handleDismiss);
+    document.addEventListener('pointerdown', handleDismiss);
+    document.addEventListener('keydown', handleKeyDown);
+
     return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
+      window.removeEventListener('scroll', handleDismiss, true);
+      window.removeEventListener('resize', handleDismiss);
+      document.removeEventListener('pointerdown', handleDismiss);
+      document.removeEventListener('keydown', handleKeyDown);
     };
   }, [showMenu]);
 
@@ -113,35 +172,10 @@ const MessageItemComponent: React.FC<Props> = ({
     }
   };
 
-  const calculateMenuDirection = () => {
-    if (bubbleRef.current) {
-      const rect = bubbleRef.current.getBoundingClientRect();
-      const scrollParent = bubbleRef.current.closest('main');
-      const parentRect = scrollParent ? scrollParent.getBoundingClientRect() : null;
-
-      // Top boundary of visible scroll container (<main>), fallback to top banner/header offset (~170px)
-      const topBoundary = parentRect ? parentRect.top : 170;
-      const bottomBoundary = parentRect ? parentRect.bottom : (window.innerHeight - 80);
-
-      // Available space above and below the message bubble
-      const spaceAbove = rect.top - topBoundary;
-      const spaceBelow = bottomBoundary - rect.bottom;
-
-      // Context menu with 3 actions is ~135px tall with padding and margins.
-      if (spaceAbove < 145) {
-        setMenuDirection('down');
-      } else if (spaceBelow < 145) {
-        setMenuDirection('up');
-      } else {
-        setMenuDirection(spaceAbove >= spaceBelow ? 'up' : 'down');
-      }
-    }
-  };
-
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
-    calculateMenuDirection();
-    setShowMenu(true);
+    e.stopPropagation();
+    openMenu();
   };
 
   const handleBubbleClick = () => {
@@ -150,11 +184,10 @@ const MessageItemComponent: React.FC<Props> = ({
     if (selection && selection.toString().trim().length > 0) {
       return;
     }
-    if (!showMenu) {
-      calculateMenuDirection();
-      setShowMenu(true);
-    } else {
+    if (showMenu) {
       setShowMenu(false);
+    } else {
+      openMenu();
     }
   };
 
@@ -455,18 +488,23 @@ const MessageItemComponent: React.FC<Props> = ({
 
           {/* Feedback badge for Copied */}
           {copied && (
-            <div className={`absolute ${menuDirection === 'down' ? '-bottom-7' : '-top-7'} start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-xs animate-message z-50`}>
+            <div className="absolute -top-7 start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-xs animate-message z-50">
               {t('copied')}
             </div>
           )}
 
-          {/* Floating Context Menu (triggered by Right Click or Tap) */}
-          {showMenu && (
+          {/* Floating Context Menu rendered via Portal in document.body to avoid clipping across all 4 boundaries */}
+          {showMenu && menuPosition && createPortal(
             <div
               ref={menuRef}
-              dir="rtl"
+              dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
               onClick={(e) => e.stopPropagation()}
-              className={`absolute ${menuDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'} ${isOwn ? 'end-0' : 'start-0'} w-44 bg-white/95 dark:bg-[#151A24]/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-1.5 shadow-floating z-50 animate-message font-sans`}
+              style={{
+                top: `${menuPosition.top}px`,
+                left: `${menuPosition.left}px`,
+                transformOrigin: menuPosition.transformOrigin
+              }}
+              className="fixed z-[9999] min-w-[192px] max-w-[240px] bg-white/95 dark:bg-[#151A24]/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-1.5 shadow-floating animate-message font-sans select-none"
             >
               {onReact && (
                 <button
@@ -474,39 +512,40 @@ const MessageItemComponent: React.FC<Props> = ({
                     e.stopPropagation();
                     triggerLike();
                   }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer whitespace-nowrap"
                 >
-                  <span className="text-sm">👍</span>
-                  <span>{hasLiked ? t('removeLike') : t('like')}</span>
+                  <span className="text-sm shrink-0">👍</span>
+                  <span className="flex-1 text-start truncate">{hasLiked ? t('removeLike') : t('like')}</span>
                 </button>
               )}
 
               {onReply && (
                 <button
                   onClick={handleReplyClick}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer whitespace-nowrap"
                 >
                   <Reply className="w-4 h-4 text-amber-500 shrink-0" />
-                  <span>{t('reply')}</span>
+                  <span className="flex-1 text-start truncate">{t('reply')}</span>
                 </button>
               )}
 
               <button
                 onClick={handleCopy}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Copy className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
-                <span>{t('copyText')}</span>
+                <span className="flex-1 text-start truncate">{t('copyText')}</span>
               </button>
 
               <button
                 onClick={handleDelete}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer whitespace-nowrap"
               >
                 <Trash2 className="w-4 h-4 shrink-0" />
-                <span>{t('deleteForEveryone')}</span>
+                <span className="flex-1 text-start truncate">{t('deleteForEveryone')}</span>
               </button>
-            </div>
+            </div>,
+            document.body
           )}
         </div>
 

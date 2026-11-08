@@ -63,22 +63,24 @@ function createAdminRouter(io) {
         WHERE role = 'user'
         ORDER BY last_seen DESC
       `).all();
+            const now = new Date().toISOString();
             // Enhance with conversation summary
             const usersWithMeta = users.map(user => {
-                // Count unread messages sent by user to admin
+                // Count unread non-expired messages sent by user to admin
                 const unreadCount = index_js_2.db.prepare(`
           SELECT COUNT(*) as count
           FROM messages
-          WHERE sender_id = ? AND recipient_id = ? AND is_read = 0
-        `).get(user.id, req.user.id);
-                // Get last message
+          WHERE sender_id = ? AND recipient_id = ? AND is_read = 0 AND expires_at > ?
+        `).get(user.id, req.user.id, now);
+                // Get last non-expired message
                 const lastMsgRow = index_js_2.db.prepare(`
           SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at
           FROM messages
-          WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+          WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
+            AND expires_at > ?
           ORDER BY created_at DESC
           LIMIT 1
-        `).get(user.id, req.user.id, req.user.id, user.id);
+        `).get(user.id, req.user.id, req.user.id, user.id, now);
                 let lastMessage = null;
                 if (lastMsgRow) {
                     lastMessage = {
@@ -103,6 +105,22 @@ function createAdminRouter(io) {
                     lastMessage
                 };
             });
+            // Sort users: conversations with messages first (by latest message timestamp DESC),
+            // followed by users with no messages yet (sorted by created_at DESC)
+            usersWithMeta.sort((a, b) => {
+                const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+                const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+                if (timeA > 0 && timeB > 0) {
+                    return timeB - timeA;
+                }
+                if (timeA > 0 && timeB === 0)
+                    return -1;
+                if (timeA === 0 && timeB > 0)
+                    return 1;
+                const fallbackA = a.created_at ? new Date(a.created_at).getTime() : (a.last_seen ? new Date(a.last_seen).getTime() : 0);
+                const fallbackB = b.created_at ? new Date(b.created_at).getTime() : (b.last_seen ? new Date(b.last_seen).getTime() : 0);
+                return fallbackB - fallbackA;
+            });
             res.json({ users: usersWithMeta });
         }
         catch (err) {
@@ -122,9 +140,10 @@ function createAdminRouter(io) {
             if (result.changes === 0) {
                 return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
             }
-            // Notify user in real-time
+            // Notify user and admin room in real-time
             if (io) {
                 io.to(`user:${id}`).emit('user:status_changed', { status });
+                io.to('room:admin').emit('user:status_changed', { userId: id, status });
             }
             res.json({ success: true, status });
         }
@@ -145,6 +164,7 @@ function createAdminRouter(io) {
             index_js_2.db.prepare('DELETE FROM users WHERE id = ?').run(id);
             if (io) {
                 io.to(`user:${id}`).emit('user:deleted');
+                io.to('room:admin').emit('user:deleted', { userId: id });
             }
             res.json({ success: true, message: 'User and all conversation history deleted' });
         }

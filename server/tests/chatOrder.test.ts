@@ -1,5 +1,6 @@
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { calculateMessageMenuPosition } from '../../client/src/utils/menuPosition.js';
 
 interface MockAdminUserItem {
   id: string;
@@ -404,5 +405,68 @@ describe('Chat Ordering by Latest Message Tests', () => {
 
     const pMehdi = getAvatarPalette('مهدی');
     assert.ok(AVATAR_PALETTES.includes(pMehdi));
+  });
+
+  it('guarantees collision-free positioning for message context menu on all boundaries', () => {
+    const MENU_WIDTH = 196;
+    const MENU_HEIGHT = 188;
+
+    // 1. User scenario from screenshot: received message on the left of admin chat (sidebar 0-320px)
+    const adminLeftScenario = calculateMessageMenuPosition({
+      bubbleRect: { top: 300, bottom: 340, left: 336, right: 416 },
+      menuWidth: MENU_WIDTH,
+      menuHeight: MENU_HEIGHT,
+      containerRect: { top: 60, bottom: 740, left: 320, right: 1200 },
+      viewportWidth: 1280,
+      viewportHeight: 800,
+      isOwn: false
+    });
+    // Menu must be placed inside chat container (>= 320 + 10) and not clipped into sidebar
+    assert.ok(adminLeftScenario.left >= 330, `Expected left >= 330, got ${adminLeftScenario.left}`);
+    assert.ok(adminLeftScenario.left + MENU_WIDTH <= 1200, `Expected right <= 1200, got ${adminLeftScenario.left + MENU_WIDTH}`);
+    assert.ok(adminLeftScenario.top >= 60, `Expected top >= 60, got ${adminLeftScenario.top}`);
+
+    // 2. Right edge collision: sent message on right of mobile screen
+    const mobileRightScenario = calculateMessageMenuPosition({
+      bubbleRect: { top: 400, bottom: 440, left: 290, right: 380 },
+      menuWidth: MENU_WIDTH,
+      menuHeight: MENU_HEIGHT,
+      containerRect: { top: 50, bottom: 750, left: 0, right: 390 },
+      viewportWidth: 390,
+      viewportHeight: 844,
+      isOwn: true
+    });
+    // Menu must not overflow right edge (<= 390 - 10 = 380)
+    assert.ok(mobileRightScenario.left + MENU_WIDTH <= 380, `Expected menu right <= 380, got ${mobileRightScenario.left + MENU_WIDTH}`);
+    assert.ok(mobileRightScenario.left >= 10, `Expected menu left >= 10, got ${mobileRightScenario.left}`);
+
+    // 3. Top edge collision: first message near chat header
+    const topCollisionScenario = calculateMessageMenuPosition({
+      bubbleRect: { top: 70, bottom: 110, left: 16, right: 120 },
+      menuWidth: MENU_WIDTH,
+      menuHeight: MENU_HEIGHT,
+      containerRect: { top: 60, bottom: 700, left: 0, right: 390 },
+      viewportWidth: 390,
+      viewportHeight: 800,
+      isOwn: false
+    });
+    // Not enough space above (70 - 60 = 10 < 188), must open downward
+    assert.ok(topCollisionScenario.top >= 110, `Expected downward top >= 110, got ${topCollisionScenario.top}`);
+    assert.ok(topCollisionScenario.transformOrigin.startsWith('top'), `Expected top origin, got ${topCollisionScenario.transformOrigin}`);
+
+    // 4. Bottom edge collision: message directly above bottom input bar
+    const bottomCollisionScenario = calculateMessageMenuPosition({
+      bubbleRect: { top: 680, bottom: 720, left: 200, right: 380 },
+      menuWidth: MENU_WIDTH,
+      menuHeight: MENU_HEIGHT,
+      containerRect: { top: 60, bottom: 740, left: 0, right: 390 },
+      viewportWidth: 390,
+      viewportHeight: 800,
+      isOwn: true
+    });
+    // Not enough space below (740 - 720 = 20 < 188), must open upward
+    assert.ok(bottomCollisionScenario.top <= 680 - MENU_HEIGHT, `Expected upward top <= ${680 - MENU_HEIGHT}, got ${bottomCollisionScenario.top}`);
+    assert.ok(bottomCollisionScenario.transformOrigin.startsWith('bottom'), `Expected bottom origin, got ${bottomCollisionScenario.transformOrigin}`);
+    assert.ok(bottomCollisionScenario.top >= 60, `Expected top >= 60, got ${bottomCollisionScenario.top}`);
   });
 });
