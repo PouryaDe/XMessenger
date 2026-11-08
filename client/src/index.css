@@ -58,11 +58,10 @@ body, button, input, select, textarea {
   background: rgba(180, 160, 140, 0.6);
 }
 
-/* Viewport layout - Optimized for iOS Safari PWA and full-bleed mobile display */
+/* Viewport layout - 100% Full-bleed on iOS Safari PWA, Android, and Desktop */
 html {
-  height: 100%;
-  height: -webkit-fill-available;
   width: 100%;
+  height: 100%;
   margin: 0;
   padding: 0;
   overflow: hidden;
@@ -75,33 +74,60 @@ html.dark {
 
 body {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   width: 100%;
   height: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
   margin: 0;
   padding: 0;
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
-  background-color: inherit;
+  background-color: #DFDDD6;
+}
+
+html.dark body {
+  background-color: #0E1218;
 }
 
 #root {
   width: 100%;
   height: 100%;
-  height: 100dvh;
-  min-height: 100dvh;
-  min-height: -webkit-fill-available;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  background-color: inherit;
+  background-color: transparent;
+}
+
+/* Universal full-bleed ambient canvas layer - Covers 100% of physical glass under notches and home bars */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: -1;
+  pointer-events: none;
+  background-color: #DFDDD6;
+  background-image: 
+    radial-gradient(ellipse 75% 65% at 88% 10%, rgba(235, 225, 189, 0.70) 0%, transparent 65%),
+    radial-gradient(ellipse 75% 65% at 10% 10%, rgba(213, 223, 235, 0.72) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 70% at 12% 90%, rgba(237, 224, 190, 0.58) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 70% at 88% 90%, rgba(209, 221, 233, 0.65) 0%, transparent 65%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
+}
+
+html.dark body::before {
+  background-color: #0E1218;
+  background-image: 
+    radial-gradient(ellipse 75% 65% at 88% 10%, rgba(217, 119, 6, 0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 75% 65% at 10% 10%, rgba(37, 99, 235, 0.12) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 70% at 12% 90%, rgba(217, 119, 6, 0.08) 0%, transparent 65%),
+    radial-gradient(ellipse 80% 70% at 88% 90%, rgba(30, 58, 138, 0.14) 0%, transparent 65%);
+  background-repeat: no-repeat;
+  background-size: cover;
+  background-position: center;
 }
 
 /* Mobile PWA Safe Area Utilities (iOS Notch & Home Bar) */

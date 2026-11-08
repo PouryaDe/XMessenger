@@ -16,8 +16,8 @@
           var l = localStorage.getItem('xmessenger_lang') || 'fa';
           document.documentElement.lang = l;
           document.documentElement.dir = (l === 'fa') ? 'rtl' : 'ltr';
-          var m = document.querySelector('meta[name="theme-color"]');
-          if (m) m.setAttribute('content', t === 'dark' ? '#0E1218' : '#DFDDD6');
+          var m = document.querySelectorAll('meta[name="theme-color"]');
+          m.forEach(function(el) { el.setAttribute('content', t === 'dark' ? '#0E1218' : '#DFDDD6'); });
         } catch (e) {}
       })();
     </script>
@@ -37,6 +37,8 @@
 
     <!-- Web App Manifest for Android Chrome & Desktop PWA -->
     <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" media="(prefers-color-scheme: dark)" content="#0E1218" />
+    <meta name="theme-color" media="(prefers-color-scheme: light)" content="#DFDDD6" />
     <meta name="theme-color" content="#0E1218" />
     
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
