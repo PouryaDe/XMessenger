@@ -106,8 +106,15 @@ body {
 
 /* Mobile PWA Safe Area Utilities (iOS Notch & Home Bar) */
 .pb-safe {
-  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
+  padding-bottom: max(1.25rem, calc(env(safe-area-inset-bottom, 0px) + 0.75rem));
 }
+
+@media (min-width: 640px) {
+  .pb-safe {
+    padding-bottom: max(1.5rem, calc(env(safe-area-inset-bottom, 0px) + 1rem));
+  }
+}
+
 .pt-safe {
   padding-top: max(0.75rem, env(safe-area-inset-top, 0.75rem));
 }
