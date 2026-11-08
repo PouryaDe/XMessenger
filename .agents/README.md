@@ -28,6 +28,8 @@ This directory holds the agentic knowledge base, architectural contracts, design
      - 1-Way Hub-and-Spoke messaging.
      - Disappearing TTL messages with background hard-purge.
      - Image messaging with full-screen Lightbox and clipboard paste.
+     - Telegram-style date separators and smart scroll preserving reading position.
+     - Background Web Push notifications (PWA & Web) with zero-config VAPID.
      - Dynamic PWA with custom branding, icon, and profile photos.
      - Database online backup and validated restore.
      - Multi-domain Docker deployment with shared Nginx SSL gateway.
@@ -43,3 +45,4 @@ This directory holds the agentic knowledge base, architectural contracts, design
    - SQLite WAL storage & persistent volume contracts.
    - Production Docker asset serving and cache headers.
    - Socket.IO real-time event lifecycle.
+   - Web Push notification architecture and VAPID key lifecycle.

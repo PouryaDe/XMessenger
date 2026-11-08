@@ -73,8 +73,12 @@ function getVapidPublicKey() {
 }
 function saveSubscription(userId, subscription, userAgent) {
     const { endpoint, keys } = subscription;
-    if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+    if (!endpoint || typeof endpoint !== 'string' || !keys || !keys.p256dh || !keys.auth) {
         throw new Error('INVALID_SUBSCRIPTION');
+    }
+    // Strict URL validation: must be an HTTPS push endpoint
+    if (!endpoint.startsWith('https://') || endpoint.length > 2048) {
+        throw new Error('INVALID_ENDPOINT');
     }
     const existing = index_js_1.db.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?').get(endpoint);
     const now = new Date().toISOString();
@@ -93,10 +97,15 @@ function saveSubscription(userId, subscription, userAgent) {
     `).run(id, userId, endpoint, keys.p256dh, keys.auth, userAgent || '', now);
     }
 }
-function removeSubscription(endpoint) {
+function removeSubscription(endpoint, userId) {
     if (!endpoint)
         return;
-    index_js_1.db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(endpoint);
+    if (userId) {
+        index_js_1.db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?').run(endpoint, userId);
+    }
+    else {
+        index_js_1.db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(endpoint);
+    }
 }
 async function sendPushToUser(userId, payload) {
     initVapid();
@@ -131,6 +140,11 @@ async function sendPushToUser(userId, payload) {
 }
 async function dispatchPushForMessage(sender, recipientId, rawText) {
     try {
+        // Check recipient exists and is active (Hub-and-Spoke security isolation)
+        const recipient = index_js_1.db.prepare('SELECT id, status FROM users WHERE id = ?').get(recipientId);
+        if (!recipient || recipient.status !== 'active') {
+            return;
+        }
         const appName = (0, index_js_1.getSettingValue)('app_name', 'XMessenger');
         const pwaIconUrl = (0, index_js_1.getSettingValue)('pwa_icon_url', '');
         const senderTitle = sender.role === 'admin'

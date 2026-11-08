@@ -225,7 +225,11 @@ const resources = {
       pushTestFailed: 'ارسال اعلان آزمایشی ناموفق بود.',
       pushPermissionDenied: 'دسترسی نوتیفیکیشن در مرورگر مسدود شده است. لطفاً در تنظیمات مرورگر آن را مجاز کنید.',
       pushIosTip: 'در آیفون، ابتدا باید از طریق دکمه Share گزینه Add to Home Screen را بزنید تا نوتیفیکیشن فعال شود.',
-      pushUnsupported: 'مرورگر شما از پوش نوتیفیکیشن وب پشتیبانی نمی‌کند.'
+      pushUnsupported: 'مرورگر شما از پوش نوتیفیکیشن وب پشتیبانی نمی‌کند.',
+      activeDevicesLabel: 'دستگاه‌های فعال ثبت‌شده شما',
+      activeDevicesCount: '{{count}} دستگاه',
+      activeDevicesCount_plural: '{{count}} دستگاه',
+      pushSystemInfo: 'سیستم پوش نوتیفیکیشن بر پایه استاندارد وب‌پوش، در صورت بسته بودن اپلیکیشن روی اندروید، دسکتاپ و آیفون (iOS 16.4 به بعد در حالت PWA) پیام‌ها را تحویل می‌دهد.'
     }
   },
   en: {
@@ -452,7 +456,11 @@ const resources = {
       pushTestFailed: 'Failed to send test notification.',
       pushPermissionDenied: 'Notification permission was denied. Please allow it in browser settings.',
       pushIosTip: 'On iPhone, tap Share and then "Add to Home Screen" to enable push notifications.',
-      pushUnsupported: 'Your browser does not support Web Push notifications.'
+      pushUnsupported: 'Your browser does not support Web Push notifications.',
+      activeDevicesLabel: 'Your Active Registered Devices',
+      activeDevicesCount: '{{count}} device',
+      activeDevicesCount_plural: '{{count}} devices',
+      pushSystemInfo: 'The Web Push system delivers messages even when the app is closed on Android, Desktop, and iPhone (iOS 16.4+ in PWA mode).'
     }
   }
 };

@@ -23,7 +23,8 @@ This document outlines the architectural layers, data contracts, and component r
   - Tables:
     - `users`: ID, username, password hash, role, status, avatar URL, timestamps.
     - `messages`: ID, sender ID, recipient ID, ciphertext (AES-256), IV, auth tag, creation timestamp, expiration timestamp, read status.
-    - `settings`: Key-value store for registration control, approval mode, TTL defaults, app name, PWA configuration.
+    - `push_subscriptions`: ID, user ID (foreign key on delete cascade), endpoint, p256dh, auth, user agent, creation timestamp.
+    - `settings`: Key-value store for registration control, approval mode, TTL defaults, app name, PWA configuration, VAPID keys.
 - **Uploads & Static Media**:
   - Mounted volume directory: `/app/data/uploads`
   - Subdirectories:
@@ -55,3 +56,18 @@ This document outlines the architectural layers, data contracts, and component r
   - `conversation:cleared`: Reset conversation stream for a user-admin thread.
   - `typing`: Live typing status broadcast with debounce.
   - `presence:init` & `user:online_status`: Real-time online/offline presence tracking.
+
+---
+
+## 5. Web Push Notification Architecture
+
+- Built on the official W3C Push API and RFC 8291 / RFC 8292 (VAPID).
+- VAPID keys are generated automatically if absent and stored securely in SQLite `settings`.
+- Endpoints:
+  - `GET /api/push/vapid-public-key`: Exposes public application server key.
+  - `POST /api/push/subscribe`: Registers user push endpoint in `push_subscriptions`.
+  - `POST /api/push/unsubscribe`: Removes push subscription with owner isolation.
+  - `POST /api/push/test`: Dispatches a verification test notification.
+- Service Worker (`sw.js`):
+  - Listens to `push` event, suppresses noise if client window is focused (`silentIfFocused`), and presents native OS notifications.
+  - Listens to `notificationclick`, focuses open window or opens app root URL `/`.

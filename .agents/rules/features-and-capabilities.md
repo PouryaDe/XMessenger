@@ -59,6 +59,31 @@ This document provides a comprehensive inventory of all built-in features, archi
 
 ---
 
+## 5. Telegram-Style Date Separators & Smart Chat Stream Scrolling
+
+1. **Centered Sticky/Inline Date Badges**:
+   - Messages are partitioned by calendar day using Telegram-style translucent pill badges centered between message groups.
+   - Fully localized with zero hardcoded strings (`امروز` / `Today`, `دیروز` / `Yesterday`, or formatted local month and day).
+2. **Smart Scroll & Reading Position Preservation**:
+   - Prevents auto-scroll bounce: Reading history is strictly preserved when user scrolls up (`isNearBottom = false`), even during periodic 6s heartbeat syncs or incoming messages.
+   - Telegram Floating Action Button (`ChevronDown`) appears when scrolled up (>160px) to let users smoothly jump back to the latest messages on demand.
+
+---
+
+## 6. Web Push Notifications (PWA & Desktop)
+
+1. **Background & Standalone Delivery**:
+   - Delivers native OS notifications when the app is in the background, closed, or device screen is locked.
+   - Fully supports Desktop browsers (Chrome, Edge, Safari, Firefox), Android (browser & PWA), and iOS 16.4+ (in standalone Home Screen PWA mode).
+2. **Privacy & Focused-Window Respect**:
+   - Notifications automatically silence themselves (`silentIfFocused`) when the user is actively focused on the chat window to eliminate intrusive system banners.
+   - Notification previews automatically recognize image messages (`📷 Image`) and truncate long text.
+3. **Zero Configuration VAPID**:
+   - Automated VAPID public/private key generation and persistence in SQLite `settings`.
+   - In-app toggle and instant test notification button in both `UserDrawer` and `AdminSettingsModal`.
+
+---
+
 ## 5. Security & Encryption Standards
 
 1. **At-Rest Message Encryption**:

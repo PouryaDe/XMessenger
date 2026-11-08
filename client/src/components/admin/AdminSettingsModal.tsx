@@ -92,7 +92,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
         }
       }
     } catch (e: any) {
-      setPushErrorMsg(e.message || t('pushUnsupported'));
+      setPushErrorMsg(getErrorMessage(e, 'pushUnsupported'));
     } finally {
       setIsPushLoading(false);
     }
@@ -556,14 +556,14 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-2">
                 <div className="flex items-center justify-between">
                   <span className="text-xs font-semibold text-slate-800 dark:text-slate-200">
-                    دستگاه‌های فعال ثبت‌شده برای شما
+                    {t('activeDevicesLabel')}
                   </span>
                   <span className="text-xs px-2.5 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-700 dark:text-slate-300 font-bold">
-                    {activeDevicesCount} دستگاه
+                    {t('activeDevicesCount', { count: activeDevicesCount })}
                   </span>
                 </div>
-                <p className="text-[11px] text-slate-400 leading-relaxed">
-                  سیستم پوش نوتیفیکیشن XMessenger مبتنی بر استاندارد رسمی Web Push و VAPID است و بر روی کامپیوترها، تبلت‌ها و گوشی‌های اندروید و آیفون (iOS 16.4 به بعد در حالت PWA) حتی زمانی که صفحه بسته باشد، نوتیفیکیشن ارسال می‌کند.
+                <p className="text-[11px] text-slate-400 leading-relaxed font-sans">
+                  {t('pushSystemInfo')}
                 </p>
               </div>
             </>

@@ -55747,8 +55747,11 @@ function getVapidPublicKey() {
 }
 function saveSubscription(userId, subscription, userAgent) {
   const { endpoint, keys } = subscription;
-  if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+  if (!endpoint || typeof endpoint !== "string" || !keys || !keys.p256dh || !keys.auth) {
     throw new Error("INVALID_SUBSCRIPTION");
+  }
+  if (!endpoint.startsWith("https://") || endpoint.length > 2048) {
+    throw new Error("INVALID_ENDPOINT");
   }
   const existing = db.prepare("SELECT id FROM push_subscriptions WHERE endpoint = ?").get(endpoint);
   const now = (/* @__PURE__ */ new Date()).toISOString();
@@ -55766,9 +55769,13 @@ function saveSubscription(userId, subscription, userAgent) {
     `).run(id, userId, endpoint, keys.p256dh, keys.auth, userAgent || "", now);
   }
 }
-function removeSubscription(endpoint) {
+function removeSubscription(endpoint, userId) {
   if (!endpoint) return;
-  db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
+  if (userId) {
+    db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?").run(endpoint, userId);
+  } else {
+    db.prepare("DELETE FROM push_subscriptions WHERE endpoint = ?").run(endpoint);
+  }
 }
 async function sendPushToUser(userId, payload) {
   initVapid();
@@ -55800,6 +55807,10 @@ async function sendPushToUser(userId, payload) {
 }
 async function dispatchPushForMessage(sender, recipientId, rawText) {
   try {
+    const recipient = db.prepare("SELECT id, status FROM users WHERE id = ?").get(recipientId);
+    if (!recipient || recipient.status !== "active") {
+      return;
+    }
     const appName = getSettingValue("app_name", "XMessenger");
     const pwaIconUrl = getSettingValue("pwa_icon_url", "");
     const senderTitle = sender.role === "admin" ? appName : sender.username;
@@ -56875,7 +56886,7 @@ pushRouter.post("/unsubscribe", (req, res) => {
   try {
     const { endpoint } = req.body;
     if (endpoint) {
-      removeSubscription(endpoint);
+      removeSubscription(endpoint, req.user.id);
     }
     res.json({ success: true, message: "Unsubscribed successfully" });
   } catch (err) {

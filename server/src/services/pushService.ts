@@ -45,8 +45,13 @@ export interface PushSubscriptionInput {
 
 export function saveSubscription(userId: string, subscription: PushSubscriptionInput, userAgent?: string): void {
   const { endpoint, keys } = subscription;
-  if (!endpoint || !keys || !keys.p256dh || !keys.auth) {
+  if (!endpoint || typeof endpoint !== 'string' || !keys || !keys.p256dh || !keys.auth) {
     throw new Error('INVALID_SUBSCRIPTION');
+  }
+
+  // Strict URL validation: must be an HTTPS push endpoint
+  if (!endpoint.startsWith('https://') || endpoint.length > 2048) {
+    throw new Error('INVALID_ENDPOINT');
   }
 
   const existing = db.prepare('SELECT id FROM push_subscriptions WHERE endpoint = ?').get(endpoint) as { id: string } | undefined;
@@ -67,9 +72,13 @@ export function saveSubscription(userId: string, subscription: PushSubscriptionI
   }
 }
 
-export function removeSubscription(endpoint: string): void {
+export function removeSubscription(endpoint: string, userId?: string): void {
   if (!endpoint) return;
-  db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(endpoint);
+  if (userId) {
+    db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ? AND user_id = ?').run(endpoint, userId);
+  } else {
+    db.prepare('DELETE FROM push_subscriptions WHERE endpoint = ?').run(endpoint);
+  }
 }
 
 export async function sendPushToUser(
@@ -124,6 +133,12 @@ export async function dispatchPushForMessage(
   rawText: string
 ): Promise<void> {
   try {
+    // Check recipient exists and is active (Hub-and-Spoke security isolation)
+    const recipient = db.prepare('SELECT id, status FROM users WHERE id = ?').get(recipientId) as { id: string; status: string } | undefined;
+    if (!recipient || recipient.status !== 'active') {
+      return;
+    }
+
     const appName = getSettingValue('app_name', 'XMessenger');
     const pwaIconUrl = getSettingValue('pwa_icon_url', '');
 

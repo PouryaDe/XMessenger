@@ -55,7 +55,7 @@ exports.pushRouter.post('/unsubscribe', (req, res) => {
     try {
         const { endpoint } = req.body;
         if (endpoint) {
-            (0, pushService_js_1.removeSubscription)(endpoint);
+            (0, pushService_js_1.removeSubscription)(endpoint, req.user.id);
         }
         res.json({ success: true, message: 'Unsubscribed successfully' });
     }

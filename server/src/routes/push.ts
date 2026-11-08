@@ -1,10 +1,10 @@
 import { Router } from 'express';
 import { authenticate, AuthenticatedRequest } from '../middleware/auth.js';
-import { 
-  getVapidPublicKey, 
-  saveSubscription, 
-  removeSubscription, 
-  sendPushToUser 
+import {
+  getVapidPublicKey,
+  saveSubscription,
+  removeSubscription,
+  sendPushToUser
 } from '../services/pushService.js';
 import { db, getSettingValue } from '../database/index.js';
 
@@ -63,7 +63,7 @@ pushRouter.post('/unsubscribe', (req: AuthenticatedRequest, res) => {
   try {
     const { endpoint } = req.body;
     if (endpoint) {
-      removeSubscription(endpoint);
+      removeSubscription(endpoint, req.user!.id);
     }
     res.json({ success: true, message: 'Unsubscribed successfully' });
   } catch (err: any) {

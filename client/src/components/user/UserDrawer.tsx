@@ -81,7 +81,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         }
       }
     } catch (e: any) {
-      setPushErrorMsg(e.message || t('pushUnsupported'));
+      setPushErrorMsg(getErrorMessage(e, 'pushUnsupported'));
     } finally {
       setIsPushLoading(false);
     }

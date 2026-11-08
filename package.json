@@ -9,7 +9,8 @@
     "build:server": "npm --prefix server run build",
     "build:client": "npm --prefix client run build",
     "build": "npm run build:server && npm run build:client",
-    "start": "npm --prefix server run start"
+    "start": "npm --prefix server run start",
+    "test": "npm --prefix server run test"
   },
   "keywords": [
     "messenger",

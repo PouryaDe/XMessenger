@@ -23,4 +23,3 @@ export const DateSeparator: React.FC<Props> = ({ date }) => {
     </div>
   );
 };
-
