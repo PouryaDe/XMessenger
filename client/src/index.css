@@ -66,6 +66,11 @@ html {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  background-color: #DFDDD6;
+}
+
+html.dark {
+  background-color: #0E1218;
 }
 
 body {
@@ -84,6 +89,7 @@ body {
   overflow: hidden;
   overscroll-behavior: none;
   -webkit-overflow-scrolling: touch;
+  background-color: inherit;
 }
 
 #root {
@@ -95,6 +101,7 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background-color: inherit;
 }
 
 /* Mobile PWA Safe Area Utilities (iOS Notch & Home Bar) */
@@ -175,7 +182,7 @@ body {
     radial-gradient(ellipse 80% 70% at 88% 90%, rgba(209, 221, 233, 0.65) 0%, transparent 65%);
   background-repeat: no-repeat;
   background-size: cover;
-  background-attachment: fixed;
+  background-position: center;
 }
 
 .dark .bg-ambient-canvas {
@@ -187,7 +194,7 @@ body {
     radial-gradient(ellipse 80% 70% at 88% 90%, rgba(30, 58, 138, 0.14) 0%, transparent 65%);
   background-repeat: no-repeat;
   background-size: cover;
-  background-attachment: fixed;
+  background-position: center;
 }
 
 /* Universal input shadow reset: Absolutely no shadows on inputs or floating pills in all themes */

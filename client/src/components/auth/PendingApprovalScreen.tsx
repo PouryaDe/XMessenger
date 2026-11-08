@@ -27,13 +27,13 @@ export const PendingApprovalScreen: React.FC = () => {
   }, [user, setUser]);
 
   return (
-    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-ambient-canvas font-sans">
-      <div className="fixed top-5 right-5 rtl:right-auto rtl:left-5 flex items-center gap-2.5">
+    <div className="fixed inset-0 z-40 flex items-center justify-center p-4 bg-ambient-canvas font-sans overflow-y-auto overscroll-none">
+      <div className="fixed top-[max(1.25rem,calc(env(safe-area-inset-top,0px)+0.85rem))] end-4 z-50 flex items-center gap-2">
         <LanguageToggle />
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] p-8 text-center shadow-floating relative">
+      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[32px] p-8 text-center shadow-floating relative">
         <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-white/[0.08] border border-stone-200/50 dark:border-white/[0.09] text-amber-500 mx-auto flex items-center justify-center mb-5 shadow-xs animate-pulse">
           <Clock className="w-8 h-8" />
         </div>

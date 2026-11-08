@@ -1,19 +1,19 @@
 // XMessenger PWA Service Worker (Automated Build Stamping)
-const BUILD_VERSION = 'vmw75x8sv-20261108';
+const BUILD_VERSION = 'vmw765t98-20261108';
 const CACHE_NAME = 'xmessenger-' + BUILD_VERSION;
 
 const PRECACHE_ASSETS = [
   '/manifest.json',
   '/shield.svg',
-  '/shield.svg?v=2.1.0',
+  '/shield.svg?v=2.1.1',
   '/icon-192.png',
-  '/icon-192.png?v=2.1.0',
+  '/icon-192.png?v=2.1.1',
   '/icon-512.png',
-  '/icon-512.png?v=2.1.0',
+  '/icon-512.png?v=2.1.1',
   '/icon-512-maskable.png',
-  '/icon-512-maskable.png?v=2.1.0',
+  '/icon-512-maskable.png?v=2.1.1',
   '/apple-touch-icon.png',
-  '/apple-touch-icon.png?v=2.1.0'
+  '/apple-touch-icon.png?v=2.1.1'
 ];
 
 self.addEventListener('install', (event) => {

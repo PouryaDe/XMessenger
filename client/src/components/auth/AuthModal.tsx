@@ -56,21 +56,17 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ambient-canvas font-sans">
-      {/* Top action controls */}
-      <div className="fixed top-5 right-5 rtl:right-auto rtl:left-5 flex items-center gap-2.5">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ambient-canvas font-sans overflow-y-auto overscroll-none">
+      {/* Top action controls respecting iOS notch and Dynamic Island */}
+      <div className="fixed top-[max(1.25rem,calc(env(safe-area-inset-top,0px)+0.85rem))] end-4 z-50 flex items-center gap-2">
         <LanguageToggle />
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative overflow-hidden">
-        {/* Soft Ambient Glow */}
-        <div className="absolute -top-16 -right-16 w-36 h-36 bg-amber-300/20 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-emerald-300/20 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
+      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-7">
-          <div className="w-16 h-16 rounded-3xl bg-slate-900/5 dark:bg-white/[0.06] border border-stone-200/50 dark:border-white/[0.09] flex items-center justify-center mb-4 shadow-xs overflow-hidden p-1.5">
+          <div className="w-16 h-16 rounded-3xl bg-black/5 dark:bg-white/[0.06] border border-black/[0.06] dark:border-white/[0.09] flex items-center justify-center mb-4 shadow-xs overflow-hidden p-1.5">
             <img 
               src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
               alt={t('appName')} 

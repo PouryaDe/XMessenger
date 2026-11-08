@@ -1,5 +1,5 @@
 <!doctype html>
-<html lang="fa" dir="rtl">
+<html lang="fa" dir="rtl" class="bg-ambient-canvas">
   <head>
     <meta charset="UTF-8" />
     <script>
@@ -8,8 +8,10 @@
           var t = localStorage.getItem('xmessenger_theme') || 'dark';
           if (t === 'dark') {
             document.documentElement.classList.add('dark');
+            document.documentElement.style.backgroundColor = '#0E1218';
           } else {
             document.documentElement.classList.remove('dark');
+            document.documentElement.style.backgroundColor = '#DFDDD6';
           }
           var l = localStorage.getItem('xmessenger_lang') || 'fa';
           document.documentElement.lang = l;
@@ -19,15 +21,15 @@
         } catch (e) {}
       })();
     </script>
-    <link rel="icon" type="image/svg+xml" href="/shield.svg?v=2.1.0" />
-    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2.1.0" />
-    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2.1.0" />
+    <link rel="icon" type="image/svg+xml" href="/shield.svg?v=2.1.1" />
+    <link rel="icon" type="image/png" sizes="192x192" href="/icon-192.png?v=2.1.1" />
+    <link rel="icon" type="image/png" sizes="512x512" href="/icon-512.png?v=2.1.1" />
     
     <!-- iOS Safari PWA Icons & Meta Tags -->
-    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2.1.0" />
-    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2.1.0" />
-    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png?v=2.1.0" />
-    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png?v=2.1.0" />
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2.1.1" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png?v=2.1.1" />
+    <link rel="apple-touch-icon" sizes="192x192" href="/icon-192.png?v=2.1.1" />
+    <link rel="apple-touch-icon" sizes="512x512" href="/icon-512.png?v=2.1.1" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -47,8 +49,8 @@
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-D5Uhg1yS.js"></script>
-    <link rel="stylesheet" crossorigin href="/assets/index-Cr51TZBv.css">
+    <script type="module" crossorigin src="/assets/index-ChYsTmK5.js"></script>
+    <link rel="stylesheet" crossorigin href="/assets/index-DjJsDnlC.css">
   </head>
   <body class="bg-ambient-canvas text-gray-900 dark:text-gray-100 font-sans antialiased overflow-hidden select-none">
     <div id="root"></div>
