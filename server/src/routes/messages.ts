@@ -92,7 +92,7 @@ export function createMessagesRouter(io?: Server) {
 
       // Fetch non-expired messages in chronological order
       const rows = db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -108,6 +108,7 @@ export function createMessagesRouter(io?: Server) {
         expires_at: string;
         is_read: number;
         reply_to_id?: string | null;
+        reactions?: string | null;
       }>;
 
       // Mark incoming messages as read
@@ -143,7 +144,8 @@ export function createMessagesRouter(io?: Server) {
         expiresAt: r.expires_at,
         isRead: Boolean(r.is_read),
         isOwn: r.sender_id === currentUser.id,
-        replyToId: r.reply_to_id || null
+        replyToId: r.reply_to_id || null,
+        reactions: r.reactions ? (() => { try { return JSON.parse(r.reactions); } catch { return []; } })() : []
       }));
 
       res.json({ messages });
@@ -201,8 +203,8 @@ export function createMessagesRouter(io?: Server) {
       const encrypted = encryptMessage(text.trim());
 
       db.prepare(`
-        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '[]')
       `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
 
       const messagePayload = {
@@ -213,7 +215,8 @@ export function createMessagesRouter(io?: Server) {
         createdAt,
         expiresAt,
         isRead: false,
-        replyToId: validReplyToId
+        replyToId: validReplyToId,
+        reactions: []
       };
 
       // Emit to sockets
@@ -267,6 +270,68 @@ export function createMessagesRouter(io?: Server) {
     } catch (err) {
       console.error('Error deleting message:', err);
       res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to delete message' });
+    }
+  });
+
+  // 3.5. Toggle Reaction on Message
+  router.post('/:id/react', (req: AuthenticatedRequest, res) => {
+    try {
+      const currentUser = req.user!;
+      const { id } = req.params;
+      const rawEmoji = typeof req.body.emoji === 'string' ? req.body.emoji.trim() : '👍';
+      const emoji = (rawEmoji.length > 0 && rawEmoji.length <= 16) ? rawEmoji : '👍';
+
+      const row = db.prepare('SELECT id, sender_id, recipient_id, reactions FROM messages WHERE id = ?').get(id) as {
+        id: string;
+        sender_id: string;
+        recipient_id: string;
+        reactions?: string | null;
+      } | undefined;
+
+      if (!row) {
+        return res.status(404).json({ error: 'NOT_FOUND', message: 'Message not found' });
+      }
+
+      if (currentUser.role !== 'admin' && row.sender_id !== currentUser.id && row.recipient_id !== currentUser.id) {
+        return res.status(403).json({ error: 'FORBIDDEN', message: 'Not authorized to react to this message' });
+      }
+
+      let reactions: Array<{ userId: string; username: string; avatarUrl?: string; emoji: string; createdAt: string }> = [];
+      try {
+        reactions = row.reactions ? JSON.parse(row.reactions) : [];
+      } catch {}
+
+      const liveUser = db.prepare('SELECT username, avatar_url FROM users WHERE id = ?').get(currentUser.id) as {
+        username: string;
+        avatar_url?: string;
+      } | undefined;
+
+      const existingIndex = reactions.findIndex((r) => r.userId === currentUser.id && r.emoji === emoji);
+      if (existingIndex !== -1) {
+        reactions.splice(existingIndex, 1);
+      } else {
+        reactions = reactions.filter((r) => r.userId !== currentUser.id);
+        reactions.push({
+          userId: currentUser.id,
+          username: liveUser?.username || currentUser.username,
+          avatarUrl: liveUser?.avatar_url || currentUser.avatarUrl || undefined,
+          emoji,
+          createdAt: new Date().toISOString()
+        });
+      }
+
+      db.prepare('UPDATE messages SET reactions = ? WHERE id = ?').run(JSON.stringify(reactions), id);
+
+      if (io) {
+        io.to(`user:${row.sender_id}`).emit('message:reaction', { messageId: id, reactions });
+        io.to(`user:${row.recipient_id}`).emit('message:reaction', { messageId: id, reactions });
+        io.to('room:admin').emit('message:reaction', { messageId: id, reactions });
+      }
+
+      res.json({ success: true, reactions });
+    } catch (err: any) {
+      console.error('Error toggling reaction:', err);
+      res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message || 'Failed to toggle reaction' });
     }
   });
 

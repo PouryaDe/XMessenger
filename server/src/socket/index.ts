@@ -48,7 +48,13 @@ export function setupSocketServer(io: Server) {
 
     try {
       const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
-      const user = db.prepare('SELECT id, username, role, status FROM users WHERE id = ?').get(decoded.id) as AuthUser | undefined;
+      const user = db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(decoded.id) as {
+        id: string;
+        username: string;
+        role: 'admin' | 'user';
+        status: 'active' | 'pending' | 'banned';
+        avatar_url?: string;
+      } | undefined;
 
       if (!user) {
         return next(new Error('USER_NOT_FOUND'));
@@ -58,7 +64,13 @@ export function setupSocketServer(io: Server) {
         return next(new Error('ACCOUNT_BANNED'));
       }
 
-      socket.user = user;
+      socket.user = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        status: user.status,
+        avatarUrl: user.avatar_url || undefined
+      };
       next();
     } catch (err) {
       next(new Error('INVALID_TOKEN'));
@@ -166,8 +178,8 @@ export function setupSocketServer(io: Server) {
         const encrypted = encryptMessage(text.trim());
 
         db.prepare(`
-          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '[]')
         `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
 
         const messagePayload = {
@@ -178,7 +190,8 @@ export function setupSocketServer(io: Server) {
           createdAt,
           expiresAt,
           isRead: false,
-          replyToId: validReplyToId
+          replyToId: validReplyToId,
+          reactions: []
         };
 
         // Emit to recipient and sender with exact message types
@@ -268,6 +281,73 @@ export function setupSocketServer(io: Server) {
         if (callback) callback({ success: true });
       } catch (err) {
         console.error('Socket message delete error:', err);
+        if (callback) callback({ error: 'INTERNAL_ERROR' });
+      }
+    });
+
+    // Toggle reaction on message via Socket
+    socket.on('message:react', ({ messageId, emoji }: { messageId: string; emoji?: string }, callback) => {
+      try {
+        if (user.status !== 'active') {
+          if (callback) callback({ error: 'ACCOUNT_NOT_ACTIVE' });
+          return;
+        }
+
+        const rawEmoji = (typeof emoji === 'string' && emoji.trim()) ? emoji.trim() : '👍';
+        // Bound emoji input length to prevent payload abuse
+        const reactionEmoji = (rawEmoji.length > 0 && rawEmoji.length <= 16) ? rawEmoji : '👍';
+
+        const row = db.prepare('SELECT id, sender_id, recipient_id, reactions FROM messages WHERE id = ?').get(messageId) as {
+          id: string;
+          sender_id: string;
+          recipient_id: string;
+          reactions?: string | null;
+        } | undefined;
+
+        if (!row) {
+          if (callback) callback({ error: 'NOT_FOUND' });
+          return;
+        }
+
+        if (user.role !== 'admin' && row.sender_id !== user.id && row.recipient_id !== user.id) {
+          if (callback) callback({ error: 'FORBIDDEN' });
+          return;
+        }
+
+        let reactions: Array<{ userId: string; username: string; avatarUrl?: string; emoji: string; createdAt: string }> = [];
+        try {
+          reactions = row.reactions ? JSON.parse(row.reactions) : [];
+        } catch {}
+
+        const liveUser = db.prepare('SELECT username, avatar_url FROM users WHERE id = ?').get(user.id) as {
+          username: string;
+          avatar_url?: string;
+        } | undefined;
+
+        const existingIndex = reactions.findIndex((r) => r.userId === user.id && r.emoji === reactionEmoji);
+        if (existingIndex !== -1) {
+          reactions.splice(existingIndex, 1);
+        } else {
+          reactions = reactions.filter((r) => r.userId !== user.id);
+          reactions.push({
+            userId: user.id,
+            username: liveUser?.username || user.username,
+            avatarUrl: liveUser?.avatar_url || user.avatarUrl || undefined,
+            emoji: reactionEmoji,
+            createdAt: new Date().toISOString()
+          });
+        }
+
+        db.prepare('UPDATE messages SET reactions = ? WHERE id = ?').run(JSON.stringify(reactions), messageId);
+
+        // Notify all sessions of both participants
+        io.to(`user:${row.sender_id}`).emit('message:reaction', { messageId, reactions });
+        io.to(`user:${row.recipient_id}`).emit('message:reaction', { messageId, reactions });
+        io.to('room:admin').emit('message:reaction', { messageId, reactions });
+
+        if (callback) callback({ success: true, reactions });
+      } catch (err) {
+        console.error('Socket message:react error:', err);
         if (callback) callback({ error: 'INTERNAL_ERROR' });
       }
     });

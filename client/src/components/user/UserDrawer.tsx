@@ -23,7 +23,8 @@ import {
   RefreshCw,
   Bell,
   BellRing,
-  Send
+  Send,
+  Loader2
 } from 'lucide-react';
 
 interface Props {
@@ -39,6 +40,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
+  const [updateStepText, setUpdateStepText] = useState<string | null>(null);
 
   // Push Notifications state
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
@@ -97,25 +99,30 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
 
   const handleForceUpdateApp = async () => {
     setIsUpdatingApp(true);
+    setUpdateStepText(t('clearingCache'));
+    // Signal global smooth updating transition so UI doesn't jump or flash
+    window.dispatchEvent(new CustomEvent('app:updating', { detail: { reason: 'manual' } }));
+
     try {
       if ('serviceWorker' in navigator) {
         const reg = await navigator.serviceWorker.getRegistration();
         if (reg) {
           reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
           reg.active?.postMessage({ type: 'PURGE_CACHE' });
-          await reg.unregister().catch(() => {});
         }
       }
       if ('caches' in window) {
         const keys = await caches.keys();
-        await Promise.all(keys.map(k => caches.delete(k)));
+        await Promise.all(keys.map((k) => caches.delete(k)));
       }
     } catch (e) {
       console.warn('Force update purge error:', e);
     }
+
+    setUpdateStepText(t('loadingLatest'));
     setTimeout(() => {
       window.location.reload();
-    }, 400);
+    }, 450);
   };
 
   if (!isOpen) return null;
@@ -158,7 +165,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
       />
 
       {/* Drawer content */}
-      <div className={`relative w-full max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/[0.08] shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
+      <div className={`relative w-[88vw] max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/[0.08] shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
         {/* Header */}
         <div className="p-6 pt-safe border-b border-stone-200/50 dark:border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-3">
@@ -232,9 +239,9 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
           </div>
 
           {/* Web Push Notifications Card */}
-          <div className="p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-2.5">
-            <div className="flex items-center justify-between gap-3">
-              <div className="flex items-center gap-3 overflow-hidden">
+          <div className="p-3.5 sm:p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-2.5 overflow-hidden">
+            <div className="flex items-center justify-between gap-2.5 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
                 <div className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ${
                   isPushSubscribed 
                     ? 'bg-amber-500/15 text-amber-600 dark:text-amber-400' 
@@ -242,8 +249,8 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
                 }`}>
                   {isPushSubscribed ? <BellRing className="w-4 h-4" /> : <Bell className="w-4 h-4" />}
                 </div>
-                <div className="truncate">
-                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight">
+                <div className="min-w-0 flex-1 overflow-hidden text-start">
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate">
                     {t('pushNotifications')}
                   </p>
                   <p className="text-[10px] text-slate-400 font-normal mt-0.5 truncate">
@@ -256,18 +263,25 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
                 type="button"
                 onClick={handleTogglePush}
                 disabled={isPushLoading}
-                className={`px-3 py-1.5 rounded-full text-[11px] font-semibold transition-all shadow-xs shrink-0 cursor-pointer ${
+                className={`min-w-[5.25rem] px-2.5 py-1.5 rounded-full text-[11px] font-semibold transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5 ${
                   isPushSubscribed
                     ? 'bg-stone-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30'
                     : 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold'
-                }`}
+                } disabled:opacity-75 disabled:cursor-not-allowed`}
               >
-                {isPushLoading ? t('pushSubscribing') : (isPushSubscribed ? t('disablePush') : t('enablePush'))}
+                {isPushLoading ? (
+                  <>
+                    <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                    <span>{t('pushSubscribingShort')}</span>
+                  </>
+                ) : (
+                  <span>{isPushSubscribed ? t('disablePush') : t('enablePush')}</span>
+                )}
               </button>
             </div>
 
             {pushErrorMsg && (
-              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed font-sans">
+              <div className="p-2.5 rounded-xl bg-amber-500/10 border border-amber-500/20 text-[11px] text-amber-700 dark:text-amber-300 leading-relaxed font-sans break-words overflow-hidden">
                 {pushErrorMsg}
               </div>
             )}
@@ -278,10 +292,14 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
                   type="button"
                   onClick={handleSendTestPush}
                   disabled={isSendingTest}
-                  className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer"
+                  className="text-[11px] font-medium text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
                 >
-                  <Send className="w-3 h-3" />
-                  <span>{isSendingTest ? t('pushSubscribing') : t('pushSendTest')}</span>
+                  {isSendingTest ? (
+                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                  ) : (
+                    <Send className="w-3 h-3 shrink-0" />
+                  )}
+                  <span>{isSendingTest ? t('pushSendingTest') : t('pushSendTest')}</span>
                 </button>
               </div>
             )}
@@ -314,24 +332,46 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
           </button>
 
           {/* Update PWA / Force Refresh App */}
-          <button
-            onClick={handleForceUpdateApp}
-            disabled={isUpdatingApp}
-            className="w-full flex items-center justify-between p-4 rounded-[22px] bg-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] shadow-xs border border-black/[0.06] dark:border-white/[0.06] text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all text-start"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
-                <RefreshCw className={`w-4 h-4 ${isUpdatingApp ? 'animate-spin' : ''}`} />
+          <div className="p-3.5 sm:p-4 rounded-[22px] bg-white dark:bg-white/[0.04] shadow-xs border border-black/[0.06] dark:border-white/[0.06] transition-all overflow-hidden">
+            <div className="flex items-center justify-between gap-2.5 min-w-0">
+              <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+                <div className="w-8 h-8 rounded-full bg-blue-50 dark:bg-blue-500/15 flex items-center justify-center text-blue-600 dark:text-blue-400 shrink-0">
+                  <RefreshCw className={`w-4 h-4 ${isUpdatingApp ? 'animate-spin' : ''}`} />
+                </div>
+                <div className="min-w-0 flex-1 text-start overflow-hidden">
+                  <p className="text-xs font-semibold text-slate-800 dark:text-slate-200 leading-tight truncate">
+                    {t('updateApp')}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-normal mt-0.5 truncate">
+                    {t('updateAppDesc')}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="leading-tight">{t('updateApp')}</p>
-                <p className="text-[10px] text-slate-400 font-normal mt-0.5">{t('updateAppDesc')}</p>
-              </div>
+
+              <button
+                type="button"
+                onClick={handleForceUpdateApp}
+                disabled={isUpdatingApp}
+                className="px-2.5 py-1.5 rounded-full bg-blue-500/10 hover:bg-blue-500/20 text-blue-600 dark:text-blue-400 text-[10px] font-bold shrink-0 flex items-center gap-1.5 transition-all cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
+              >
+                {isUpdatingApp ? (
+                  <>
+                    <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                    <span>{t('updatingApp')}</span>
+                  </>
+                ) : (
+                  <span>v{APP_VERSION}</span>
+                )}
+              </button>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-500 shrink-0 font-bold">
-              {isUpdatingApp ? t('updatingApp') : `v${APP_VERSION}`}
-            </span>
-          </button>
+
+            {isUpdatingApp && (
+              <div className="mt-2.5 pt-2 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-blue-600 dark:text-blue-400 font-medium">
+                <span className="truncate">{updateStepText || t('updatingAppDesc')}</span>
+                <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0 ms-2" />
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Footer Logout & App Version */}

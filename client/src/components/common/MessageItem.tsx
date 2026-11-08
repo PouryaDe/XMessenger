@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Message } from '../../services/api.js';
+import { Message, User } from '../../services/api.js';
 import { useTranslation } from 'react-i18next';
 import { FormattedMessageText } from './FormattedMessageText.js';
 import { 
@@ -7,28 +7,37 @@ import {
   Check, 
   CheckCheck, 
   Flame, 
-  Copy,
-  X,
-  Download,
-  Reply
+  Copy, 
+  X, 
+  Download, 
+  Reply,
+  Clock
 } from 'lucide-react';
 
 interface Props {
   message: Message;
   isOwn: boolean;
+  isFirstInGroup?: boolean;
+  isLastInGroup?: boolean;
   onDelete: (id: string) => void;
   onReply?: (message: Message) => void;
+  onReact?: (messageId: string, emoji?: string) => void;
+  currentUser?: User | null;
   repliedMessage?: Message | null;
   repliedSenderName?: string;
   onScrollToMessage?: (id: string) => void;
   isHighlighted?: boolean;
 }
 
-export const MessageItem: React.FC<Props> = ({
+const MessageItemComponent: React.FC<Props> = ({
   message,
   isOwn,
+  isFirstInGroup = true,
+  isLastInGroup = true,
   onDelete,
   onReply,
+  onReact,
+  currentUser,
   repliedMessage,
   repliedSenderName,
   onScrollToMessage,
@@ -41,9 +50,18 @@ export const MessageItem: React.FC<Props> = ({
   const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('up');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
+  const [showReactionAnim, setShowReactionAnim] = useState(false);
+  const lastTapRef = useRef<number>(0);
+  const lastTriggerLikeRef = useRef<number>(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
+
+  const isPending = message.status === 'sending' || message.id.startsWith('temp_');
+  // Only play entrance animation if newly created or sending, avoiding 50 simultaneous animations on load
+  const shouldAnimate = useRef(
+    isPending || (Date.now() - new Date(message.createdAt).getTime() < 3000)
+  );
 
   // Parse potential image attachment [image:url]\ncaption
   const imageMatch = message.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
@@ -191,9 +209,31 @@ export const MessageItem: React.FC<Props> = ({
     }
   };
 
+  const triggerLike = () => {
+    const now = Date.now();
+    // Guard against duplicate triggers on mobile touch (touchend + synthetic dblclick)
+    if (now - lastTriggerLikeRef.current < 450) {
+      return;
+    }
+    lastTriggerLikeRef.current = now;
+    setShowMenu(false);
+    setShowReactionAnim(true);
+    setTimeout(() => setShowReactionAnim(false), 700);
+    onReact?.(message.id, '👍');
+  };
+
   const handleTouchEnd = () => {
     if (Math.abs(swipeOffset) >= 38 && onReply) {
       onReply(message);
+    } else if (Math.abs(swipeOffset) < 10) {
+      const now = Date.now();
+      if (now - lastTapRef.current < 320) {
+        // Double tap on mobile triggers like!
+        triggerLike();
+        lastTapRef.current = 0;
+      } else {
+        lastTapRef.current = now;
+      }
     }
     setSwipeOffset(0);
     touchStartRef.current = null;
@@ -204,14 +244,28 @@ export const MessageItem: React.FC<Props> = ({
     minute: '2-digit'
   });
 
+  const reactions = message.reactions || [];
+  const hasLiked = reactions.some((r) => r.userId === currentUser?.id);
+
+  // Telegram corner radii: intermediate messages are uniformly rounded; last message in streak has the tail corner
+  const cornerRadiusClass = isOwn
+    ? (isLastInGroup
+        ? 'rounded-[18px] rounded-br-[4px]'
+        : 'rounded-[18px]')
+    : (isLastInGroup
+        ? 'rounded-[18px] rounded-bl-[4px]'
+        : 'rounded-[18px]');
+
+  const verticalSpacing = isFirstInGroup ? 'mt-3.5 sm:mt-4 mb-1' : 'mt-1 mb-1';
+
   return (
     <div
       id={`msg-${message.id}`}
       dir="ltr"
-      className={`w-full flex my-1.5 px-3 animate-message select-none ${isOwn ? 'justify-end' : 'justify-start'} ${showMenu ? 'relative z-40' : 'relative z-0'}`}
+      className={`w-full flex ${verticalSpacing} px-3 select-none ${shouldAnimate.current ? 'animate-message' : ''} ${isOwn ? 'justify-end' : 'justify-start'} ${showMenu ? 'relative z-40' : 'relative z-0'}`}
     >
       <div
-        className="relative max-w-[85%] sm:max-w-md md:max-w-lg transition-transform duration-150 ease-out"
+        className="relative max-w-[76%] sm:max-w-[70%] md:max-w-[65%] transition-transform duration-150 ease-out"
         style={swipeOffset ? { transform: `translateX(${swipeOffset}px)` } : undefined}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
@@ -228,25 +282,54 @@ export const MessageItem: React.FC<Props> = ({
           </div>
         )}
 
-        {/* Message Bubble Card with Modern Rounded Corners */}
+        {/* Message Bubble Card with Telegram Styling */}
         <div
           ref={bubbleRef}
           onContextMenu={handleContextMenu}
           onClick={handleBubbleClick}
           onDoubleClick={(e) => {
             e.stopPropagation();
-            onReply?.(message);
+            triggerLike();
           }}
-          className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${
+          className={`relative px-3.5 sm:px-4 ${reactions.length > 0 ? 'pb-3.5' : 'pb-2'} pt-2 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${cornerRadiusClass} ${
             isOwn
-              ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.06] dark:bg-[#232936] dark:text-white dark:border-white/[0.08] rounded-[20px] rounded-br-[6px]'
-              : 'bg-white text-slate-900 border-black/[0.04] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06] rounded-[20px] rounded-bl-[6px]'
+              ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.06] dark:bg-[#232936] dark:text-white dark:border-white/[0.08]'
+              : 'bg-white text-slate-900 border-black/[0.04] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06]'
           } ${
             isHighlighted
               ? 'ring-2 ring-amber-500 dark:ring-amber-400 scale-[1.02]'
               : ''
           }`}
         >
+          {/* Telegram Outgoing Bubble Tail (Bottom-Right) */}
+          {isLastInGroup && isOwn && (
+            <svg
+              viewBox="0 0 11 20"
+              className="absolute -bottom-[0.5px] -right-[7px] w-[9px] h-[16px] pointer-events-none fill-[#EDE8E0] dark:fill-[#232936]"
+            >
+              <path d="M0 0 C0 8 3 16 11 20 L0 20 Z" />
+            </svg>
+          )}
+
+          {/* Telegram Incoming Bubble Tail (Bottom-Left) */}
+          {isLastInGroup && !isOwn && (
+            <svg
+              viewBox="0 0 11 20"
+              className="absolute -bottom-[0.5px] -left-[7px] w-[9px] h-[16px] pointer-events-none fill-white dark:fill-[#161B24] -scale-x-100"
+            >
+              <path d="M0 0 C0 8 3 16 11 20 L0 20 Z" />
+            </svg>
+          )}
+
+          {/* Lightweight animated reaction burst on double-tap */}
+          {showReactionAnim && (
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
+              <div className="animate-like-burst select-none text-3xl sm:text-4xl filter drop-shadow-[0_2px_10px_rgba(42,171,238,0.5)]">
+                👍
+              </div>
+            </div>
+          )}
+
           {/* Replied Message Quote Block */}
           {message.replyToId && (
             <div
@@ -332,7 +415,11 @@ export const MessageItem: React.FC<Props> = ({
 
             {isOwn && (
               <span>
-                {message.isRead ? (
+                {isPending ? (
+                  <Clock className="w-3.5 h-3.5 text-amber-500/80 animate-pulse inline" />
+                ) : message.status === 'failed' ? (
+                  <span className="text-red-500 text-[10px] font-bold inline">!</span>
+                ) : message.isRead ? (
                   <CheckCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 inline" />
                 ) : (
                   <Check className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 inline" />
@@ -340,6 +427,49 @@ export const MessageItem: React.FC<Props> = ({
               </span>
             )}
           </div>
+
+          {/* Telegram Style Reaction Badge (Image 3) */}
+          {reactions.length > 0 && (
+            <div
+              onClick={(e) => {
+                e.stopPropagation();
+                triggerLike();
+              }}
+              className={`absolute -bottom-2.5 ${isOwn ? 'end-2.5' : 'start-2.5'} z-20 flex items-center gap-1.5 px-2 py-0.5 rounded-full border shadow-xs cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 ${
+                hasLiked
+                  ? 'bg-[#2AABEE]/20 border-[#2AABEE]/40 text-[#2AABEE] dark:text-[#38b9fc]'
+                  : 'bg-white/95 dark:bg-[#1E2430]/95 border-black/10 dark:border-white/10 text-slate-700 dark:text-slate-200'
+              }`}
+              title={reactions.map((r) => r.username).join(', ')}
+            >
+              <span className="text-xs leading-none">👍</span>
+              {/* Reactor User Avatar */}
+              <div className="flex items-center -space-x-1 rtl:space-x-reverse">
+                {reactions.slice(0, 3).map((r, i) => (
+                  r.avatarUrl ? (
+                    <img
+                      key={r.userId || i}
+                      src={r.avatarUrl}
+                      alt={r.username}
+                      className="w-3.5 h-3.5 rounded-full object-cover border border-white dark:border-[#1E2430]"
+                    />
+                  ) : (
+                    <span
+                      key={r.userId || i}
+                      className="w-3.5 h-3.5 rounded-full bg-amber-500/20 text-amber-600 dark:text-amber-400 text-[8px] font-bold flex items-center justify-center border border-white dark:border-[#1E2430]"
+                    >
+                      {(r.username || '?')[0].toUpperCase()}
+                    </span>
+                  )
+                ))}
+              </div>
+              {reactions.length > 1 && (
+                <span className="text-[10px] font-bold leading-none ms-0.5">
+                  {reactions.length}
+                </span>
+              )}
+            </div>
+          )}
 
           {/* Feedback badge for Copied */}
           {copied && (
@@ -356,6 +486,19 @@ export const MessageItem: React.FC<Props> = ({
               onClick={(e) => e.stopPropagation()}
               className={`absolute ${menuDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'} ${isOwn ? 'end-0' : 'start-0'} w-44 bg-white/95 dark:bg-[#151A24]/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-1.5 shadow-floating z-50 animate-message font-sans`}
             >
+              {onReact && (
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    triggerLike();
+                  }}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                >
+                  <span className="text-sm">👍</span>
+                  <span>{hasLiked ? t('removeLike') : t('like')}</span>
+                </button>
+              )}
+
               {onReply && (
                 <button
                   onClick={handleReplyClick}
@@ -426,3 +569,5 @@ export const MessageItem: React.FC<Props> = ({
     </div>
   );
 };
+
+export const MessageItem = React.memo(MessageItemComponent);

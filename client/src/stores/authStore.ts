@@ -27,38 +27,78 @@ if (typeof window !== 'undefined') {
   }
 }
 
+const savedToken = typeof window !== 'undefined' ? localStorage.getItem('xmessenger_token') : null;
+
+const savedUser: User | null = typeof window !== 'undefined' ? (() => {
+  try {
+    const raw = localStorage.getItem('xmessenger_user');
+    return raw ? JSON.parse(raw) as User : null;
+  } catch {
+    return null;
+  }
+})() : null;
+
+const savedAdminInfo = typeof window !== 'undefined' ? (() => {
+  try {
+    const raw = localStorage.getItem('xmessenger_admin_info');
+    return raw ? JSON.parse(raw) : null;
+  } catch {
+    return null;
+  }
+})() : null;
+
 export const useAuthStore = create<AuthState>((set, get) => ({
-  token: localStorage.getItem('xmessenger_token'),
-  user: null,
-  adminInfo: null,
-  isLoading: true,
+  token: savedToken,
+  user: savedUser,
+  adminInfo: savedAdminInfo,
+  // If we already have token and cached user, don't block the screen with full loader (0ms instant hydration)
+  isLoading: Boolean(savedToken && !savedUser),
   theme: savedTheme,
 
   login: (token, user) => {
     localStorage.setItem('xmessenger_token', token);
+    localStorage.setItem('xmessenger_user', JSON.stringify(user));
     initSocket(token);
     set({ token, user, isLoading: false });
   },
 
   logout: () => {
     localStorage.removeItem('xmessenger_token');
+    localStorage.removeItem('xmessenger_user');
+    localStorage.removeItem('xmessenger_admin_info');
+    try {
+      sessionStorage.removeItem('xmessenger_cached_messages');
+    } catch {}
     disconnectSocket();
     set({ token: null, user: null, adminInfo: null, isLoading: false });
   },
 
-  setUser: (user) => set({ user }),
+  setUser: (user) => {
+    try {
+      localStorage.setItem('xmessenger_user', JSON.stringify(user));
+    } catch {}
+    set({ user });
+  },
 
   updateUserAvatar: (avatarUrl?: string) => {
     const current = get().user;
     if (current) {
-      set({ user: { ...current, avatarUrl } });
+      const updated = { ...current, avatarUrl };
+      try {
+        localStorage.setItem('xmessenger_user', JSON.stringify(updated));
+      } catch {}
+      set({ user: updated });
     }
   },
 
   updateAdminAvatar: (avatarUrl?: string) => {
     const currentAdmin = get().adminInfo;
     if (currentAdmin) {
-      set({ adminInfo: { ...currentAdmin, avatarUrl } });
+      const updated = { ...currentAdmin, avatarUrl };
+      try {
+        localStorage.setItem('xmessenger_admin_info', JSON.stringify(updated));
+      } catch {}
+      set({ adminInfo: updated });
     }
   },
 
@@ -70,15 +110,32 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     }
 
     try {
-      set({ isLoading: true });
+      if (!get().user) {
+        set({ isLoading: true });
+      }
       const data = await api.getMe();
+      try {
+        localStorage.setItem('xmessenger_user', JSON.stringify(data.user));
+        if (data.adminInfo) {
+          localStorage.setItem('xmessenger_admin_info', JSON.stringify(data.adminInfo));
+        }
+      } catch {}
       initSocket(token);
       set({ user: data.user, adminInfo: data.adminInfo, token, isLoading: false });
-    } catch (err) {
-      console.error('Session expired or invalid:', err);
-      localStorage.removeItem('xmessenger_token');
-      set({ token: null, user: null, adminInfo: null, isLoading: false });
-      disconnectSocket();
+    } catch (err: any) {
+      const isAuthError = err?.status === 401 || err?.response?.status === 401 || err?.message?.includes('401');
+      if (isAuthError) {
+        console.error('Session expired or invalid:', err);
+        localStorage.removeItem('xmessenger_token');
+        localStorage.removeItem('xmessenger_user');
+        localStorage.removeItem('xmessenger_admin_info');
+        disconnectSocket();
+        set({ token: null, user: null, adminInfo: null, isLoading: false });
+      } else {
+        console.warn('Network issue during checkAuth, retaining cached session:', err);
+        initSocket(token);
+        set({ isLoading: false });
+      }
     }
   },
 

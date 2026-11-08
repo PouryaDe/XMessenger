@@ -54573,6 +54573,10 @@ function initDatabase() {
     db.exec("ALTER TABLE messages ADD COLUMN reply_to_id TEXT;");
   } catch (_) {
   }
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN reactions TEXT DEFAULT '[]';");
+  } catch (_) {
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS push_subscriptions (
       id TEXT PRIMARY KEY,
@@ -55884,14 +55888,20 @@ function setupSocketServer(io3) {
     }
     try {
       const decoded = import_jsonwebtoken2.default.verify(token, config.jwtSecret);
-      const user = db.prepare("SELECT id, username, role, status FROM users WHERE id = ?").get(decoded.id);
+      const user = db.prepare("SELECT id, username, role, status, avatar_url FROM users WHERE id = ?").get(decoded.id);
       if (!user) {
         return next(new Error("USER_NOT_FOUND"));
       }
       if (user.status === "banned") {
         return next(new Error("ACCOUNT_BANNED"));
       }
-      socket.user = user;
+      socket.user = {
+        id: user.id,
+        username: user.username,
+        role: user.role,
+        status: user.status,
+        avatarUrl: user.avatar_url || void 0
+      };
       next();
     } catch (err) {
       next(new Error("INVALID_TOKEN"));
@@ -55974,8 +55984,8 @@ function setupSocketServer(io3) {
         const createdAt = nowTime.toISOString();
         const encrypted = encryptMessage(text.trim());
         db.prepare(`
-          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '[]')
         `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
         const messagePayload = {
           id: messageId,
@@ -55985,7 +55995,8 @@ function setupSocketServer(io3) {
           createdAt,
           expiresAt,
           isRead: false,
-          replyToId: validReplyToId
+          replyToId: validReplyToId,
+          reactions: []
         };
         if (user.role === "admin") {
           io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
@@ -56046,6 +56057,52 @@ function setupSocketServer(io3) {
         if (callback) callback({ success: true });
       } catch (err) {
         console.error("Socket message delete error:", err);
+        if (callback) callback({ error: "INTERNAL_ERROR" });
+      }
+    });
+    socket.on("message:react", ({ messageId, emoji }, callback) => {
+      try {
+        if (user.status !== "active") {
+          if (callback) callback({ error: "ACCOUNT_NOT_ACTIVE" });
+          return;
+        }
+        const rawEmoji = typeof emoji === "string" && emoji.trim() ? emoji.trim() : "\u{1F44D}";
+        const reactionEmoji = rawEmoji.length > 0 && rawEmoji.length <= 16 ? rawEmoji : "\u{1F44D}";
+        const row = db.prepare("SELECT id, sender_id, recipient_id, reactions FROM messages WHERE id = ?").get(messageId);
+        if (!row) {
+          if (callback) callback({ error: "NOT_FOUND" });
+          return;
+        }
+        if (user.role !== "admin" && row.sender_id !== user.id && row.recipient_id !== user.id) {
+          if (callback) callback({ error: "FORBIDDEN" });
+          return;
+        }
+        let reactions = [];
+        try {
+          reactions = row.reactions ? JSON.parse(row.reactions) : [];
+        } catch {
+        }
+        const liveUser = db.prepare("SELECT username, avatar_url FROM users WHERE id = ?").get(user.id);
+        const existingIndex = reactions.findIndex((r) => r.userId === user.id && r.emoji === reactionEmoji);
+        if (existingIndex !== -1) {
+          reactions.splice(existingIndex, 1);
+        } else {
+          reactions = reactions.filter((r) => r.userId !== user.id);
+          reactions.push({
+            userId: user.id,
+            username: liveUser?.username || user.username,
+            avatarUrl: liveUser?.avatar_url || user.avatarUrl || void 0,
+            emoji: reactionEmoji,
+            createdAt: (/* @__PURE__ */ new Date()).toISOString()
+          });
+        }
+        db.prepare("UPDATE messages SET reactions = ? WHERE id = ?").run(JSON.stringify(reactions), messageId);
+        io3.to(`user:${row.sender_id}`).emit("message:reaction", { messageId, reactions });
+        io3.to(`user:${row.recipient_id}`).emit("message:reaction", { messageId, reactions });
+        io3.to("room:admin").emit("message:reaction", { messageId, reactions });
+        if (callback) callback({ success: true, reactions });
+      } catch (err) {
+        console.error("Socket message:react error:", err);
         if (callback) callback({ error: "INTERNAL_ERROR" });
       }
     });
@@ -56687,7 +56744,7 @@ function createMessagesRouter(io3) {
       }
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const rows = db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -56719,7 +56776,14 @@ function createMessagesRouter(io3) {
         expiresAt: r.expires_at,
         isRead: Boolean(r.is_read),
         isOwn: r.sender_id === currentUser.id,
-        replyToId: r.reply_to_id || null
+        replyToId: r.reply_to_id || null,
+        reactions: r.reactions ? (() => {
+          try {
+            return JSON.parse(r.reactions);
+          } catch {
+            return [];
+          }
+        })() : []
       }));
       res.json({ messages });
     } catch (err) {
@@ -56760,8 +56824,8 @@ function createMessagesRouter(io3) {
       const createdAt = now.toISOString();
       const encrypted = encryptMessage(text.trim());
       db.prepare(`
-        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?, '[]')
       `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
       const messagePayload = {
         id: messageId,
@@ -56771,7 +56835,8 @@ function createMessagesRouter(io3) {
         createdAt,
         expiresAt,
         isRead: false,
-        replyToId: validReplyToId
+        replyToId: validReplyToId,
+        reactions: []
       };
       if (io3) {
         io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
@@ -56806,6 +56871,50 @@ function createMessagesRouter(io3) {
     } catch (err) {
       console.error("Error deleting message:", err);
       res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to delete message" });
+    }
+  });
+  router.post("/:id/react", (req, res) => {
+    try {
+      const currentUser = req.user;
+      const { id } = req.params;
+      const rawEmoji = typeof req.body.emoji === "string" ? req.body.emoji.trim() : "\u{1F44D}";
+      const emoji = rawEmoji.length > 0 && rawEmoji.length <= 16 ? rawEmoji : "\u{1F44D}";
+      const row = db.prepare("SELECT id, sender_id, recipient_id, reactions FROM messages WHERE id = ?").get(id);
+      if (!row) {
+        return res.status(404).json({ error: "NOT_FOUND", message: "Message not found" });
+      }
+      if (currentUser.role !== "admin" && row.sender_id !== currentUser.id && row.recipient_id !== currentUser.id) {
+        return res.status(403).json({ error: "FORBIDDEN", message: "Not authorized to react to this message" });
+      }
+      let reactions = [];
+      try {
+        reactions = row.reactions ? JSON.parse(row.reactions) : [];
+      } catch {
+      }
+      const liveUser = db.prepare("SELECT username, avatar_url FROM users WHERE id = ?").get(currentUser.id);
+      const existingIndex = reactions.findIndex((r) => r.userId === currentUser.id && r.emoji === emoji);
+      if (existingIndex !== -1) {
+        reactions.splice(existingIndex, 1);
+      } else {
+        reactions = reactions.filter((r) => r.userId !== currentUser.id);
+        reactions.push({
+          userId: currentUser.id,
+          username: liveUser?.username || currentUser.username,
+          avatarUrl: liveUser?.avatar_url || currentUser.avatarUrl || void 0,
+          emoji,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      }
+      db.prepare("UPDATE messages SET reactions = ? WHERE id = ?").run(JSON.stringify(reactions), id);
+      if (io3) {
+        io3.to(`user:${row.sender_id}`).emit("message:reaction", { messageId: id, reactions });
+        io3.to(`user:${row.recipient_id}`).emit("message:reaction", { messageId: id, reactions });
+        io3.to("room:admin").emit("message:reaction", { messageId: id, reactions });
+      }
+      res.json({ success: true, reactions });
+    } catch (err) {
+      console.error("Error toggling reaction:", err);
+      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || "Failed to toggle reaction" });
     }
   });
   router.delete("/clear-all/my-chat", (req, res) => {

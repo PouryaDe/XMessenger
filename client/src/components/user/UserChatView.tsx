@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
@@ -41,7 +41,9 @@ export const UserChatView: React.FC = () => {
     setTyping,
     sendTyping,
     markConversationAsRead,
-    markMessagesReadByRecipient
+    markMessagesReadByRecipient,
+    toggleReaction,
+    updateMessageReactions
   } = useChatStore();
 
   const [inputText, setInputText] = useState('');
@@ -70,12 +72,12 @@ export const UserChatView: React.FC = () => {
     }
   }, [messages, replyingTo]);
 
-  const handleReply = (msg: Message) => {
+  const handleReply = useCallback((msg: Message) => {
     setReplyingTo(msg);
     setTimeout(() => messageInputRef.current?.focus(), 50);
-  };
+  }, []);
 
-  const handleScrollToMessage = (msgId: string) => {
+  const handleScrollToMessage = useCallback((msgId: string) => {
     const el = document.getElementById(`msg-${msgId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -85,7 +87,7 @@ export const UserChatView: React.FC = () => {
         setHighlightedMsgId(null);
       }, 1800);
     }
-  };
+  }, []);
 
   const handleImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -166,6 +168,10 @@ export const UserChatView: React.FC = () => {
       markMessagesReadByRecipient(readerId);
     });
 
+    socket.on('message:reaction', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
+      updateMessageReactions(messageId, reactions);
+    });
+
     socket.on('admin:online_status', ({ isOnline, lastSeen }) => {
       setAdminOnline(isOnline);
       if (lastSeen) setAdminLastSeen(lastSeen);
@@ -183,6 +189,7 @@ export const UserChatView: React.FC = () => {
       socket.off('message:deleted');
       socket.off('conversation:cleared');
       socket.off('messages:read');
+      socket.off('message:reaction');
       socket.off('admin:online_status');
       socket.off('typing');
     };
@@ -209,7 +216,9 @@ export const UserChatView: React.FC = () => {
   };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
     isNearBottomRef.current = true;
     setShowScrollBottom(false);
   };
@@ -229,15 +238,13 @@ export const UserChatView: React.FC = () => {
 
     if (isInitial) {
       initialScrollDoneRef.current = true;
-      scrollToBottom('auto');
-    } else if (hasNewMessages && isOwnLastMsg) {
-      // User sent a message: always scroll down
-      scrollToBottom('smooth');
-    } else if (isNearBottomRef.current) {
-      // User is already watching bottom: smooth scroll down
-      scrollToBottom('smooth');
+      requestAnimationFrame(() => scrollToBottom('auto'));
+    } else if (hasNewMessages) {
+      if (isOwnLastMsg || isNearBottomRef.current) {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      }
     }
-    // If user is scrolled up reading older messages, do NOT auto-scroll!
+    // Only scroll when new messages are added, never on read status updates or background sync
 
     prevMessagesLengthRef.current = messages.length;
   }, [messages, user?.id]);
@@ -264,7 +271,6 @@ export const UserChatView: React.FC = () => {
       } else {
         await sendMessage(text, undefined, undefined, currentReplyId);
       }
-      setTimeout(() => scrollToBottom('smooth'), 50);
     } catch (err) {
       console.error('Failed to send:', err);
       alert(t('imageUploadFailed'));
@@ -363,7 +369,10 @@ export const UserChatView: React.FC = () => {
         ) : (
           messages.map((msg, index) => {
             const prevMsg = index > 0 ? messages[index - 1] : null;
+            const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
             const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+            const isFirstInGroup = showDateSeparator || !prevMsg || (prevMsg.senderId !== msg.senderId);
+            const isLastInGroup = !nextMsg || (nextMsg.senderId !== msg.senderId) || !isSameDay(msg.createdAt, nextMsg.createdAt);
             const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
             const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
             const repliedSenderName = repliedMsg
@@ -376,8 +385,12 @@ export const UserChatView: React.FC = () => {
                 <MessageItem
                   message={msg}
                   isOwn={msg.senderId === user?.id || msg.isOwn === true}
+                  isFirstInGroup={isFirstInGroup}
+                  isLastInGroup={isLastInGroup}
                   onDelete={deleteMessage}
                   onReply={handleReply}
+                  onReact={toggleReaction}
+                  currentUser={user}
                   repliedMessage={repliedMsg}
                   repliedSenderName={repliedSenderName}
                   onScrollToMessage={handleScrollToMessage}

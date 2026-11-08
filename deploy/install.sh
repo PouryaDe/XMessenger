@@ -14,7 +14,7 @@ CYAN='\033[0;36m'
 BOLD='\033[1m'
 NC='\033[0m' # No Color
 
-APP_VERSION=$(cat "VERSION" 2>/dev/null || cat "/opt/xmessenger/VERSION" 2>/dev/null || echo "2.1.1")
+APP_VERSION=$(cat "VERSION" 2>/dev/null || cat "/opt/xmessenger/VERSION" 2>/dev/null || echo "2.2.0")
 
 echo -e "${CYAN}${BOLD}"
 echo "=================================================================="

@@ -59,18 +59,40 @@ This document provides a comprehensive inventory of all built-in features, archi
 
 ---
 
-## 5. Telegram-Style Date Separators & Smart Chat Stream Scrolling
+## 5. Telegram-Style Date Separators, Grouping & Tails
 
-1. **Centered Sticky/Inline Date Badges**:
+1. **Consecutive Message Grouping & Spacing**:
+   - Consecutive messages from the same sender on the same calendar day are visually grouped together (`mt-1`).
+   - Group boundaries and sender switches apply clear vertical separation (`mt-3.5 sm:mt-4`) to eliminate visual crowding.
+2. **Integrated Telegram Bubble Tails**:
+   - Telegram curved corner SVG tails attach seamlessly to the last message of a streak: bottom-right for outgoing messages, bottom-left for incoming messages.
+   - Message bubble max-width is tuned to `max-w-[76%] sm:max-w-[70%] md:max-w-[65%]`.
+3. **Centered Sticky/Inline Date Badges**:
    - Messages are partitioned by calendar day using Telegram-style translucent pill badges centered between message groups.
    - Fully localized with zero hardcoded strings (`امروز` / `Today`, `دیروز` / `Yesterday`, or formatted local month and day).
-2. **Smart Scroll & Reading Position Preservation**:
+4. **Smart Scroll & Reading Position Preservation**:
    - Prevents auto-scroll bounce: Reading history is strictly preserved when user scrolls up (`isNearBottom = false`), even during periodic 6s heartbeat syncs or incoming messages.
    - Telegram Floating Action Button (`ChevronDown`) appears when scrolled up (>160px) to let users smoothly jump back to the latest messages on demand.
 
 ---
 
-## 6. Web Push Notifications (PWA & Desktop)
+## 6. Message Reactions (👍 Like) & Gestures
+
+1. **Double-Tap / Double-Click to Like**:
+   - Double-tapping on mobile or double-clicking on desktop triggers an instant `👍` like reaction.
+   - Features a lightweight, GPU-accelerated reaction burst animation (`animate-like-burst`) that runs without heavy external animation libraries.
+   - Touch events are debounced (450ms) to prevent synthetic `dblclick` event duplicates on iOS/Android.
+2. **Telegram Reaction Badges & Reactor Avatars**:
+   - Active reactions appear in a pill badge at the bubble corner with reaction emoji, reactor user avatar stack, and count.
+   - Users can toggle reactions via double-tap, tapping the reaction badge, or using the message context menu.
+3. **Security & Real-Time Sync**:
+   - Reactions are verified server-side (only active conversation participants or admin can react).
+   - Emojis are bounded to `<= 16` characters to prevent payload injection.
+   - Live synchronization via WebSocket (`message:react` / `message:reaction`) with automatic REST fallback (`POST /api/messages/:id/react`).
+
+---
+
+## 7. Web Push Notifications (PWA & Desktop)
 
 1. **Background & Standalone Delivery**:
    - Delivers native OS notifications when the app is in the background, closed, or device screen is locked.
@@ -84,7 +106,7 @@ This document provides a comprehensive inventory of all built-in features, archi
 
 ---
 
-## 5. Security & Encryption Standards
+## 8. Security & Encryption Standards
 
 1. **At-Rest Message Encryption**:
    - Every message ciphertext is encrypted using **AES-256-GCM** with a unique 96-bit initialization vector (IV) and 128-bit authentication tag per row.
@@ -98,12 +120,17 @@ This document provides a comprehensive inventory of all built-in features, archi
 
 ---
 
-## 6. Progressive Web App (PWA) & Custom Branding
+## 9. Progressive Web App (PWA), Smooth Updates & Mobile UI
 
-1. **Mobile Installation (iOS & Android)**:
+1. **0ms Instant Hydration & Zero Page Jumping**:
+   - Authenticated user and conversation state are cached in `localStorage` and `sessionStorage`, enabling instant 0ms app rendering on PWA launch without intermediate loading screens or theme flashes.
+   - App updates run with a sleek glassmorphic transition overlay (`Updating Application...`) preventing multi-step screen jumping on mobile.
+2. **Narrow Screen Responsiveness**:
+   - UserDrawer and AdminSettingsModal maintain strict minimum widths and truncation (`min-w-[5.25rem]`, `truncate`), preventing element wrapping or card breakage on 320px+ viewports.
+3. **Mobile Installation (iOS & Android)**:
    - Installable on iOS via Safari ("Add to Home Screen") and Android via Chrome ("Install App").
    - Responsive standalone view with notch (`.pt-safe`) and home indicator (`.pb-safe`) spacing.
-2. **Admin Branding & Customization**:
+4. **Admin Branding & Customization**:
    - **App Name**: Custom system title dynamically reflected in browser title and PWA manifest.
    - **PWA Short Name**: Custom label under the home screen app icon.
    - **PWA Icon Upload**: Admin can upload custom PNG/SVG app icons dynamically served in `/manifest.json`.
@@ -111,7 +138,7 @@ This document provides a comprehensive inventory of all built-in features, archi
 
 ---
 
-## 7. Database Backup & Disaster Recovery
+## 10. Database Backup & Disaster Recovery
 
 1. **Online Database Backup**:
    - Admin can download a verified, consistent `.db` snapshot of the SQLite database at any time via the admin modal (`GET /api/admin/backup`).
@@ -122,7 +149,7 @@ This document provides a comprehensive inventory of all built-in features, archi
 
 ---
 
-## 8. Multi-Domain Server Architecture
+## 11. Multi-Domain Server Architecture
 
 1. **Shared Nginx Gateway**:
    - Reverse proxy container (`xmessenger-nginx`) handling Let's Encrypt SSL certificates and HTTP/2 terminating reverse proxy.

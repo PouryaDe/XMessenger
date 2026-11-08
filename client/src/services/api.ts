@@ -33,6 +33,14 @@ export interface AdminUserItem extends User {
   } | null;
 }
 
+export interface MessageReaction {
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+  emoji: string;
+  createdAt: string;
+}
+
 export interface Message {
   id: string;
   senderId: string;
@@ -43,6 +51,8 @@ export interface Message {
   isRead: boolean;
   isOwn?: boolean;
   replyToId?: string | null;
+  status?: 'sending' | 'sent' | 'failed';
+  reactions?: MessageReaction[];
 }
 
 export interface AdminSettings {
@@ -191,6 +201,15 @@ export const api = {
       headers: { ...getAuthHeader() }
     });
     return safeJson<{ success: boolean }>(res, 'Failed to delete message');
+  },
+
+  async reactToMessage(messageId: string, emoji: string = '👍'): Promise<{ success: boolean; reactions: MessageReaction[] }> {
+    const res = await fetch(`${API_BASE}/messages/${messageId}/react`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ emoji })
+    });
+    return safeJson<{ success: boolean; reactions: MessageReaction[] }>(res, 'Failed to react to message');
   },
 
   async markMessagesAsRead(partnerId: string): Promise<{ success: boolean; count: number }> {

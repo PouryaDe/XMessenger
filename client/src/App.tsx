@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuthStore } from './stores/authStore.js';
 import { api } from './services/api.js';
 import { syncPushSubscription } from './services/push.js';
@@ -6,12 +6,19 @@ import { AuthModal } from './components/auth/AuthModal.js';
 import { PendingApprovalScreen } from './components/auth/PendingApprovalScreen.js';
 import { UserChatView } from './components/user/UserChatView.js';
 import { AdminDashboard } from './components/admin/AdminDashboard.js';
-import { Shield, ShieldAlert, LogOut } from 'lucide-react';
+import { Shield, ShieldAlert, LogOut, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 
 export const App: React.FC = () => {
   const { t } = useTranslation();
   const { user, token, isLoading, checkAuth, logout, theme } = useAuthStore();
+  const [isAppUpdating, setIsAppUpdating] = useState(false);
+
+  useEffect(() => {
+    const onAppUpdating = () => setIsAppUpdating(true);
+    window.addEventListener('app:updating', onAppUpdating);
+    return () => window.removeEventListener('app:updating', onAppUpdating);
+  }, []);
 
   useEffect(() => {
     checkAuth();
@@ -66,14 +73,14 @@ export const App: React.FC = () => {
     }
   }, [token, user]);
 
-  // 1. Loading state
+  // 1. Loading state (smooth ambient canvas theme, no pitch-black flash)
   if (isLoading) {
     return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-slate-950 text-white">
-        <div className="w-16 h-16 rounded-3xl bg-primary-500/20 border border-primary-500/40 flex items-center justify-center text-primary-500 mb-4 animate-pulse">
+      <div className="fixed inset-0 flex flex-col items-center justify-center bg-ambient-canvas text-slate-800 dark:text-white transition-opacity duration-300">
+        <div className="w-16 h-16 rounded-3xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 mb-4 animate-pulse">
           <Shield className="w-8 h-8" />
         </div>
-        <p className="text-sm font-medium tracking-wide text-slate-300">
+        <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-300">
           {t('loadingSecure')}
         </p>
       </div>
@@ -82,7 +89,12 @@ export const App: React.FC = () => {
 
   // 2. Not logged in
   if (!token || !user) {
-    return <AuthModal />;
+    return (
+      <>
+        <AuthModal />
+        {isAppUpdating && renderUpdatingOverlay()}
+      </>
+    );
   }
 
   // 3. User is Banned
@@ -111,18 +123,36 @@ export const App: React.FC = () => {
     );
   }
 
-  // 4. Regular User Pending Approval
-  if (user.role === 'user' && user.status === 'pending') {
-    return <PendingApprovalScreen />;
+  function renderUpdatingOverlay() {
+    return (
+      <div className="fixed inset-0 z-[100] flex flex-col items-center justify-center bg-ambient-canvas/95 backdrop-blur-md text-slate-800 dark:text-white animate-fade-in select-none">
+        <div className="w-14 h-14 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-500 mb-4 animate-spin">
+          <RefreshCw className="w-6 h-6" />
+        </div>
+        <h3 className="font-bold text-sm sm:text-base mb-1.5 text-slate-900 dark:text-white">
+          {t('updatingApp')}
+        </h3>
+        <p className="text-xs text-slate-500 dark:text-slate-400">
+          {t('loadingLatest')}
+        </p>
+      </div>
+    );
   }
 
-  // 5. Admin Panel
-  if (user.role === 'admin') {
-    return <AdminDashboard />;
-  }
+  return (
+    <>
+      {user.role === 'user' && user.status === 'pending' ? (
+        <PendingApprovalScreen />
+      ) : user.role === 'admin' ? (
+        <AdminDashboard />
+      ) : (
+        <UserChatView />
+      )}
 
-  // 6. Regular Active User Chat
-  return <UserChatView />;
+      {/* Smooth PWA / App Updating Transition Overlay */}
+      {isAppUpdating && renderUpdatingOverlay()}
+    </>
+  );
 };
 
 export default App;

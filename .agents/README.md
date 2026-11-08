@@ -26,11 +26,13 @@ This directory holds the agentic knowledge base, architectural contracts, design
 4. [`rules/features-and-capabilities.md`](file:///c:/Users/Lion/Desktop/Projects/XMessenger/.agents/rules/features-and-capabilities.md)
    - Comprehensive inventory of project scope and features:
      - 1-Way Hub-and-Spoke messaging.
+     - Telegram message grouping, responsive bubble widths, and curved corner tails.
+     - Message reactions (👍 Like) via double-tap, animated burst, and real-time sync.
      - Disappearing TTL messages with background hard-purge.
      - Image messaging with full-screen Lightbox and clipboard paste.
      - Telegram-style date separators and smart scroll preserving reading position.
      - Background Web Push notifications (PWA & Web) with zero-config VAPID.
-     - Dynamic PWA with custom branding, icon, and profile photos.
+     - Dynamic PWA with 0ms instant hydration, smooth updates, custom branding, and profile photos.
      - Database online backup and validated restore.
      - Multi-domain Docker deployment with shared Nginx SSL gateway.
 

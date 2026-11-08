@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
@@ -47,7 +47,9 @@ export const AdminDashboard: React.FC = () => {
     sendTyping,
     syncMessages,
     markMessagesReadByRecipient,
-    syncReadUser
+    syncReadUser,
+    toggleReaction,
+    updateMessageReactions
   } = useChatStore();
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -79,12 +81,12 @@ export const AdminDashboard: React.FC = () => {
     }
   }, [messages, replyingTo]);
 
-  const handleReply = (msg: Message) => {
+  const handleReply = useCallback((msg: Message) => {
     setReplyingTo(msg);
     setTimeout(() => messageInputRef.current?.focus(), 50);
-  };
+  }, []);
 
-  const handleScrollToMessage = (msgId: string) => {
+  const handleScrollToMessage = useCallback((msgId: string) => {
     const el = document.getElementById(`msg-${msgId}`);
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -94,7 +96,7 @@ export const AdminDashboard: React.FC = () => {
         setHighlightedMsgId(null);
       }, 1800);
     }
-  };
+  }, []);
 
   const handleImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -198,6 +200,10 @@ export const AdminDashboard: React.FC = () => {
       markMessagesReadByRecipient(readerId);
     });
 
+    socket.on('message:reaction', ({ messageId, reactions }: { messageId: string; reactions: any[] }) => {
+      updateMessageReactions(messageId, reactions);
+    });
+
     socket.on('conversation:read_sync', ({ userId }: { userId: string }) => {
       syncReadUser(userId);
     });
@@ -211,6 +217,7 @@ export const AdminDashboard: React.FC = () => {
       socket.off('user:online_status');
       socket.off('typing');
       socket.off('messages:read');
+      socket.off('message:reaction');
       socket.off('conversation:read_sync');
     };
   }, [activeUserId, user?.id]);
@@ -242,7 +249,9 @@ export const AdminDashboard: React.FC = () => {
   };
 
   const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
-    messagesEndRef.current?.scrollIntoView({ behavior });
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    el.scrollTo({ top: el.scrollHeight, behavior });
     isNearBottomRef.current = true;
     setShowScrollBottom(false);
   };
@@ -262,11 +271,11 @@ export const AdminDashboard: React.FC = () => {
 
     if (isInitial) {
       initialScrollDoneRef.current = true;
-      scrollToBottom('auto');
-    } else if (hasNewMessages && isOwnLastMsg) {
-      scrollToBottom('smooth');
-    } else if (isNearBottomRef.current) {
-      scrollToBottom('smooth');
+      requestAnimationFrame(() => scrollToBottom('auto'));
+    } else if (hasNewMessages) {
+      if (isOwnLastMsg || isNearBottomRef.current) {
+        requestAnimationFrame(() => scrollToBottom('smooth'));
+      }
     }
 
     prevMessagesLengthRef.current = messages.length;
@@ -300,7 +309,6 @@ export const AdminDashboard: React.FC = () => {
       } else {
         await sendMessage(text, activeUserId, undefined, currentReplyId);
       }
-      setTimeout(() => scrollToBottom('smooth'), 50);
     } catch (err) {
       console.error('Failed to send:', err);
       alert(t('imageUploadFailed'));
@@ -506,7 +514,10 @@ export const AdminDashboard: React.FC = () => {
               ) : (
                 messages.map((msg, index) => {
                   const prevMsg = index > 0 ? messages[index - 1] : null;
+                  const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
                   const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+                  const isFirstInGroup = showDateSeparator || !prevMsg || (prevMsg.senderId !== msg.senderId);
+                  const isLastInGroup = !nextMsg || (nextMsg.senderId !== msg.senderId) || !isSameDay(msg.createdAt, nextMsg.createdAt);
                   const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
                   const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
                   const repliedSenderName = repliedMsg
@@ -519,8 +530,12 @@ export const AdminDashboard: React.FC = () => {
                       <MessageItem
                         message={msg}
                         isOwn={msg.senderId === user?.id || msg.isOwn === true}
+                        isFirstInGroup={isFirstInGroup}
+                        isLastInGroup={isLastInGroup}
                         onDelete={deleteMessage}
                         onReply={handleReply}
+                        onReact={toggleReaction}
+                        currentUser={user}
                         repliedMessage={repliedMsg}
                         repliedSenderName={repliedSenderName}
                         onScrollToMessage={handleScrollToMessage}

@@ -20,7 +20,8 @@ import {
   Bell,
   BellRing,
   Send,
-  KeyRound
+  KeyRound,
+  Loader2
 } from 'lucide-react';
 import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { 
@@ -517,7 +518,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
               {/* Push Status Card */}
               <div className="p-4 sm:p-5 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] space-y-3">
                 <div className="flex items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
+                  <div className="flex items-center gap-3 min-w-0 flex-1 overflow-hidden">
                     <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 border ${
                       isPushSubscribed 
                         ? 'bg-amber-50 dark:bg-amber-500/15 text-amber-600 dark:text-amber-400 border-amber-500/20' 
@@ -525,11 +526,11 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     }`}>
                       {isPushSubscribed ? <BellRing className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white">
+                    <div className="min-w-0 flex-1 text-start overflow-hidden">
+                      <h4 className="text-xs font-bold text-slate-900 dark:text-white truncate">
                         {t('pushNotifications')}
                       </h4>
-                      <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed">
+                      <p className="text-[11px] text-slate-400 mt-0.5 leading-relaxed truncate">
                         {t('pushNotificationsDesc')}
                       </p>
                     </div>
@@ -539,18 +540,25 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     type="button"
                     onClick={handleTogglePush}
                     disabled={isPushLoading}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-xs shrink-0 cursor-pointer ${
+                    className={`min-w-[5.25rem] px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all shadow-xs shrink-0 cursor-pointer flex items-center justify-center gap-1.5 ${
                       isPushSubscribed
                         ? 'bg-stone-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-200 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950/30'
                         : 'bg-amber-500 hover:bg-amber-600 text-slate-950 font-bold'
-                    }`}
+                    } disabled:opacity-75 disabled:cursor-not-allowed`}
                   >
-                    {isPushLoading ? t('pushSubscribing') : (isPushSubscribed ? t('disablePush') : t('enablePush'))}
+                    {isPushLoading ? (
+                      <>
+                        <Loader2 className="w-3.5 h-3.5 animate-spin shrink-0" />
+                        <span>{t('pushSubscribingShort')}</span>
+                      </>
+                    ) : (
+                      <span>{isPushSubscribed ? t('disablePush') : t('enablePush')}</span>
+                    )}
                   </button>
                 </div>
 
                 {pushErrorMsg && (
-                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 leading-relaxed font-sans">
+                  <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/20 text-xs text-amber-700 dark:text-amber-300 leading-relaxed font-sans break-words overflow-hidden">
                     {pushErrorMsg}
                   </div>
                 )}
@@ -566,10 +574,14 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       type="button"
                       onClick={handleSendTestPush}
                       disabled={isSendingTest}
-                      className="px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer"
+                      className="px-3 py-1 rounded-full text-xs font-medium bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-60"
                     >
-                      <Send className="w-3 h-3" />
-                      <span>{isSendingTest ? t('pushSubscribing') : t('pushSendTest')}</span>
+                      {isSendingTest ? (
+                        <Loader2 className="w-3 h-3 animate-spin shrink-0" />
+                      ) : (
+                        <Send className="w-3 h-3 shrink-0" />
+                      )}
+                      <span>{isSendingTest ? t('pushSendingTest') : t('pushSendTest')}</span>
                     </button>
                   </div>
                 )}

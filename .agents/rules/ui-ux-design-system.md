@@ -41,14 +41,23 @@ This design system contract defines the visual identity, color harmony, typograp
 
 ---
 
-## 2. Message Bubbles & Corner Standard
+## 2. Message Bubbles, Telegram Tails & Grouping Standards
 
 - **No Avatars Beside Messages in Chat Stream**:
-  - **CRITICAL USER RULE**: Do NOT render user avatar circles next to every message bubble in the chat view. The counterpart's avatar is already permanently visible in the sticky top header.
-- **Modern Smooth Rounded Corners (No Broken SVG Tails)**:
-  - Message bubbles use clean, seamless modern rounded corners (`rounded-[20px]` with subtle directional 6px corner).
-  - Absolutely NO separate external SVG triangle tails that cause border clipping or detached visual artifacts.
-    - SVG Tail: position `absolute -bottom-[1px] -left-[9px]`, filled with `#FFFFFF` (light) or `#182533` (dark).
+  - **CRITICAL USER RULE**: Do NOT render redundant user avatar circles next to every message bubble in the chat view. The counterpart's avatar is already permanently visible in the sticky top header.
+- **Telegram Consecutive Grouping Spacing**:
+  - Consecutive messages from the same sender on the same calendar day form a continuous streak (`mt-1 mb-1`).
+  - When the sender changes or a new group begins, insert standard vertical separation: `mt-3.5 sm:mt-4 mb-1` (via `isFirstInGroup`). This completely prevents messages from different senders from sticking together.
+- **Telegram Bubble Max-Width Standard**:
+  - Bubble max width is strictly capped at `max-w-[76%] sm:max-w-[70%] md:max-w-[65%]` (matching Telegram mobile & desktop layout proportions).
+- **Telegram Corner Radii & Integrated SVG Corner Tails**:
+  - Intermediate messages in a consecutive streak are uniformly rounded (`rounded-[18px]`).
+  - The last message of an outgoing streak (`isLastInGroup && isOwn`) uses `rounded-[18px] rounded-br-[4px]` and displays the authentic Telegram bottom-right SVG curved tail (`fill-[#EDE8E0] dark:fill-[#232936]`, positioned at `-bottom-[0.5px] -right-[7px]`).
+  - The last message of an incoming streak (`isLastInGroup && !isOwn`) uses `rounded-[18px] rounded-bl-[4px]` and displays the authentic Telegram bottom-left SVG curved tail (`fill-white dark:fill-[#161B24]`, positioned at `-bottom-[0.5px] -left-[7px] -scale-x-100`).
+- **Telegram Reactions & Double-Tap Heart/Like Burst**:
+  - Double-tapping (or double-clicking) any message triggers an instant `👍` like reaction with a lightweight pure-CSS GPU-accelerated reaction burst (`animate-like-burst`).
+  - Active reactions appear in a Telegram pill badge floating at the bubble bottom corner (`-bottom-2.5`), displaying the reaction emoji (`👍`), active user avatars stack, and reaction count.
+  - Tapping the reaction badge or selecting Like/Remove Like from the message context menu toggles the user's reaction. Touch events are debounced to prevent synthetic dblclick double triggers.
 
 ---
 

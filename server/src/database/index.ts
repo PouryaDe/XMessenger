@@ -66,6 +66,13 @@ export function initDatabase() {
     // Column already exists
   }
 
+  // Ensure reactions column exists for existing databases
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN reactions TEXT DEFAULT '[]';");
+  } catch (_) {
+    // Column already exists
+  }
+
   // 3. Push Subscriptions table
   db.exec(`
     CREATE TABLE IF NOT EXISTS push_subscriptions (

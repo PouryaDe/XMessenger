@@ -37,7 +37,11 @@ if (typeof window !== 'undefined' && 'serviceWorker' in navigator) {
     navigator.serviceWorker.addEventListener('controllerchange', () => {
       if (!isRefreshing) {
         isRefreshing = true;
-        window.location.reload();
+        // Dispatch smooth updating transition so UI doesn't jump
+        window.dispatchEvent(new CustomEvent('app:updating', { detail: { reason: 'sw-update' } }));
+        setTimeout(() => {
+          window.location.reload();
+        }, 350);
       }
     });
 

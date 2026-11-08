@@ -35,7 +35,7 @@ get_version() {
   elif [ -f "VERSION" ]; then
     cat "VERSION" | tr -d '\r\n'
   else
-    echo "2.1.1"
+    echo "2.2.0"
   fi
 }
 

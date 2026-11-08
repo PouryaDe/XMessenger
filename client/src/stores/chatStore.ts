@@ -1,6 +1,7 @@
 import { create } from 'zustand';
-import { Message, AdminUserItem, api } from '../services/api.js';
+import { Message, MessageReaction, AdminUserItem, api } from '../services/api.js';
 import { getSocket } from '../services/socket.js';
+import { useAuthStore } from './authStore.js';
 
 interface ChatState {
   messages: Message[];
@@ -22,7 +23,11 @@ interface ChatState {
   markMessagesReadByRecipient: (readerId: string) => void;
   syncReadUser: (userId: string) => void;
   sendMessage: (text: string, targetUserId?: string, ttlSeconds?: number, replyToId?: string | null) => Promise<void>;
+  replaceMessage: (tempId: string, realMsg: Message) => void;
+  updateMessageStatus: (messageId: string, status: 'sending' | 'sent' | 'failed') => void;
   deleteMessage: (messageId: string) => Promise<void>;
+  toggleReaction: (messageId: string, emoji?: string) => Promise<void>;
+  updateMessageReactions: (messageId: string, reactions: MessageReaction[]) => void;
   addMessage: (msg: Message) => void;
   removeMessage: (messageId: string) => void;
   clearMessages: () => void;
@@ -33,8 +38,18 @@ interface ChatState {
   sendTyping: (isTyping: boolean, targetUserId?: string) => void;
 }
 
+// Read cached messages from session for 0ms instant hydration on refresh / PWA reloads
+const initialCachedMessages: Message[] = typeof window !== 'undefined' ? (() => {
+  try {
+    const raw = sessionStorage.getItem('xmessenger_cached_messages');
+    return raw ? JSON.parse(raw) as Message[] : [];
+  } catch {
+    return [];
+  }
+})() : [];
+
 export const useChatStore = create<ChatState>((set, get) => ({
-  messages: [],
+  messages: initialCachedMessages,
   activeUserId: null,
   adminUsers: [],
   isAdminOnline: false,
@@ -82,6 +97,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
       set({ isLoadingMessages: true });
       const data = await api.getMessages(targetUserId);
       set({ messages: data.messages, isLoadingMessages: false });
+      try {
+        sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(data.messages.slice(-50)));
+      } catch {}
       if (targetUserId) {
         set((state) => ({
           adminUsers: state.adminUsers.map((u) => 
@@ -118,6 +136,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       if (hasChanged) {
         set({ messages: newMessages });
+        try {
+          sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(newMessages.slice(-50)));
+        } catch {}
       }
 
       if (activeUserId) {
@@ -151,11 +172,18 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   markMessagesReadByRecipient: (readerId: string) => {
-    set((state) => ({
-      messages: state.messages.map((m) => 
-        (m.recipientId === readerId || m.isOwn) ? { ...m, isRead: true } : m
-      )
-    }));
+    set((state) => {
+      let changed = false;
+      const updatedMessages = state.messages.map((m) => {
+        if ((m.recipientId === readerId || m.isOwn) && !m.isRead) {
+          changed = true;
+          return { ...m, isRead: true };
+        }
+        return m;
+      });
+      if (!changed) return state;
+      return { messages: updatedMessages };
+    });
   },
 
   syncReadUser: (userId: string) => {
@@ -166,7 +194,51 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }));
   },
 
+  replaceMessage: (tempId: string, realMsg: Message) => {
+    set((state) => {
+      const realExists = state.messages.some((m) => m.id === realMsg.id);
+      let newMessages: Message[];
+      if (realExists) {
+        newMessages = state.messages.filter((m) => m.id !== tempId);
+      } else {
+        newMessages = state.messages.map((m) => (m.id === tempId ? realMsg : m));
+      }
+      try {
+        sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(newMessages.slice(-50)));
+      } catch {}
+      return { messages: newMessages };
+    });
+  },
+
+  updateMessageStatus: (messageId: string, status: 'sending' | 'sent' | 'failed') => {
+    set((state) => {
+      const newMessages = state.messages.map((m) => (m.id === messageId ? { ...m, status } : m));
+      return { messages: newMessages };
+    });
+  },
+
   sendMessage: async (text, targetUserId, ttlSeconds, replyToId) => {
+    const authStore = useAuthStore.getState();
+    const currentUserId = authStore.user?.id || '';
+    const tempId = `temp_${Date.now()}_${Math.random().toString(36).substring(2, 7)}`;
+    const expiryDate = new Date(Date.now() + (ttlSeconds || 86400) * 1000).toISOString();
+
+    // 1. Optimistic message insertion (instant 0ms delivery on UI, no lag or jump)
+    const optimisticMessage: Message = {
+      id: tempId,
+      senderId: currentUserId,
+      recipientId: targetUserId || authStore.adminInfo?.id || '',
+      text,
+      createdAt: new Date().toISOString(),
+      expiresAt: expiryDate,
+      isRead: false,
+      isOwn: true,
+      replyToId: replyToId || null,
+      status: 'sending'
+    };
+
+    get().addMessage(optimisticMessage);
+
     const socket = getSocket();
     if (socket && socket.connected) {
       return new Promise<void>((resolve, reject) => {
@@ -178,9 +250,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
             settled = true;
             try {
               const res = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
-              get().addMessage({ ...res.message, isOwn: true });
+              get().replaceMessage(tempId, { ...res.message, isOwn: true, status: 'sent' });
               resolve();
             } catch (err: any) {
+              get().updateMessageStatus(tempId, 'failed');
               reject(err);
             }
           }
@@ -195,13 +268,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
             console.warn('[Socket] message:send error from server:', res.error);
             try {
               const apiRes = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
-              get().addMessage({ ...apiRes.message, isOwn: true });
+              get().replaceMessage(tempId, { ...apiRes.message, isOwn: true, status: 'sent' });
               resolve();
             } catch (err: any) {
+              get().updateMessageStatus(tempId, 'failed');
               reject(new Error(res.error || err.message));
             }
           } else if (res?.message) {
-            get().addMessage({ ...res.message, isOwn: true });
+            get().replaceMessage(tempId, { ...res.message, isOwn: true, status: 'sent' });
             resolve();
           } else {
             resolve();
@@ -210,8 +284,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
     } else {
       // Direct REST delivery
-      const res = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
-      get().addMessage({ ...res.message, isOwn: true });
+      try {
+        const res = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
+        get().replaceMessage(tempId, { ...res.message, isOwn: true, status: 'sent' });
+      } catch (err) {
+        get().updateMessageStatus(tempId, 'failed');
+        throw err;
+      }
     }
   },
 
@@ -225,6 +304,71 @@ export const useChatStore = create<ChatState>((set, get) => ({
     get().removeMessage(messageId);
   },
 
+  updateMessageReactions: (messageId, reactions) => {
+    set((state) => {
+      const idx = state.messages.findIndex((m) => m.id === messageId);
+      if (idx === -1) return state;
+      const cur = state.messages[idx];
+      if (JSON.stringify(cur.reactions || []) === JSON.stringify(reactions)) {
+        return state;
+      }
+      const updated = [...state.messages];
+      updated[idx] = { ...cur, reactions };
+      try {
+        sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(updated.slice(-50)));
+      } catch {}
+      return { messages: updated };
+    });
+  },
+
+  toggleReaction: async (messageId, emoji = '👍') => {
+    const authUser = useAuthStore.getState().user;
+    if (!authUser) return;
+
+    // 1. Optimistic toggle
+    const currentMsgs = get().messages;
+    const msg = currentMsgs.find((m) => m.id === messageId);
+    if (msg) {
+      const curReactions = msg.reactions || [];
+      const hasReaction = curReactions.some((r) => r.userId === authUser.id && r.emoji === emoji);
+      let nextReactions: MessageReaction[];
+      if (hasReaction) {
+        nextReactions = curReactions.filter((r) => !(r.userId === authUser.id && r.emoji === emoji));
+      } else {
+        nextReactions = [
+          ...curReactions.filter((r) => r.userId !== authUser.id),
+          {
+            userId: authUser.id,
+            username: authUser.username,
+            avatarUrl: authUser.avatarUrl,
+            emoji,
+            createdAt: new Date().toISOString()
+          }
+        ];
+      }
+      get().updateMessageReactions(messageId, nextReactions);
+    }
+
+    // 2. Transmit via socket or fallback to REST
+    const socket = getSocket();
+    if (socket && socket.connected) {
+      socket.emit('message:react', { messageId, emoji }, (res: any) => {
+        if (res?.reactions) {
+          get().updateMessageReactions(messageId, res.reactions);
+        }
+      });
+    } else {
+      try {
+        const res = await api.reactToMessage(messageId, emoji);
+        if (res?.reactions) {
+          get().updateMessageReactions(messageId, res.reactions);
+        }
+      } catch (err) {
+        console.warn('Failed to react via REST:', err);
+      }
+    }
+  },
+
   addMessage: (msg) => {
     const { activeUserId } = get();
     // If msg is from the user that the admin is currently viewing, mark it read immediately!
@@ -233,9 +377,42 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     set((state) => {
-      // Prevent duplicates
-      const exists = state.messages.some((m) => m.id === msg.id);
-      const newMessages = exists ? state.messages : [...state.messages, msg];
+      // 1. If message already exists by id, check if changed
+      const existingIdx = state.messages.findIndex((m) => m.id === msg.id);
+      if (existingIdx !== -1) {
+        const cur = state.messages[existingIdx];
+        if (
+          cur.isRead === msg.isRead &&
+          cur.text === msg.text &&
+          cur.expiresAt === msg.expiresAt &&
+          cur.status === msg.status
+        ) {
+          return state; // No-op, preserve reference!
+        }
+        const updated = [...state.messages];
+        updated[existingIdx] = { ...cur, ...msg };
+        return { messages: updated };
+      }
+
+      // 2. If it's a confirmed message matching a pending optimistic message, replace in-place!
+      const pendingIdx = state.messages.findIndex(
+        (m) =>
+          (m.id.startsWith('temp_') || m.status === 'sending') &&
+          m.text === msg.text &&
+          (m.isOwn || m.senderId === msg.senderId)
+      );
+
+      let newMessages: Message[];
+      if (pendingIdx !== -1) {
+        newMessages = [...state.messages];
+        newMessages[pendingIdx] = { ...msg, isOwn: true, status: 'sent' };
+      } else {
+        newMessages = [...state.messages, msg];
+      }
+
+      try {
+        sessionStorage.setItem('xmessenger_cached_messages', JSON.stringify(newMessages.slice(-50)));
+      } catch {}
 
       // Update adminUsers lastMessage and unreadCount in real time
       const updatedAdminUsers = state.adminUsers.map((u) => {
@@ -272,6 +449,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   clearMessages: () => {
+    try {
+      sessionStorage.removeItem('xmessenger_cached_messages');
+    } catch {}
     set({ messages: [] });
   },
 
