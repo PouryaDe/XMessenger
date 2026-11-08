@@ -49,6 +49,10 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
     return adminUsers.filter((u) => u.status === 'pending').length;
   }, [adminUsers]);
 
+  const unreadChatsCount = useMemo(() => {
+    return adminUsers.filter((u) => (u.unreadCount ?? 0) > 0).length;
+  }, [adminUsers]);
+
   return (
     <aside className="w-full sm:w-80 md:w-96 h-full bg-white/45 dark:bg-[#0E1218]/50 backdrop-blur-2xl border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/[0.08] shadow-[1px_0_3px_rgba(0,0,0,0.03)] rtl:shadow-[-1px_0_3px_rgba(0,0,0,0.03)] flex flex-col shrink-0 font-sans z-20">
       {/* Top Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
@@ -108,35 +112,43 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
         <div className="grid grid-cols-4 p-1 rounded-2xl bg-black/[0.035] dark:bg-black/40 border border-black/[0.04] dark:border-white/[0.06] select-none">
           <button
             onClick={() => setFilterTab('all')}
-            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+            className={`relative flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all ${
               filterTab === 'all'
                 ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
             }`}
           >
-            <span>{t('allUsers')}</span>
-            <span className="text-[10px] opacity-60">({adminUsers.length})</span>
+            <span className="relative inline-flex items-center">
+              <span>{t('allUsers')}</span>
+              {unreadChatsCount > 0 && (
+                <span className="absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218] pointer-events-none">
+                  {unreadChatsCount}
+                </span>
+              )}
+            </span>
           </button>
 
           <button
             onClick={() => setFilterTab('pending')}
-            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+            className={`relative flex items-center justify-center py-1.5 px-0.5 rounded-xl text-xs transition-all ${
               filterTab === 'pending'
                 ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
             }`}
           >
-            <span>{t('pendingUsers')}</span>
-            {pendingCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-bold">
-                {pendingCount}
-              </span>
-            )}
+            <span className="relative inline-flex items-center">
+              <span>{t('pendingUsers')}</span>
+              {pendingCount > 0 && (
+                <span className="absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-amber-500 text-white text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218] pointer-events-none">
+                  {pendingCount}
+                </span>
+              )}
+            </span>
           </button>
 
           <button
             onClick={() => setFilterTab('active')}
-            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+            className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all ${
               filterTab === 'active'
                 ? 'bg-white dark:bg-white/[0.14] text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
@@ -147,7 +159,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
 
           <button
             onClick={() => setFilterTab('banned')}
-            className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
+            className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all ${
               filterTab === 'banned'
                 ? 'bg-white dark:bg-white/[0.14] text-red-600 dark:text-red-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'

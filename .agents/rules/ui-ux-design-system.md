@@ -181,3 +181,17 @@ This design system contract defines the visual identity, color harmony, typograp
 - **No Artificial Separator Gradients / Masks**:
   - Avoid artificial top/bottom dark gradient overlays (`bg-gradient-to-b from-[#...]/90`) or CSS fade masks (`chat-fade-mask`), which create muddy horizontal shadow bands. Rely on clean frosted glassmorphism borders (`border-b border-black/[0.05] dark:border-white/[0.08]`).
 
+---
+
+## 10. Segmented Tab Filters & Notification Badges Standard
+
+- **No Parentheses Counts**:
+  - Never display counts inside parentheses (e.g., `همه (2)`) in tab or segmented control text labels.
+- **Top-Corner Floating Badges**:
+  - Badges must be styled as small circular/pill indicators floating at the top-left of the text label in RTL (top-right in LTR): `absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218]`.
+- **Targeted Notification Scopes**:
+  - **All Chats Tab (`all`)**: Display only the count of unread chats (`unreadChatsCount`), and only when `> 0`. Styled with `bg-slate-900 text-white dark:bg-white dark:text-slate-900`.
+  - **Pending Approval Tab (`pending`)**: Display only pending approval users count (`pendingCount`), and only when `> 0`. Styled with amber indicator `bg-amber-500 text-white`.
+  - **Active (`active`) & Banned (`banned`) Tabs**: Never display numerical count badges.
+
+

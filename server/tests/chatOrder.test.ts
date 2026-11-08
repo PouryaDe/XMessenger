@@ -309,4 +309,32 @@ describe('Chat Ordering by Latest Message Tests', () => {
     // Bob's message MUST remain unread
     assert.equal(updated.find((m) => m.id === 'm2')?.isRead, false);
   });
+
+  it('accurately computes unreadChatsCount and pendingCount for sidebar tab badges', () => {
+    const adminUsers = [
+      { id: 'u1', username: 'alice', status: 'active', unreadCount: 3 },
+      { id: 'u2', username: 'bob', status: 'pending', unreadCount: 0 },
+      { id: 'u3', username: 'charlie', status: 'pending', unreadCount: 1 },
+      { id: 'u4', username: 'dave', status: 'banned', unreadCount: 0 },
+      { id: 'u5', username: 'eve', status: 'active', unreadCount: undefined }
+    ];
+
+    // Compute unreadChatsCount: count of distinct chats with unread messages (> 0)
+    const unreadChatsCount = adminUsers.filter((u) => (u.unreadCount ?? 0) > 0).length;
+    // Alice (3) and Charlie (1) have unread messages
+    assert.equal(unreadChatsCount, 2);
+
+    // Compute pendingCount: count of pending approval users
+    const pendingCount = adminUsers.filter((u) => u.status === 'pending').length;
+    // Bob and Charlie are pending
+    assert.equal(pendingCount, 2);
+
+    // When admin reads Charlie's chat:
+    const afterRead = adminUsers.map((u) => (u.id === 'u3' ? { ...u, unreadCount: 0 } : u));
+    assert.equal(afterRead.filter((u) => (u.unreadCount ?? 0) > 0).length, 1);
+
+    // When all pending users are approved:
+    const afterApproval = adminUsers.map((u) => (u.status === 'pending' ? { ...u, status: 'active' } : u));
+    assert.equal(afterApproval.filter((u) => u.status === 'pending').length, 0);
+  });
 });
