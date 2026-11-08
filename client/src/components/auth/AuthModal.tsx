@@ -66,10 +66,10 @@ export const AuthModal: React.FC = () => {
       <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative">
         {/* Brand Header */}
         <div className="flex flex-col items-center text-center mb-7">
-          <div className="relative mb-5 group">
+          <div className="relative mb-4 group">
             {/* Ambient soft glow underneath */}
-            <div className="absolute -inset-1.5 rounded-[28px] bg-gradient-to-tr from-amber-500/20 via-amber-400/10 to-blue-500/20 blur-lg opacity-70 dark:opacity-40 group-hover:opacity-100 transition-opacity" />
-            <div className="relative w-18 h-18 sm:w-20 sm:h-20 rounded-[22px] sm:rounded-[24px] overflow-hidden border border-black/[0.08] dark:border-white/[0.14] shadow-lg dark:shadow-[0_12px_28px_rgba(0,0,0,0.55)] bg-[#0E1218] flex items-center justify-center">
+            <div className="absolute -inset-1 rounded-[22px] sm:rounded-[24px] bg-gradient-to-tr from-amber-500/20 via-amber-400/10 to-blue-500/20 blur-md opacity-60 dark:opacity-30 group-hover:opacity-90 transition-opacity" />
+            <div className="relative w-13 h-13 sm:w-16 sm:h-16 rounded-[18px] sm:rounded-[20px] overflow-hidden border border-black/[0.06] dark:border-white/[0.10] shadow-md dark:shadow-[0_8px_20px_rgba(0,0,0,0.45)] bg-[#0E1218] flex items-center justify-center">
               <img 
                 src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
                 alt={appMeta?.appName || 'XMessenger'} 
@@ -109,7 +109,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete="username"
                 dir="ltr"
                 placeholder="e.g. user101"
-                className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/25 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
+                className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border-0 bg-stone-100/90 dark:bg-white/[0.05] focus:bg-stone-200/70 dark:focus:bg-white/[0.08] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
               />
             </div>
           </div>
@@ -128,7 +128,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete={isRegister ? 'new-password' : 'current-password'}
                 dir="ltr"
                 placeholder="••••••••"
-                className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/25 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
+                className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border-0 bg-stone-100/90 dark:bg-white/[0.05] focus:bg-stone-200/70 dark:focus:bg-white/[0.08] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
               />
             </div>
           </div>
@@ -148,7 +148,7 @@ export const AuthModal: React.FC = () => {
                   autoComplete="new-password"
                   dir="ltr"
                   placeholder="••••••••"
-                  className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/25 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
+                  className="w-full pl-12 pr-4 py-3.5 sm:py-3.5 rounded-full border-0 bg-stone-100/90 dark:bg-white/[0.05] focus:bg-stone-200/70 dark:focus:bg-white/[0.08] text-slate-900 dark:text-white text-sm sm:text-base text-left focus:outline-none focus:ring-0 shadow-none placeholder:text-slate-400 placeholder:text-left transition-all"
                 />
               </div>
             </div>
