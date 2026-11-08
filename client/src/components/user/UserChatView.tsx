@@ -4,6 +4,7 @@ import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
+import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
 import { getSocket } from '../../services/socket.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
@@ -44,6 +45,7 @@ export const UserChatView: React.FC = () => {
 
   const [inputText, setInputText] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
@@ -454,6 +456,13 @@ export const UserChatView: React.FC = () => {
       <UserDrawer
         isOpen={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        onOpenChangePassword={() => setIsChangePasswordOpen(true)}
+      />
+
+      {/* Change Password Modal (centered, independent of drawer) */}
+      <ChangePasswordModal
+        isOpen={isChangePasswordOpen}
+        onClose={() => setIsChangePasswordOpen(false)}
       />
     </div>
   );

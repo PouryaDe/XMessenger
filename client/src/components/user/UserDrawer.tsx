@@ -29,19 +29,15 @@ import {
 interface Props {
   isOpen: boolean;
   onClose: () => void;
+  onOpenChangePassword?: () => void;
 }
 
-export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
+export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassword }) => {
   const { t, i18n } = useTranslation();
   const { user, logout, updateUserAvatar } = useAuthStore();
   const { clearMessages } = useChatStore();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
-
-  const [showPasswordModal, setShowPasswordModal] = useState(false);
-  const [currentPassword, setCurrentPassword] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [pwdMsg, setPwdMsg] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
   const [isUpdatingApp, setIsUpdatingApp] = useState(false);
 
   // Push Notifications state
@@ -150,20 +146,6 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       } catch (err: any) {
         alert(getErrorMessage(err, 'errClearChat'));
       }
-    }
-  };
-
-  const handlePasswordSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setPwdMsg(null);
-    try {
-      await api.changePassword(currentPassword, newPassword);
-      setPwdMsg({ type: 'success', text: t('pwdChangedSuccess') });
-      setCurrentPassword('');
-      setNewPassword('');
-      setTimeout(() => setShowPasswordModal(false), 1500);
-    } catch (err: any) {
-      setPwdMsg({ type: 'error', text: getErrorMessage(err, 'errCurrentPasswordWrong') });
     }
   };
 
@@ -307,8 +289,12 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
 
           {/* Password change option */}
           <button
-            onClick={() => setShowPasswordModal(true)}
-            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] shadow-xs border border-black/[0.06] dark:border-white/[0.06] text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all"
+            type="button"
+            onClick={() => {
+              onClose();
+              onOpenChangePassword?.();
+            }}
+            className="w-full flex items-center gap-3 p-4 rounded-[22px] bg-white dark:bg-white/[0.04] dark:hover:bg-white/[0.08] shadow-xs border border-black/[0.06] dark:border-white/[0.06] text-xs font-semibold text-slate-800 dark:text-slate-200 transition-all cursor-pointer"
           >
             <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-white/[0.06] flex items-center justify-center text-slate-700 dark:text-slate-200 shrink-0">
               <KeyRound className="w-4 h-4" />
@@ -362,65 +348,6 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
           </div>
         </div>
       </div>
-
-      {/* Change Password Modal */}
-      {showPasswordModal && (
-        <div className="fixed inset-0 z-60 flex items-center justify-center p-4 bg-slate-950/50 backdrop-blur-xs">
-          <div className="w-full max-w-sm bg-white dark:bg-[#12161E] border border-stone-200/70 dark:border-white/[0.08] rounded-[28px] p-6 shadow-floating">
-            <h4 className="text-sm font-bold mb-4 text-slate-900 dark:text-white flex items-center gap-2">
-              <KeyRound className="w-4 h-4 text-amber-500" />
-              <span>{t('changePassword')}</span>
-            </h4>
-
-            {pwdMsg && (
-              <div className={`mb-3 p-2.5 rounded-xl text-xs ${pwdMsg.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400' : 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400'}`}>
-                {pwdMsg.text}
-              </div>
-            )}
-
-            <form onSubmit={handlePasswordSubmit} className="space-y-3 font-sans">
-              <div>
-                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">{t('currentPassword')}</label>
-                <input
-                  type="password"
-                  value={currentPassword}
-                  onChange={(e) => setCurrentPassword(e.target.value)}
-                  required
-                  dir="ltr"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs text-slate-500 dark:text-slate-400 mb-1">{t('newPassword')}</label>
-                <input
-                  type="password"
-                  value={newPassword}
-                  onChange={(e) => setNewPassword(e.target.value)}
-                  required
-                  dir="ltr"
-                  className="w-full px-4 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
-                />
-              </div>
-
-              <div className="flex gap-2 pt-2">
-                <button
-                  type="button"
-                  onClick={() => setShowPasswordModal(false)}
-                  className="flex-1 py-2.5 rounded-full bg-stone-100 dark:bg-white/[0.08] text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-stone-200 dark:hover:bg-white/[0.12] transition-colors"
-                >
-                  {t('cancel')}
-                </button>
-                <button
-                  type="submit"
-                  className="flex-1 py-2.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-semibold shadow-xs"
-                >
-                  {t('save')}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

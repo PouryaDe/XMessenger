@@ -19,8 +19,10 @@ import {
   RefreshCw,
   Bell,
   BellRing,
-  Send
+  Send,
+  KeyRound
 } from 'lucide-react';
+import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { 
   getCurrentSubscription, 
   subscribeToPush, 
@@ -48,6 +50,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const [restoreFile, setRestoreFile] = useState<File | null>(null);
   const [isRestoring, setIsRestoring] = useState(false);
   const [showRestoreConfirm, setShowRestoreConfirm] = useState(false);
+  const [showPasswordModal, setShowPasswordModal] = useState(false);
 
   // File upload refs
   const pwaIconInputRef = useRef<HTMLInputElement>(null);
@@ -485,6 +488,26 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   })}
                 </div>
               </div>
+
+              {/* 4. Admin Account Password Change */}
+              <div className="flex items-center justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06]">
+                <div>
+                  <span className="text-xs font-bold text-slate-900 dark:text-white block select-none">
+                    {t('changePassword')}
+                  </span>
+                  <p className="text-[11px] text-slate-400 mt-0.5 select-none">
+                    {t('changePasswordDesc')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowPasswordModal(true)}
+                  className="px-3.5 py-2 rounded-full text-xs font-semibold bg-stone-100 dark:bg-white/[0.08] text-slate-700 dark:text-slate-200 hover:bg-stone-200 dark:hover:bg-white/[0.12] transition-colors flex items-center gap-1.5 cursor-pointer shadow-xs"
+                >
+                  <KeyRound className="w-3.5 h-3.5 text-amber-500" />
+                  <span>{t('changePassword')}</span>
+                </button>
+              </div>
             </>
           )}
 
@@ -863,6 +886,11 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
+        {/* Change Admin Password Modal */}
+        <ChangePasswordModal
+          isOpen={showPasswordModal}
+          onClose={() => setShowPasswordModal(false)}
+        />
       </div>
     </div>
   );
