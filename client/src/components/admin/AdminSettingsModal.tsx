@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api, AdminSettings } from '../../services/api.js';
 import { useAuthStore } from '../../stores/authStore.js';
+import { getErrorMessage } from '../../utils/errors.js';
 import { 
   X, 
   Sliders, 
@@ -62,7 +63,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
         onClose();
       }, 1200);
     } catch (err: any) {
-      setMsg({ type: 'error', text: t('pwdChangeError') + ': ' + err.message });
+      setMsg({ type: 'error', text: getErrorMessage(err, 'errGeneral') });
     } finally {
       setLoading(false);
     }
@@ -83,7 +84,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
       const linkIcon = document.querySelector('link[rel="icon"]');
       if (linkIcon) linkIcon.setAttribute('href', res.pwaIconUrl);
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message });
+      setMsg({ type: 'error', text: getErrorMessage(err, 'imageUploadFailed') });
     } finally {
       setLoading(false);
       if (pwaIconInputRef.current) pwaIconInputRef.current.value = '';
@@ -100,7 +101,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
       const linkIcon = document.querySelector('link[rel="icon"]');
       if (linkIcon) linkIcon.setAttribute('href', '/icon-192.png');
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message });
+      setMsg({ type: 'error', text: getErrorMessage(err, 'errGeneral') });
     } finally {
       setLoading(false);
     }
@@ -120,7 +121,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
       updateAdminAvatar(res.avatarUrl);
       setMsg({ type: 'success', text: t('settingsSaved') });
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message });
+      setMsg({ type: 'error', text: getErrorMessage(err, 'imageUploadFailed') });
     } finally {
       setLoading(false);
       if (adminAvatarInputRef.current) adminAvatarInputRef.current.value = '';
@@ -137,7 +138,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
       updateAdminAvatar(undefined);
       setMsg({ type: 'success', text: t('settingsSaved') });
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message });
+      setMsg({ type: 'error', text: getErrorMessage(err, 'errGeneral') });
     } finally {
       setLoading(false);
     }
@@ -151,7 +152,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
       await api.downloadBackup();
       setMsg({ type: 'success', text: t('backupTitle') + ': ' + t('clearedSuccess') });
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message });
+      setMsg({ type: 'error', text: getErrorMessage(err, 'errDownloadFailed') });
     } finally {
       setIsDownloading(false);
     }
@@ -172,7 +173,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
         window.location.reload();
       }, 1500);
     } catch (err: any) {
-      setMsg({ type: 'error', text: err.message || t('restoreError') });
+      setMsg({ type: 'error', text: getErrorMessage(err, 'errRestoreFailed') });
       setIsRestoring(false);
     }
   };

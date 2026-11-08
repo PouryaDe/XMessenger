@@ -8,6 +8,7 @@ import { AdminSettingsModal } from './AdminSettingsModal.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { getSocket } from '../../services/socket.js';
 import { formatLastSeen } from '../../utils/date.js';
+import { getErrorMessage } from '../../utils/errors.js';
 import { 
   Paperclip,
   CheckCircle, 
@@ -228,7 +229,7 @@ export const AdminDashboard: React.FC = () => {
       await api.updateUserStatus(activeUserId, 'active');
       refreshUsers();
     } catch (err: any) {
-      alert(err.message || 'Error approving user');
+      alert(getErrorMessage(err, 'errApproveUser'));
     }
   };
 
@@ -239,7 +240,7 @@ export const AdminDashboard: React.FC = () => {
       await api.updateUserStatus(activeUser.id, nextStatus);
       refreshUsers();
     } catch (err: any) {
-      alert(err.message || 'Error changing ban status');
+      alert(getErrorMessage(err, 'errBanUser'));
     }
   };
 
@@ -251,7 +252,7 @@ export const AdminDashboard: React.FC = () => {
         clearMessages();
         refreshUsers();
       } catch (err: any) {
-        alert(err.message || 'Error wiping chat');
+        alert(getErrorMessage(err, 'errClearChat'));
       }
     }
   };
@@ -264,7 +265,7 @@ export const AdminDashboard: React.FC = () => {
         setActiveUserId(null);
         refreshUsers();
       } catch (err: any) {
-        alert(err.message || 'Error deleting user');
+        alert(getErrorMessage(err, 'errDeleteUser'));
       }
     }
   };

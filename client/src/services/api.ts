@@ -57,6 +57,17 @@ function getAuthHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+export class ApiError extends Error {
+  code?: string;
+  status?: number;
+  constructor(message: string, code?: string, status?: number) {
+    super(message);
+    this.name = 'ApiError';
+    this.code = code;
+    this.status = status;
+  }
+}
+
 async function safeJson<T = any>(res: Response, defaultErrorMsg: string): Promise<T> {
   const text = await res.text();
   let data: any = null;
@@ -65,15 +76,16 @@ async function safeJson<T = any>(res: Response, defaultErrorMsg: string): Promis
       data = JSON.parse(text);
     } catch {
       if (!res.ok) {
-        throw new Error(`${defaultErrorMsg} (${res.status} ${res.statusText || 'Server Error'})`);
+        throw new ApiError(`${defaultErrorMsg} (${res.status} ${res.statusText || 'Server Error'})`, 'SERVER_ERROR', res.status);
       }
-      throw new Error(defaultErrorMsg);
+      throw new ApiError(defaultErrorMsg, 'PARSE_ERROR');
     }
   }
 
   if (!res.ok) {
+    const errorCode = data && data.error;
     const errorMsg = data && (data.message || data.error);
-    throw new Error(errorMsg || `${defaultErrorMsg} (${res.status})`);
+    throw new ApiError(errorMsg || `${defaultErrorMsg} (${res.status})`, errorCode, res.status);
   }
 
   return data as T;

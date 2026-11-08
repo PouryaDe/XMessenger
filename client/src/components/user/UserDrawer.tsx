@@ -5,6 +5,7 @@ import { useChatStore } from '../../stores/chatStore.js';
 import { api } from '../../services/api.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
+import { getErrorMessage } from '../../utils/errors.js';
 import { 
   X, 
   ShieldCheck, 
@@ -42,7 +43,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       const res = await api.uploadAvatar(file);
       updateUserAvatar(res.avatarUrl);
     } catch (err: any) {
-      alert(err.message || 'Failed to upload photo');
+      alert(getErrorMessage(err, 'imageUploadFailed'));
     } finally {
       setIsUploadingAvatar(false);
       if (avatarInputRef.current) avatarInputRef.current.value = '';
@@ -57,7 +58,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
         onClose();
         alert(t('clearedSuccess'));
       } catch (err: any) {
-        alert(err.message || 'Error clearing chat');
+        alert(getErrorMessage(err, 'errClearChat'));
       }
     }
   };
@@ -72,7 +73,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       setNewPassword('');
       setTimeout(() => setShowPasswordModal(false), 1500);
     } catch (err: any) {
-      setPwdMsg({ type: 'error', text: err.message || t('pwdChangeError') });
+      setPwdMsg({ type: 'error', text: getErrorMessage(err, 'errCurrentPasswordWrong') });
     }
   };
 

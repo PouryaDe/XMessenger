@@ -4,6 +4,7 @@ import { useAuthStore } from '../../stores/authStore.js';
 import { api, AppMeta } from '../../services/api.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
+import { getErrorMessage } from '../../utils/errors.js';
 import { Shield, Lock, User as UserIcon, ArrowRight, CheckCircle2, AlertCircle } from 'lucide-react';
 
 export const AuthModal: React.FC = () => {
@@ -28,7 +29,7 @@ export const AuthModal: React.FC = () => {
     setError(null);
 
     if (!username.trim() || !password) {
-      setError(t('invalidCredentials'));
+      setError(t('errRequiredFields'));
       return;
     }
 
@@ -47,7 +48,7 @@ export const AuthModal: React.FC = () => {
         login(res.token, res.user);
       }
     } catch (err: any) {
-      setError(err.message || 'Error occurred');
+      setError(getErrorMessage(err, isRegister ? 'errRegisterFailed' : 'invalidCredentials'));
     } finally {
       setLoading(false);
     }
