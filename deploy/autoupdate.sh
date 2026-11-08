@@ -25,10 +25,10 @@ check_and_update() {
 
   LOCAL_HEAD=$(git rev-parse HEAD 2>/dev/null || echo "none")
 
-  # Fetch latest remote commits from origin/main
+  # Fetch latest remote commits from origin/main (with 10s network connect timeout)
   rm -f "${BASE_DIR}/.git/index.lock" "${BASE_DIR}/.git/FETCH_HEAD.lock" 2>/dev/null || true
   export GIT_TERMINAL_PROMPT=0
-  timeout 25 git fetch origin main >/dev/null 2>&1 || return 0
+  timeout 15 git -c http.connectTimeout=10 -c http.lowSpeedLimit=1000 -c http.lowSpeedTime=10 fetch origin main >/dev/null 2>&1 || return 0
   REMOTE_HEAD=$(git rev-parse origin/main 2>/dev/null || echo "none")
 
   if [ "$LOCAL_HEAD" != "$REMOTE_HEAD" ] && [ "$REMOTE_HEAD" != "none" ]; then
