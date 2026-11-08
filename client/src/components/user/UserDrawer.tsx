@@ -98,30 +98,55 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
   };
 
   const handleForceUpdateApp = async () => {
+    if (isUpdatingApp) return;
     setIsUpdatingApp(true);
     setUpdateStepText(t('clearingCache'));
     // Signal global smooth updating transition so UI doesn't jump or flash
     window.dispatchEvent(new CustomEvent('app:updating', { detail: { reason: 'manual' } }));
 
     try {
-      if ('serviceWorker' in navigator) {
-        const reg = await navigator.serviceWorker.getRegistration();
-        if (reg) {
-          reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
-          reg.active?.postMessage({ type: 'PURGE_CACHE' });
+      // 1. Clear stored build version so client re-fetches latest build metadata
+      localStorage.removeItem('xmessenger_app_build');
+
+      // 2. Clear all cache storage in browser
+      if ('caches' in window) {
+        try {
+          const keys = await caches.keys();
+          await Promise.all(keys.map((k) => caches.delete(k)));
+        } catch (cacheErr) {
+          console.warn('[PWA] Cache purge error:', cacheErr);
         }
       }
-      if ('caches' in window) {
-        const keys = await caches.keys();
-        await Promise.all(keys.map((k) => caches.delete(k)));
+
+      // 3. Signal Service Worker to purge cache and skip waiting
+      if ('serviceWorker' in navigator) {
+        try {
+          const registrations = await navigator.serviceWorker.getRegistrations();
+          for (const reg of registrations) {
+            reg.waiting?.postMessage({ type: 'SKIP_WAITING' });
+            reg.active?.postMessage({ type: 'PURGE_CACHE' });
+            await reg.update().catch(() => {});
+          }
+        } catch (swErr) {
+          console.warn('[PWA] Service worker update check error:', swErr);
+        }
       }
     } catch (e) {
-      console.warn('Force update purge error:', e);
+      console.warn('[PWA] Force update error:', e);
     }
 
     setUpdateStepText(t('loadingLatest'));
+
+    // 4. Force guaranteed fresh reload across iOS Safari, PWA, and all platforms
+    // Appending a cache-busting timestamp parameter forces iOS WebKit PWA to perform a true network navigation
     setTimeout(() => {
-      window.location.reload();
+      try {
+        const targetUrl = new URL(window.location.href);
+        targetUrl.searchParams.set('_v', Date.now().toString());
+        window.location.replace(targetUrl.toString());
+      } catch {
+        window.location.reload();
+      }
     }, 450);
   };
 
@@ -312,9 +337,14 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
               )}
             </div>
 
-            {/* Update App Row */}
-            <div className="p-3">
-              <div className="flex items-center justify-between gap-2 min-w-0">
+            {/* Update App Interactive Action Row (Entire row clickable) */}
+            <button
+              type="button"
+              onClick={handleForceUpdateApp}
+              disabled={isUpdatingApp}
+              className="w-full p-3 flex flex-col text-start hover:bg-black/[0.02] dark:hover:bg-white/[0.03] transition-colors cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed outline-none select-none"
+            >
+              <div className="flex items-center justify-between gap-2 min-w-0 w-full">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
                   <div className="w-7 h-7 rounded-lg bg-amber-500/15 flex items-center justify-center text-amber-600 dark:text-amber-400 shrink-0">
                     <RefreshCw className={`w-3.5 h-3.5 ${isUpdatingApp ? 'animate-spin' : ''}`} />
@@ -324,17 +354,13 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
                       {t('updateApp')}
                     </p>
                     <p className="text-[10px] text-slate-400 font-normal mt-0.5 truncate">
-                      {t('updateAppDesc')}
+                      {isUpdatingApp ? (updateStepText || t('loadingLatest')) : t('updateAppDesc')}
                     </p>
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={handleForceUpdateApp}
-                  disabled={isUpdatingApp}
-                  className="px-2.5 py-1 rounded-full bg-amber-500/15 hover:bg-amber-500/25 text-amber-600 dark:text-amber-400 text-[10px] font-bold shrink-0 flex items-center gap-1 transition-all cursor-pointer disabled:opacity-80 disabled:cursor-not-allowed"
-                >
+                {/* Version Pill / Loading State Badge */}
+                <div className="px-2.5 py-1 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold shrink-0 flex items-center gap-1 shadow-xs">
                   {isUpdatingApp ? (
                     <>
                       <Loader2 className="w-3 h-3 animate-spin shrink-0" />
@@ -343,16 +369,16 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
                   ) : (
                     <span>v{APP_VERSION}</span>
                   )}
-                </button>
+                </div>
               </div>
 
               {isUpdatingApp && (
-                <div className="mt-2 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[10px] text-blue-600 dark:text-blue-400 font-medium">
-                  <span className="truncate">{updateStepText || t('updatingAppDesc')}</span>
+                <div className="w-full mt-2 pt-1.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[10px] text-amber-600 dark:text-amber-400 font-medium">
+                  <span className="truncate">{updateStepText || t('loadingLatest')}</span>
                   <Loader2 className="w-3 h-3 animate-spin shrink-0 ms-2" />
                 </div>
               )}
-            </div>
+            </button>
           </div>
 
           {/* Group 3: Account & Actions */}

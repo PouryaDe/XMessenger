@@ -21,6 +21,12 @@ export const App: React.FC = () => {
   }, []);
 
   useEffect(() => {
+    // If cache-busting _v query parameter is present after force update, clean it up silently from address bar
+    if (typeof window !== 'undefined' && window.location.search.includes('_v=')) {
+      const cleanUrl = window.location.pathname + window.location.hash;
+      window.history.replaceState(null, '', cleanUrl);
+    }
+
     checkAuth();
     // Load app metadata (custom title & PWA icon)
     api.getMeta().then((meta) => {
