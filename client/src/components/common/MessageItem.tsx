@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Message, User } from '../../services/api.js';
 import { useTranslation } from 'react-i18next';
 import { FormattedMessageText } from './FormattedMessageText.js';
+import { formatMessageTime } from '../../utils/date.js';
 import { 
   Trash2, 
   Check, 
@@ -209,10 +210,7 @@ const MessageItemComponent: React.FC<Props> = ({
     touchStartRef.current = null;
   };
 
-  const formattedTime = new Date(message.createdAt).toLocaleTimeString([], {
-    hour: '2-digit',
-    minute: '2-digit'
-  });
+  const formattedTime = formatMessageTime(message.createdAt);
 
   const reactions = message.reactions || [];
   const hasLiked = reactions.some((r) => r.userId === currentUser?.id);

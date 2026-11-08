@@ -123,3 +123,19 @@ export function formatChatDateSeparator(dateIso: string, language?: string): str
     return '';
   }
 }
+
+/**
+ * Safely formats message timestamp (e.g., '14:30' or '02:30 PM')
+ * Gracefully handles null, undefined, and malformed date strings without throwing
+ */
+export function formatMessageTime(dateIso?: string | null): string {
+  if (!dateIso) return '';
+  try {
+    const d = new Date(dateIso);
+    if (isNaN(d.getTime())) return '';
+    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  } catch {
+    return '';
+  }
+}
+

@@ -7,11 +7,17 @@ This directory holds the agentic knowledge base, architectural contracts, design
 ## Knowledge Index & Standards
 
 1. [`rules/ui-ux-design-system.md`](file:///c:/Users/Lion/Desktop/Projects/XMessenger/.agents/rules/ui-ux-design-system.md)
-   - Color harmony rules (warm sandy linen `#DFDDD6` canvas, Telegram mint `#EFFDDE` outgoing bubbles, Telegram navy `#2B5278`).
+   - Color harmony rules (warm sandy linen `#DFDDD6` canvas, dark obsidian `#0E1218` ambient canvas, and full-bleed transparent header/footer integration).
    - Telegram curved corner tails and removal of redundant in-chat avatars.
    - Static floating pill input bar (zero hover/focus border jumps).
    - Standardized user list cards (`rounded-xl`, subtle hairline borders, no heavy shadows).
-   - Mobile PWA notch and safe area handling.
+   - Unpinned stream TTL notice (floating centered glass pill scrolling naturally with chat).
+   - Standard 3-line hamburger menu icon (`Menu` from `lucide-react`).
+   - Dynamic smart context menu positioning preventing viewport and header clipping.
+   - Mobile PWA notch, dynamic island, and safe area handling (`pt-safe`, `pb-safe`).
+   - Segmented control floating circular notification badges (unread chats on All tab, pending count on Pending tab).
+   - Deterministic high-contrast initials avatar palettes (`getAvatarPalette`) with defined borders.
+   - Chat list row hierarchy: message timestamp in top row, vibrant Telegram emerald unread badge in bottom row.
 
 2. [`rules/i18n-standard.md`](file:///c:/Users/Lion/Desktop/Projects/XMessenger/.agents/rules/i18n-standard.md)
    - Zero hardcoded text rule: All user-facing strings strictly in `client/src/i18n/index.ts`.

@@ -7,6 +7,7 @@ import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { getAvatarPalette } from '../../utils/avatar.js';
+import { formatMessageTime } from '../../utils/date.js';
 import { 
   Users, 
   Search, 
@@ -260,7 +261,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                     {/* Top: Timestamp (always aligned with contact username) */}
                     {u.lastMessage ? (
                       <span className="text-slate-400 dark:text-slate-400 font-sans text-[10px] leading-tight select-none">
-                        {new Date(u.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        {formatMessageTime(u.lastMessage.createdAt)}
                       </span>
                     ) : (
                       <span className="h-3" />

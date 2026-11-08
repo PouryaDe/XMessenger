@@ -337,4 +337,72 @@ describe('Chat Ordering by Latest Message Tests', () => {
     const afterApproval = adminUsers.map((u) => (u.status === 'pending' ? { ...u, status: 'active' } : u));
     assert.equal(afterApproval.filter((u) => u.status === 'pending').length, 0);
   });
+
+  it('safely formats message timestamps and gracefully handles edge cases', () => {
+    function formatMessageTime(dateIso?: string | null): string {
+      if (!dateIso) return '';
+      try {
+        const d = new Date(dateIso);
+        if (isNaN(d.getTime())) return '';
+        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+      } catch {
+        return '';
+      }
+    }
+
+    // Valid date
+    const formatted = formatMessageTime('2026-11-08T14:30:00.000Z');
+    assert.ok(formatted.length > 0);
+
+    // Null, undefined, empty string
+    assert.equal(formatMessageTime(null), '');
+    assert.equal(formatMessageTime(undefined), '');
+    assert.equal(formatMessageTime(''), '');
+
+    // Malformed invalid date string
+    assert.equal(formatMessageTime('invalid-date-string'), '');
+    assert.equal(formatMessageTime('2026-99-99T99:99:99'), '');
+  });
+
+  it('deterministically generates vibrant avatar palettes for usernames and handles unicode', () => {
+    const AVATAR_PALETTES = [
+      'palette-amber',
+      'palette-sky',
+      'palette-emerald',
+      'palette-violet',
+      'palette-rose',
+      'palette-indigo',
+      'palette-teal',
+      'palette-orange'
+    ];
+
+    function getAvatarPalette(username?: string | null): string {
+      if (!username) return AVATAR_PALETTES[0];
+      let hash = 0;
+      for (let i = 0; i < username.length; i++) {
+        hash = (hash << 5) - hash + username.charCodeAt(i);
+        hash |= 0;
+      }
+      const idx = Math.abs(hash) % AVATAR_PALETTES.length;
+      return AVATAR_PALETTES[idx];
+    }
+
+    // Handles null / empty
+    assert.equal(getAvatarPalette(null), 'palette-amber');
+    assert.equal(getAvatarPalette(''), 'palette-amber');
+
+    // Deterministic: multiple calls return identical palette
+    const p1 = getAvatarPalette('alice');
+    const p2 = getAvatarPalette('alice');
+    assert.equal(p1, p2);
+
+    // Handles Persian Unicode characters smoothly without throwing or producing NaN
+    const pPersian1 = getAvatarPalette('پویا');
+    const pPersian2 = getAvatarPalette('پویا');
+    assert.equal(pPersian1, pPersian2);
+    assert.ok(AVATAR_PALETTES.includes(pPersian1));
+
+    const pMehdi = getAvatarPalette('مهدی');
+    assert.ok(AVATAR_PALETTES.includes(pMehdi));
+  });
 });
