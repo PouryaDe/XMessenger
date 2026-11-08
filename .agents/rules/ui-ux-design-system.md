@@ -135,12 +135,15 @@ This design system contract defines the visual identity, color harmony, typograp
 
 ---
 
-## 7. Floating Banners & Drawer Direction Harmony
+## 7. Stream Badges, Ephemeral TTL Notice & Drawer Direction Harmony
 
 - **Ephemeral 24h Auto-Purge Banner**:
-  - Must NEVER be bare unstyled text touching the top header border.
-  - Standard container: Centered floating pill card with generous top spacing (`px-4 pt-4 sm:pt-5 pb-2 flex justify-center`), detached from the ceiling/header.
-  - Card style: `inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-slate-800/80 backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-400`.
+  - Must NEVER be pinned or fixed to the top ceiling/header where it permanently occupies screen real estate.
+  - Position strictly at the **start of the scrollable message stream**, centered horizontally exactly like date separators (`DateSeparator`).
+  - Scrolls naturally with conversation messages instead of staying stuck at the top.
+  - Pill style: `inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-slate-900/40 dark:bg-black/50 text-amber-300/95 dark:text-amber-300/95 backdrop-blur-md border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.12)]`.
+- **Top Header Client Navigation Menu**:
+  - Use the standard 3-line hamburger menu icon (`Menu` from `lucide-react`) for opening the side drawer, replacing 4-square grid icons.
 - **Drawer Direction & Trigger Alignment**:
   - **CRITICAL UX RULE**: The side navigation drawer MUST open from the exact same side of the screen as the button that opened it.
   - In RTL (Persian): The menu button is on the top-left; the drawer must open on the **LEFT** with slide-in animation `animate-drawer-left` (`translateX(-100%)` to `0`).

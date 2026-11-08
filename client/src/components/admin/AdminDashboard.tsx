@@ -21,7 +21,8 @@ import {
   X,
   Loader2,
   ChevronDown,
-  Reply
+  Reply,
+  Flame
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -457,44 +458,54 @@ export const AdminDashboard: React.FC = () => {
                     </p>
                   </div>
                 ) : (
-                  messages.map((msg, index) => {
-                    const prevMsg = index > 0 ? messages[index - 1] : null;
-                    const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
-                    const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+                  <>
+                    {/* Ephemeral 24h Purge Notice at the beginning of chat stream (unpinned, scrolls naturally like date separators) */}
+                    <div className="w-full flex justify-center my-3 select-none pointer-events-none animate-fade-in shrink-0">
+                      <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-slate-900/40 dark:bg-black/50 text-amber-300/95 dark:text-amber-300/95 backdrop-blur-md border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.12)] pointer-events-auto">
+                        <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+                        <span>{t('chatTtlBanner')}</span>
+                      </span>
+                    </div>
 
-                    const isOwnMsg = (m: typeof msg | null) => !m ? false : (m.senderId === user?.id || m.isOwn === true);
-                    const prevIsOwn = isOwnMsg(prevMsg);
-                    const currIsOwn = isOwnMsg(msg);
-                    const nextIsOwn = isOwnMsg(nextMsg);
+                    {messages.map((msg, index) => {
+                      const prevMsg = index > 0 ? messages[index - 1] : null;
+                      const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
+                      const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
 
-                    const isFirstInGroup = showDateSeparator || !prevMsg || (prevIsOwn !== currIsOwn);
-                    const isLastInGroup = !nextMsg || (nextIsOwn !== currIsOwn) || !isSameDay(msg.createdAt, nextMsg.createdAt);
-                    const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
-                    const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
-                    const repliedSenderName = repliedMsg
-                      ? (repliedIsOwn ? t('replyToSelf') : activeUser.username)
-                      : '';
+                      const isOwnMsg = (m: typeof msg | null) => !m ? false : (m.senderId === user?.id || m.isOwn === true);
+                      const prevIsOwn = isOwnMsg(prevMsg);
+                      const currIsOwn = isOwnMsg(msg);
+                      const nextIsOwn = isOwnMsg(nextMsg);
 
-                    return (
-                      <React.Fragment key={msg.id}>
-                        {showDateSeparator && <DateSeparator date={msg.createdAt} />}
-                        <MessageItem
-                          message={msg}
-                          isOwn={currIsOwn}
-                          isFirstInGroup={isFirstInGroup}
-                          isLastInGroup={isLastInGroup}
-                          onDelete={deleteMessage}
-                          onReply={handleReply}
-                          onReact={toggleReaction}
-                          currentUser={user}
-                          repliedMessage={repliedMsg}
-                          repliedSenderName={repliedSenderName}
-                          onScrollToMessage={handleScrollToMessage}
-                          isHighlighted={highlightedMsgId === msg.id}
-                        />
-                      </React.Fragment>
-                    );
-                  })
+                      const isFirstInGroup = showDateSeparator || !prevMsg || (prevIsOwn !== currIsOwn);
+                      const isLastInGroup = !nextMsg || (nextIsOwn !== currIsOwn) || !isSameDay(msg.createdAt, nextMsg.createdAt);
+                      const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
+                      const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
+                      const repliedSenderName = repliedMsg
+                        ? (repliedIsOwn ? t('replyToSelf') : activeUser.username)
+                        : '';
+
+                      return (
+                        <React.Fragment key={msg.id}>
+                          {showDateSeparator && <DateSeparator date={msg.createdAt} />}
+                          <MessageItem
+                            message={msg}
+                            isOwn={currIsOwn}
+                            isFirstInGroup={isFirstInGroup}
+                            isLastInGroup={isLastInGroup}
+                            onDelete={deleteMessage}
+                            onReply={handleReply}
+                            onReact={toggleReaction}
+                            currentUser={user}
+                            repliedMessage={repliedMsg}
+                            repliedSenderName={repliedSenderName}
+                            onScrollToMessage={handleScrollToMessage}
+                            isHighlighted={highlightedMsgId === msg.id}
+                          />
+                        </React.Fragment>
+                      );
+                    })}
+                  </>
                 )}
                 <div ref={messagesEndRef} />
               </main>

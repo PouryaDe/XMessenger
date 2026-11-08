@@ -18,7 +18,7 @@ import {
   ShieldCheck, 
   Flame, 
   Paperclip, 
-  LayoutGrid, 
+  Menu, 
   Lock,
   X,
   Loader2,
@@ -331,13 +331,13 @@ export const UserChatView: React.FC = () => {
           </div>
         </div>
 
-        {/* Circular Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
+        {/* Hamburger Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+          className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title={t('menuAndSettings')}
         >
-          <LayoutGrid className="w-4 h-4 text-slate-600 dark:text-slate-300" />
+          <Menu className="w-4 h-4 text-slate-600 dark:text-slate-300" />
         </button>
       </header>
 
@@ -382,14 +382,6 @@ export const UserChatView: React.FC = () => {
         </div>
       )}
 
-      {/* Ephemeral Flame Tag Banner in Rounded Pill Card */}
-      <div className="px-4 pt-3 pb-1.5 flex justify-center shrink-0 select-none">
-        <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-white/[0.08] backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-300/90 font-sans">
-          <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-pulse" />
-          <span>{t('chatTtlBanner')}</span>
-        </div>
-      </div>
-
       {/* Messages Stream */}
       <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
         <main 
@@ -410,44 +402,54 @@ export const UserChatView: React.FC = () => {
               </p>
             </div>
           ) : (
-            messages.map((msg, index) => {
-              const prevMsg = index > 0 ? messages[index - 1] : null;
-              const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
-              const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+            <>
+              {/* Ephemeral 24h Purge Notice at the beginning of chat stream (unpinned, scrolls naturally like date separators) */}
+              <div className="w-full flex justify-center my-3 select-none pointer-events-none animate-fade-in shrink-0">
+                <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-slate-900/40 dark:bg-black/50 text-amber-300/95 dark:text-amber-300/95 backdrop-blur-md border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.12)] pointer-events-auto">
+                  <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+                  <span>{t('chatTtlBanner')}</span>
+                </span>
+              </div>
 
-              const isOwnMsg = (m: typeof msg | null) => !m ? false : (m.senderId === user?.id || m.isOwn === true);
-              const prevIsOwn = isOwnMsg(prevMsg);
-              const currIsOwn = isOwnMsg(msg);
-              const nextIsOwn = isOwnMsg(nextMsg);
+              {messages.map((msg, index) => {
+                const prevMsg = index > 0 ? messages[index - 1] : null;
+                const nextMsg = index < messages.length - 1 ? messages[index + 1] : null;
+                const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
 
-              const isFirstInGroup = showDateSeparator || !prevMsg || (prevIsOwn !== currIsOwn);
-              const isLastInGroup = !nextMsg || (nextIsOwn !== currIsOwn) || !isSameDay(msg.createdAt, nextMsg.createdAt);
-              const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
-              const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
-              const repliedSenderName = repliedMsg
-                ? (repliedIsOwn ? t('replyToSelf') : t('chatWithAdmin'))
-                : '';
+                const isOwnMsg = (m: typeof msg | null) => !m ? false : (m.senderId === user?.id || m.isOwn === true);
+                const prevIsOwn = isOwnMsg(prevMsg);
+                const currIsOwn = isOwnMsg(msg);
+                const nextIsOwn = isOwnMsg(nextMsg);
 
-              return (
-                <React.Fragment key={msg.id}>
-                  {showDateSeparator && <DateSeparator date={msg.createdAt} />}
-                  <MessageItem
-                    message={msg}
-                    isOwn={currIsOwn}
-                    isFirstInGroup={isFirstInGroup}
-                    isLastInGroup={isLastInGroup}
-                    onDelete={deleteMessage}
-                    onReply={handleReply}
-                    onReact={toggleReaction}
-                    currentUser={user}
-                    repliedMessage={repliedMsg}
-                    repliedSenderName={repliedSenderName}
-                    onScrollToMessage={handleScrollToMessage}
-                    isHighlighted={highlightedMsgId === msg.id}
-                  />
-                </React.Fragment>
-              );
-            })
+                const isFirstInGroup = showDateSeparator || !prevMsg || (prevIsOwn !== currIsOwn);
+                const isLastInGroup = !nextMsg || (nextIsOwn !== currIsOwn) || !isSameDay(msg.createdAt, nextMsg.createdAt);
+                const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
+                const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
+                const repliedSenderName = repliedMsg
+                  ? (repliedIsOwn ? t('replyToSelf') : t('chatWithAdmin'))
+                  : '';
+
+                return (
+                  <React.Fragment key={msg.id}>
+                    {showDateSeparator && <DateSeparator date={msg.createdAt} />}
+                    <MessageItem
+                      message={msg}
+                      isOwn={currIsOwn}
+                      isFirstInGroup={isFirstInGroup}
+                      isLastInGroup={isLastInGroup}
+                      onDelete={deleteMessage}
+                      onReply={handleReply}
+                      onReact={toggleReaction}
+                      currentUser={user}
+                      repliedMessage={repliedMsg}
+                      repliedSenderName={repliedSenderName}
+                      onScrollToMessage={handleScrollToMessage}
+                      isHighlighted={highlightedMsgId === msg.id}
+                    />
+                  </React.Fragment>
+                );
+              })}
+            </>
           )}
           <div ref={messagesEndRef} />
         </main>
