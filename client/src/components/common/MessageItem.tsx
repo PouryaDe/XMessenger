@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Message } from '../../services/api.js';
 import { useTranslation } from 'react-i18next';
+import { FormattedMessageText } from './FormattedMessageText.js';
 import { 
   Trash2, 
   Check, 
@@ -176,14 +177,9 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
             </div>
           )}
 
-          {/* Message content or caption (natural directionality for Persian/English) */}
+          {/* Message content or caption (rich format for code, vless/vmess configs, links) */}
           {caption && (
-            <p
-              dir="auto"
-              className="whitespace-pre-wrap select-text font-normal text-start"
-            >
-              {caption}
-            </p>
+            <FormattedMessageText text={caption} />
           )}
 
           {/* Footer inside bubble: Flame Tag + Time + Read status */}
