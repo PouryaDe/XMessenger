@@ -501,7 +501,7 @@ export const AdminDashboard: React.FC = () => {
               <main 
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto px-6 py-3 space-y-1 chat-fade-mask relative"
+                className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 chat-fade-mask relative"
               >
                 {isLoadingMessages && messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none animate-fade-in">
@@ -562,22 +562,22 @@ export const AdminDashboard: React.FC = () => {
               </main>
 
               <div className="pointer-events-none absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
+
+              {/* Floating Scroll to Bottom Button - Fixed directly above the input bar */}
+              {showScrollBottom && (
+                <button
+                  type="button"
+                  onClick={() => scrollToBottom('smooth')}
+                  className="absolute bottom-3 end-4 sm:end-8 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 dark:bg-[#1C222D]/95 text-slate-700 dark:text-slate-200 border border-black/[0.08] dark:border-white/[0.12] shadow-floating backdrop-blur-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all animate-fade-in cursor-pointer"
+                  title={t('scrollToBottom')}
+                >
+                  <ChevronDown className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+                </button>
+              )}
             </div>
 
-            {/* Floating Scroll to Bottom Button */}
-            {showScrollBottom && (
-              <button
-                type="button"
-                onClick={() => scrollToBottom('smooth')}
-                className="absolute bottom-20 sm:bottom-24 end-6 sm:end-8 z-30 w-10 h-10 rounded-full bg-white/95 dark:bg-[#1C222D]/95 text-slate-700 dark:text-slate-200 border border-black/[0.08] dark:border-white/[0.12] shadow-floating backdrop-blur-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all animate-fade-in"
-                title={t('scrollToBottom')}
-              >
-                <ChevronDown className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-              </button>
-            )}
-
             {/* Bottom Floating Pill Input Area */}
-            <footer className="px-3.5 sm:px-6 pt-2 pb-safe shrink-0">
+            <footer className="px-3 sm:px-6 pt-1.5 pb-safe shrink-0">
               <form
                 onSubmit={handleSend}
                 className="max-w-3xl mx-auto"

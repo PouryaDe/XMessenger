@@ -226,7 +226,8 @@ const MessageItemComponent: React.FC<Props> = ({
         ? 'rounded-[18px] rounded-bl-[4px]'
         : 'rounded-[18px]');
 
-  const verticalSpacing = isFirstInGroup ? 'mt-3.5 sm:mt-4 mb-1' : 'mt-1 mb-1';
+  // Spacing: Consecutive messages from same sender are closely grouped (mb-1); last message in streak has generous breathing room (mb-3.5/mb-4) before speaker switches
+  const verticalSpacing = `${isLastInGroup ? 'mb-3.5 sm:mb-4' : 'mb-1'} ${isFirstInGroup ? 'mt-1' : ''}`;
 
   return (
     <div

@@ -348,7 +348,7 @@ export const UserChatView: React.FC = () => {
   const isOpponentTyping = adminInfo ? typingUsers[adminInfo.id] : false;
 
   return (
-    <div className="relative flex flex-col flex-1 h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
+    <div className="relative flex flex-col flex-1 h-full min-h-0 w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
       
       {/* Top Header */}
       <header className="h-16 px-4 sm:px-5 flex items-center justify-between shrink-0 bg-white/45 dark:bg-[#12161E]/70 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.08] z-10">
@@ -451,7 +451,7 @@ export const UserChatView: React.FC = () => {
         <main 
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-5 py-2 space-y-1 chat-fade-mask relative"
+          className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 chat-fade-mask relative"
         >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
@@ -503,22 +503,22 @@ export const UserChatView: React.FC = () => {
         </main>
 
         <div className="pointer-events-none absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
+
+        {/* Floating Scroll to Bottom Button - Fixed directly above the input bar */}
+        {showScrollBottom && (
+          <button
+            type="button"
+            onClick={() => scrollToBottom('smooth')}
+            className="absolute bottom-3 end-4 sm:end-6 z-20 w-9 h-9 sm:w-10 sm:h-10 rounded-full bg-white/95 dark:bg-[#1C222D]/95 text-slate-700 dark:text-slate-200 border border-black/[0.08] dark:border-white/[0.12] shadow-floating backdrop-blur-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all animate-fade-in cursor-pointer"
+            title={t('scrollToBottom')}
+          >
+            <ChevronDown className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+          </button>
+        )}
       </div>
 
-      {/* Floating Scroll to Bottom Button */}
-      {showScrollBottom && (
-        <button
-          type="button"
-          onClick={() => scrollToBottom('smooth')}
-          className="absolute bottom-20 end-5 z-30 w-10 h-10 rounded-full bg-white/95 dark:bg-[#1C222D]/95 text-slate-700 dark:text-slate-200 border border-black/[0.08] dark:border-white/[0.12] shadow-floating backdrop-blur-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all animate-fade-in"
-          title={t('scrollToBottom')}
-        >
-          <ChevronDown className="w-5 h-5 text-slate-700 dark:text-slate-200" />
-        </button>
-      )}
-
       {/* Floating Pill Input Bar with Telegram Send Button INSIDE the Pill */}
-      <footer className="px-3.5 sm:px-6 pt-2 pb-safe shrink-0">
+      <footer className="px-3 sm:px-6 pt-1.5 pb-safe shrink-0">
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
           {/* Active Reply Preview Banner */}
           {replyingTo && (() => {
