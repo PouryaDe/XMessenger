@@ -505,8 +505,8 @@ export const AdminDashboard: React.FC = () => {
               >
                 {isLoadingMessages && messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none animate-fade-in">
-                    <div className="w-12 h-12 rounded-2xl bg-amber-500/15 border border-amber-500/25 text-amber-500 flex items-center justify-center mb-3 animate-spin">
-                      <Loader2 className="w-6 h-6" />
+                    <div className="w-12 h-12 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-500 flex items-center justify-center mb-3 shadow-xs">
+                      <Loader2 className="w-6 h-6 animate-spin" />
                     </div>
                     <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
                       {t('loadingConversation')}
@@ -514,7 +514,7 @@ export const AdminDashboard: React.FC = () => {
                   </div>
                 ) : messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-                    <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
+                    <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
                       <MessageSquare className="w-7 h-7" />
                     </div>
                     <p className="text-sm font-bold text-slate-800 dark:text-slate-200">

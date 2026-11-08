@@ -77,7 +77,7 @@ export const App: React.FC = () => {
   if (isLoading) {
     return (
       <div className="fixed inset-0 flex flex-col items-center justify-center bg-ambient-canvas text-slate-800 dark:text-white transition-opacity duration-300">
-        <div className="w-16 h-16 rounded-3xl bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 mb-4 animate-pulse">
+        <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 mb-4 animate-pulse">
           <Shield className="w-8 h-8" />
         </div>
         <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-300">
