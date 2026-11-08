@@ -191,7 +191,7 @@ const MessageItemComponent: React.FC<Props> = ({
     }
   };
 
-  // Mobile Touch Swipe-to-Reply Gesture
+  // Mobile Touch Swipe-to-Reply Gesture: strictly leftward swipe only
   const handleTouchStart = (e: React.TouchEvent) => {
     if (!onReply || e.touches.length !== 1) return;
     touchStartRef.current = {
@@ -205,11 +205,13 @@ const MessageItemComponent: React.FC<Props> = ({
     const dx = e.touches[0].clientX - touchStartRef.current.x;
     const dy = e.touches[0].clientY - touchStartRef.current.y;
 
-    // Only trigger horizontal swipe if movement is predominantly horizontal
-    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5) {
-      // Allow swiping towards the center of the chat
-      const clamped = Math.max(-56, Math.min(56, dx * 0.65));
+    // Only allow leftward swipe (dx < 0). Disallow rightward movement completely!
+    if (dx < -10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      // Clamped strictly between -56px and 0px (only moves to the left)
+      const clamped = Math.max(-56, dx * 0.65);
       setSwipeOffset(clamped);
+    } else if (dx >= 0 && swipeOffset !== 0) {
+      setSwipeOffset(0);
     }
   };
 
@@ -227,7 +229,8 @@ const MessageItemComponent: React.FC<Props> = ({
   };
 
   const handleTouchEnd = () => {
-    if (Math.abs(swipeOffset) >= 38 && onReply) {
+    // Only trigger reply if swiped to the left by at least 36px
+    if (swipeOffset <= -36 && onReply) {
       onReply(message);
     } else if (Math.abs(swipeOffset) < 10) {
       const now = Date.now();
@@ -267,18 +270,16 @@ const MessageItemComponent: React.FC<Props> = ({
       className={`w-full flex ${verticalSpacing} px-3 select-none ${shouldAnimate.current ? 'animate-message' : ''} ${isOwn ? 'justify-end' : 'justify-start'} ${showMenu ? 'relative z-40' : 'relative z-0'}`}
     >
       <div
-        className="relative max-w-[76%] sm:max-w-[70%] md:max-w-[65%] transition-transform duration-150 ease-out"
+        className="relative max-w-[76%] sm:max-w-[70%] md:max-w-[65%] transition-transform duration-150 ease-out touch-pan-y"
         style={swipeOffset ? { transform: `translateX(${swipeOffset}px)` } : undefined}
         onTouchStart={handleTouchStart}
         onTouchMove={handleTouchMove}
         onTouchEnd={handleTouchEnd}
       >
-        {/* Swipe-to-Reply visual indicator */}
-        {Math.abs(swipeOffset) > 18 && (
+        {/* Swipe-to-Reply visual indicator (strictly appears on the right when swiped left) */}
+        {swipeOffset < -18 && (
           <div
-            className={`absolute top-1/2 -translate-y-1/2 ${
-              swipeOffset > 0 ? '-left-9' : '-right-9'
-            } w-7 h-7 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center transition-opacity`}
+            className="absolute top-1/2 -translate-y-1/2 -right-9 w-7 h-7 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center transition-opacity"
           >
             <Reply className="w-3.5 h-3.5" />
           </div>

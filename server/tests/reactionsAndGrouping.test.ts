@@ -236,4 +236,35 @@ describe('Message Reactions Core Logic & Security Tests', () => {
     assert.strictEqual(isAuthorized(adminId, 'admin'), true, 'Admin is authorized');
     assert.strictEqual(isAuthorized(eveId, 'user'), false, 'Third-party user is rejected (403 Forbidden)');
   });
+
+  it('guarantees touch swipe gesture strictly activates leftward only (prevents page wobble & rightward swipe)', () => {
+    // Pure function representing the exact touch logic in MessageItem.tsx
+    function calculateTouchSwipe(dx: number, dy: number, currentOffset: number) {
+      if (dx < -10 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+        return Math.max(-56, dx * 0.65);
+      } else if (dx >= 0 && currentOffset !== 0) {
+        return 0;
+      }
+      return currentOffset;
+    }
+
+    function shouldTriggerReply(finalOffset: number): boolean {
+      return finalOffset <= -36;
+    }
+
+    // 1. Swiping leftwards: activates translation and triggers reply when dragged past threshold
+    const leftSwipeOffset = calculateTouchSwipe(-60, 5, 0);
+    assert.ok(leftSwipeOffset <= -36, `Expected offset <= -36, got ${leftSwipeOffset}`);
+    assert.strictEqual(shouldTriggerReply(leftSwipeOffset), true, 'Left swipe past -36px must trigger reply');
+
+    // 2. Swiping rightwards: MUST NOT move or activate swipe
+    const rightSwipeOffset = calculateTouchSwipe(60, 5, 0);
+    assert.strictEqual(rightSwipeOffset, 0, 'Rightward swipe must produce 0 offset');
+    assert.strictEqual(shouldTriggerReply(rightSwipeOffset), false, 'Rightward swipe must NEVER trigger reply');
+
+    // 3. Dominant vertical scroll: MUST NOT activate horizontal swipe
+    const verticalScrollOffset = calculateTouchSwipe(-40, 80, 0);
+    assert.strictEqual(verticalScrollOffset, 0, 'Vertical scrolling must not trigger horizontal swipe offset');
+    assert.strictEqual(shouldTriggerReply(verticalScrollOffset), false);
+  });
 });

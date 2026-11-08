@@ -315,9 +315,9 @@ export const AdminDashboard: React.FC = () => {
   const isUserTyping = activeUserId ? typingUsers[activeUserId] : false;
 
   return (
-    <div className="flex flex-1 h-full w-full bg-ambient-canvas overflow-hidden font-sans">
+    <div className="flex flex-1 h-full w-full bg-ambient-canvas overflow-hidden overflow-x-hidden overscroll-x-none select-none font-sans">
       {/* Left/Right Sidebar (Responsive: full width on mobile when no user selected) */}
-      <div className={`${activeUserId ? 'hidden sm:flex' : 'flex'} w-full sm:w-auto h-full`}>
+      <div className={`${activeUserId ? 'hidden sm:flex' : 'flex'} w-full sm:w-auto h-full overflow-hidden overflow-x-hidden`}>
         <AdminSidebar
           onOpenSettings={() => setSettingsModalOpen(true)}
           onSelectUser={handleSelectUser}
@@ -325,7 +325,7 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       {/* Main Chat Area */}
-      <div className={`${!activeUserId ? 'hidden sm:flex' : 'flex'} flex-1 flex-col h-full bg-transparent relative overflow-hidden`}>
+      <div className={`${!activeUserId ? 'hidden sm:flex' : 'flex'} flex-1 flex-col h-full bg-transparent relative overflow-hidden overflow-x-hidden`}>
         {activeUser ? (
           <>
             {/* Top Chat Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
@@ -435,11 +435,11 @@ export const AdminDashboard: React.FC = () => {
             </header>
 
             {/* Messages Area */}
-            <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
+            <div className="relative flex-1 flex flex-col min-h-0 w-full overflow-hidden overflow-x-hidden">
               <main 
                 ref={scrollContainerRef}
                 onScroll={handleScroll}
-                className="flex-1 overflow-y-auto px-4 sm:px-6 py-3 relative"
+                className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none overscroll-y-contain touch-pan-y px-4 sm:px-6 py-3 relative w-full"
               >
                 {isLoadingMessages && messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none animate-fade-in">

@@ -294,7 +294,7 @@ export const UserChatView: React.FC = () => {
   const isOpponentTyping = adminInfo ? typingUsers[adminInfo.id] : false;
 
   return (
-    <div className="relative flex flex-col flex-1 h-full min-h-0 w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
+    <div className="relative flex flex-col flex-1 h-full min-h-0 w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden overflow-x-hidden overscroll-x-none select-none font-sans">
       
       {/* Top Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
       <header className="pt-safe pb-2.5 px-4 sm:px-5 flex items-center justify-between shrink-0 bg-transparent border-b border-black/[0.05] dark:border-white/[0.06] z-10">
@@ -383,11 +383,11 @@ export const UserChatView: React.FC = () => {
       )}
 
       {/* Messages Stream */}
-      <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
+      <div className="relative flex-1 flex flex-col min-h-0 w-full overflow-hidden overflow-x-hidden">
         <main 
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 relative"
+          className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none overscroll-y-contain touch-pan-y px-2 sm:px-4 py-2 relative w-full"
         >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">

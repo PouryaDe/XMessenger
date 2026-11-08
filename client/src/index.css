@@ -68,6 +68,10 @@ html {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   background-color: #DFDDD6;
 }
 
@@ -86,7 +90,10 @@ body {
   margin: 0;
   padding: 0;
   overflow: hidden;
+  overflow-x: hidden;
   overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   -webkit-overflow-scrolling: touch;
   background-color: #DFDDD6;
 }
@@ -104,6 +111,10 @@ html.dark body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overflow-x: hidden;
+  overscroll-behavior: none;
+  overscroll-behavior-x: none;
+  touch-action: pan-y;
   background-color: transparent;
 }
 
