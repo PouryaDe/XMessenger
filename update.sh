@@ -101,15 +101,66 @@ fi
 
 # Ensure 100M client body limit & clean up any corrupted Nginx location blocks
 if [ -d "${BASE_DIR}/shared/nginx/conf.d" ]; then
+  # Guarantee 100% clean Nginx config for xchat.iranistream.com
+  if [ -f "${BASE_DIR}/shared/nginx/conf.d/xchat.iranistream.com.conf" ]; then
+    cat <<'EOF' > "${BASE_DIR}/shared/nginx/conf.d/xchat.iranistream.com.conf"
+server {
+    listen 80;
+    server_name xchat.iranistream.com;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://$host$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name xchat.iranistream.com;
+
+    ssl_certificate /etc/letsencrypt/live/xchat.iranistream.com/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/xchat.iranistream.com/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    # Security Headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # Client body limit (Supports Database Restore & Media Uploads)
+    client_max_body_size 100M;
+
+    location /socket.io/ {
+        proxy_pass http://xmessenger-xchat-iranistream-com:3001/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade $http_upgrade;
+        proxy_set_header Connection $http_connection;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_read_timeout 86400;
+    }
+
+    location / {
+        proxy_pass http://xmessenger-xchat-iranistream-com:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}
+EOF
+  fi
+
   for cfg in "${BASE_DIR}/shared/nginx/conf.d"/*.conf; do
     [ -f "$cfg" ] || continue
-    # Clean up any bad proxy_pass to non-existent xmessenger:3001
-    sed -i '/location ~\* \\.(html|json)\$/,/^[ \t]*}/d' "$cfg" 2>/dev/null || true
-    sed -i '/location = \/sw\.js/,/^[ \t]*}/d' "$cfg" 2>/dev/null || true
     sed -i 's|http://xmessenger:3001|http://xmessenger-xchat-iranistream-com:3001|g' "$cfg" 2>/dev/null || true
-    if ! grep -q "client_max_body_size" "$cfg"; then
-      sed -i '/server {/a \    client_max_body_size 100M;' "$cfg" 2>/dev/null || true
-    fi
   done
 fi
 

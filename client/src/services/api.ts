@@ -57,12 +57,33 @@ function getAuthHeader(): Record<string, string> {
   return token ? { Authorization: `Bearer ${token}` } : {};
 }
 
+async function safeJson<T = any>(res: Response, defaultErrorMsg: string): Promise<T> {
+  const text = await res.text();
+  let data: any = null;
+  if (text) {
+    try {
+      data = JSON.parse(text);
+    } catch {
+      if (!res.ok) {
+        throw new Error(`${defaultErrorMsg} (${res.status} ${res.statusText || 'Server Error'})`);
+      }
+      throw new Error(defaultErrorMsg);
+    }
+  }
+
+  if (!res.ok) {
+    const errorMsg = data && (data.message || data.error);
+    throw new Error(errorMsg || `${defaultErrorMsg} (${res.status})`);
+  }
+
+  return data as T;
+}
+
 export const api = {
   // Public Meta
   async getMeta(): Promise<AppMeta> {
     const res = await fetch(`${API_BASE}/auth/meta`);
-    if (!res.ok) throw new Error('Failed to fetch app meta');
-    return res.json();
+    return safeJson<AppMeta>(res, 'Failed to fetch app meta');
   },
 
   // Auth
@@ -72,9 +93,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Login failed');
-    return data;
+    return safeJson<{ token: string; user: User }>(res, 'Login failed');
   },
 
   async register(username: string, password: string): Promise<{ token: string; user: User; message: string }> {
@@ -83,18 +102,14 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Registration failed');
-    return data;
+    return safeJson<{ token: string; user: User; message: string }>(res, 'Registration failed');
   },
 
   async getMe(): Promise<{ user: User; adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null }> {
     const res = await fetch(`${API_BASE}/auth/me`, {
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to fetch user');
-    return data;
+    return safeJson<{ user: User; adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null }>(res, 'Failed to fetch user');
   },
 
   async uploadAvatar(file: File): Promise<{ success: boolean; avatarUrl: string; message: string }> {
@@ -105,9 +120,7 @@ export const api = {
       headers: { ...getAuthHeader() },
       body: formData
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to upload avatar');
-    return data;
+    return safeJson<{ success: boolean; avatarUrl: string; message: string }>(res, 'Failed to upload avatar');
   },
 
   async deleteAvatar(): Promise<{ success: boolean }> {
@@ -115,9 +128,7 @@ export const api = {
       method: 'DELETE',
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to delete avatar');
-    return data;
+    return safeJson<{ success: boolean }>(res, 'Failed to delete avatar');
   },
 
   async changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
@@ -126,9 +137,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ currentPassword, newPassword })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to change password');
-    return data;
+    return safeJson<{ success: boolean; message: string }>(res, 'Failed to change password');
   },
 
   // Messages
@@ -137,9 +146,7 @@ export const api = {
     const res = await fetch(url, {
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to fetch messages');
-    return data;
+    return safeJson<{ messages: Message[] }>(res, 'Failed to fetch messages');
   },
 
   async sendMessage(text: string, targetUserId?: string, ttlSeconds?: number): Promise<{ message: Message }> {
@@ -148,29 +155,19 @@ export const api = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ text, targetUserId, ttlSeconds })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to send message');
-    return data;
+    return safeJson<{ message: Message }>(res, 'Failed to send message');
   },
 
   async uploadChatImage(file: File): Promise<{ success: boolean; url: string; filename: string; size: number }> {
     const formData = new FormData();
     formData.append('image', file);
 
-    const token = localStorage.getItem('token');
-    const headers: Record<string, string> = {};
-    if (token) {
-      headers['Authorization'] = `Bearer ${token}`;
-    }
-
     const res = await fetch(`${API_BASE}/messages/upload`, {
       method: 'POST',
-      headers,
+      headers: { ...getAuthHeader() },
       body: formData
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to upload image');
-    return data;
+    return safeJson<{ success: boolean; url: string; filename: string; size: number }>(res, 'Failed to upload image');
   },
 
   async deleteMessage(messageId: string): Promise<{ success: boolean }> {
@@ -178,9 +175,7 @@ export const api = {
       method: 'DELETE',
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to delete message');
-    return data;
+    return safeJson<{ success: boolean }>(res, 'Failed to delete message');
   },
 
   async clearUserChat(): Promise<{ success: boolean }> {
@@ -188,9 +183,7 @@ export const api = {
       method: 'DELETE',
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to clear chat');
-    return data;
+    return safeJson<{ success: boolean }>(res, 'Failed to clear chat');
   },
 
   // Admin
@@ -198,9 +191,7 @@ export const api = {
     const res = await fetch(`${API_BASE}/admin/users`, {
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to fetch users');
-    return data;
+    return safeJson<{ users: AdminUserItem[] }>(res, 'Failed to fetch users');
   },
 
   async updateUserStatus(userId: string, status: 'active' | 'pending' | 'banned'): Promise<{ success: boolean; status: string }> {
@@ -209,9 +200,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ status })
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to update user status');
-    return data;
+    return safeJson<{ success: boolean; status: string }>(res, 'Failed to update user status');
   },
 
   async deleteUser(userId: string): Promise<{ success: boolean }> {
@@ -219,18 +208,14 @@ export const api = {
       method: 'DELETE',
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to delete user');
-    return data;
+    return safeJson<{ success: boolean }>(res, 'Failed to delete user');
   },
 
   async getAdminSettings(): Promise<AdminSettings> {
     const res = await fetch(`${API_BASE}/admin/settings`, {
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to get settings');
-    return data;
+    return safeJson<AdminSettings>(res, 'Failed to get settings');
   },
 
   async updateAdminSettings(settings: Partial<AdminSettings>): Promise<{ success: boolean }> {
@@ -239,9 +224,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify(settings)
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to update settings');
-    return data;
+    return safeJson<{ success: boolean }>(res, 'Failed to update settings');
   },
 
   async clearAdminConversation(userId: string): Promise<{ success: boolean }> {
@@ -249,9 +232,7 @@ export const api = {
       method: 'DELETE',
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to clear conversation');
-    return data;
+    return safeJson<{ success: boolean }>(res, 'Failed to clear conversation');
   },
 
   // PWA Custom Icon
@@ -263,9 +244,7 @@ export const api = {
       headers: { ...getAuthHeader() },
       body: formData
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to upload PWA icon');
-    return data;
+    return safeJson<{ success: boolean; pwaIconUrl: string; message: string }>(res, 'Failed to upload PWA icon');
   },
 
   async deletePwaIcon(): Promise<{ success: boolean }> {
@@ -273,9 +252,7 @@ export const api = {
       method: 'DELETE',
       headers: { ...getAuthHeader() }
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to reset PWA icon');
-    return data;
+    return safeJson<{ success: boolean }>(res, 'Failed to reset PWA icon');
   },
 
   // Database Backup & Restore
@@ -284,7 +261,7 @@ export const api = {
       headers: { ...getAuthHeader() }
     });
     if (!res.ok) {
-      const data = await res.json().catch(() => ({}));
+      const data = await safeJson(res, 'Failed to download database backup');
       throw new Error(data.message || 'Failed to download database backup');
     }
     const blob = await res.blob();
@@ -312,9 +289,6 @@ export const api = {
       headers: { ...getAuthHeader() },
       body: formData
     });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Failed to restore database');
-    return data;
+    return safeJson<{ success: boolean; message: string }>(res, 'Failed to restore database');
   }
 };
-
