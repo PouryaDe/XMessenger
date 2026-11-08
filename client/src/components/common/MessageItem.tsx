@@ -22,8 +22,10 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
+  const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('up');
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
+  const bubbleRef = useRef<HTMLDivElement>(null);
 
   // Parse potential image attachment [image:url]\ncaption
   const imageMatch = message.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
@@ -89,8 +91,21 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
     }
   };
 
+  const calculateMenuDirection = () => {
+    if (bubbleRef.current) {
+      const rect = bubbleRef.current.getBoundingClientRect();
+      // Menu height + margins is ~105px. If space above is less than 135px, open downwards
+      if (rect.top < 135) {
+        setMenuDirection('down');
+      } else {
+        setMenuDirection('up');
+      }
+    }
+  };
+
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    calculateMenuDirection();
     setShowMenu(true);
   };
 
@@ -100,7 +115,12 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
     if (selection && selection.toString().trim().length > 0) {
       return;
     }
-    setShowMenu((prev) => !prev);
+    if (!showMenu) {
+      calculateMenuDirection();
+      setShowMenu(true);
+    } else {
+      setShowMenu(false);
+    }
   };
 
   const formattedTime = new Date(message.createdAt).toLocaleTimeString([], {
@@ -111,12 +131,13 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
   return (
     <div
       dir="ltr"
-      className={`w-full flex my-1.5 px-3 animate-message select-none ${isOwn ? 'justify-end' : 'justify-start'}`}
+      className={`w-full flex my-1.5 px-3 animate-message select-none ${isOwn ? 'justify-end' : 'justify-start'} ${showMenu ? 'relative z-40' : 'relative z-0'}`}
     >
       <div className="relative max-w-[85%] sm:max-w-md md:max-w-lg">
         
         {/* Message Bubble Card with Telegram Curved Corner Tail */}
         <div
+          ref={bubbleRef}
           onContextMenu={handleContextMenu}
           onClick={handleBubbleClick}
           className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border border-black/[0.04] dark:border-white/[0.05] ${
@@ -220,7 +241,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
 
           {/* Feedback badge for Copied */}
           {copied && (
-            <div className="absolute -top-7 start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-xs animate-message">
+            <div className={`absolute ${menuDirection === 'down' ? '-bottom-7' : '-top-7'} start-1/2 -translate-x-1/2 px-2.5 py-0.5 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[10px] font-semibold shadow-xs animate-message z-50`}>
               {t('copied')}
             </div>
           )}
@@ -231,7 +252,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
               ref={menuRef}
               dir="rtl"
               onClick={(e) => e.stopPropagation()}
-              className={`absolute bottom-full mb-2 ${isOwn ? 'end-0' : 'start-0'} w-44 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-1.5 shadow-floating z-50 animate-message font-sans`}
+              className={`absolute ${menuDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'} ${isOwn ? 'end-0' : 'start-0'} w-44 bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl border border-black/10 dark:border-white/10 rounded-2xl p-1.5 shadow-floating z-50 animate-message font-sans`}
             >
               <button
                 onClick={handleCopy}
