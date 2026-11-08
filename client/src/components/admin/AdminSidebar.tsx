@@ -53,7 +53,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
               {t('adminPanel')}
             </h2>
-            <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/[0.08] text-slate-500 dark:text-slate-400">
+            <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-black/5 dark:bg-white/[0.08] text-slate-500 dark:text-slate-400">
               v{APP_VERSION}
             </span>
           </div>
@@ -112,7 +112,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             }`}
           >
             <span>{t('allUsers')}</span>
-            <span className="text-[10px] font-mono opacity-60">({adminUsers.length})</span>
+            <span className="text-[10px] opacity-60">({adminUsers.length})</span>
           </button>
 
           <button
@@ -125,7 +125,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           >
             <span>{t('pendingUsers')}</span>
             {pendingCount > 0 && (
-              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-bold font-mono">
+              <span className="px-1.5 py-0.2 rounded-full bg-amber-500 text-white text-[9px] font-bold">
                 {pendingCount}
               </span>
             )}
@@ -179,7 +179,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                 <div className="flex items-center gap-2.5 overflow-hidden">
                   {/* Avatar with status indicator */}
                   <div className="relative shrink-0">
-                    <div className="w-9 h-9 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-slate-200 flex items-center justify-center font-bold text-xs uppercase font-mono shadow-xs border border-white dark:border-white/[0.08] overflow-hidden">
+                    <div className="w-9 h-9 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-slate-200 flex items-center justify-center font-bold text-xs uppercase shadow-xs border border-white dark:border-white/[0.08] overflow-hidden">
                       {u.avatarUrl ? (
                         <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
                       ) : (
@@ -231,7 +231,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                 {/* Unread badge & timestamp */}
                 <div className="flex flex-col items-end shrink-0 gap-1 text-[10px]">
                   {u.unreadCount && u.unreadCount > 0 ? (
-                    <span className="px-1.5 py-0.2 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold font-mono text-[9px]">
+                    <span className="px-1.5 py-0.2 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-[9px]">
                       {u.unreadCount}
                     </span>
                   ) : null}
@@ -250,7 +250,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
       {/* Sidebar Footer with Version */}
       <div className="p-3.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 select-none shrink-0 bg-black/[0.01] dark:bg-white/[0.01]">
         <span className="font-semibold tracking-tight text-slate-600 dark:text-slate-400">XMessenger</span>
-        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 font-bold">
+        <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 font-bold">
           v{APP_VERSION}
         </span>
       </div>

@@ -48,7 +48,7 @@ export const PendingApprovalScreen: React.FC = () => {
 
         <div className="p-4 rounded-2xl bg-stone-50 dark:bg-white/[0.04] border border-stone-200/60 dark:border-white/[0.06] mb-6 text-xs text-slate-600 dark:text-slate-300 flex items-center justify-center gap-2 font-sans">
           <ShieldAlert className="w-4 h-4 text-amber-500 shrink-0" />
-          <span>{t('usernameLabel')}<strong className="text-slate-900 dark:text-white font-mono">{user?.username}</strong></span>
+          <span>{t('usernameLabel')}<strong className="text-slate-900 dark:text-white font-bold">{user?.username}</strong></span>
         </div>
 
         <div className="flex flex-col gap-2.5">

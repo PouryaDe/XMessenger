@@ -5,12 +5,14 @@
 :root {
   color-scheme: light dark;
   --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'Vazirmatn', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
 }
 
 [dir="ltr"],
 html[lang="en"],
 body[lang="en"] {
   --font-family: 'Inter', -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Courier New", monospace;
   font-family: var(--font-family) !important;
 }
 
@@ -18,7 +20,19 @@ body[lang="en"] {
 html[lang="fa"],
 body[lang="fa"] {
   --font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: 'Vazirmatn', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
   font-family: var(--font-family) !important;
+}
+
+/* Never use monospace font in Persian */
+[dir="rtl"] .font-mono,
+html[lang="fa"] .font-mono,
+body[lang="fa"] .font-mono,
+[dir="rtl"] code,
+[dir="rtl"] kbd,
+[dir="rtl"] samp,
+[dir="rtl"] pre {
+  font-family: 'Vazirmatn', -apple-system, BlinkMacSystemFont, system-ui, sans-serif !important;
 }
 
 body, button, input, select, textarea {
@@ -44,22 +58,51 @@ body, button, input, select, textarea {
   background: rgba(180, 160, 140, 0.6);
 }
 
-/* Viewport layout */
-html, body, #root {
+/* Viewport layout - Optimized for iOS Safari PWA and full-bleed mobile display */
+html {
   height: 100%;
+  height: -webkit-fill-available;
   width: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
+}
+
+body {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  overscroll-behavior: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  width: 100%;
+  height: 100%;
+  height: 100dvh;
+  min-height: 100dvh;
+  min-height: -webkit-fill-available;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
 /* Mobile PWA Safe Area Utilities (iOS Notch & Home Bar) */
-@media (max-width: 639px) {
-  .pb-safe {
-    padding-bottom: max(1rem, env(safe-area-inset-bottom, 1rem));
-  }
+.pb-safe {
+  padding-bottom: max(0.5rem, env(safe-area-inset-bottom, 0.5rem));
 }
 .pt-safe {
-  padding-top: max(0.875rem, env(safe-area-inset-top, 0.875rem));
+  padding-top: max(0.75rem, env(safe-area-inset-top, 0.75rem));
 }
 
 /* Smooth message animations */

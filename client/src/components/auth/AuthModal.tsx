@@ -109,7 +109,7 @@ export const AuthModal: React.FC = () => {
                 autoComplete="username"
                 dir="ltr"
                 placeholder="e.g. user101"
-                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 font-mono shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
+                className="w-full pl-11 pr-4 py-3 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-slate-900 dark:text-white text-xs text-left focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none placeholder:text-slate-400 placeholder:text-left transition-colors"
               />
             </div>
           </div>
@@ -203,7 +203,7 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Footer Version */}
-        <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 font-mono mt-4 select-none">
+        <div className="text-center text-[11px] text-slate-400 dark:text-slate-500 mt-4 select-none">
           XMessenger v{appMeta?.version || APP_VERSION}
         </div>
       </div>

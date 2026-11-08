@@ -192,7 +192,7 @@ export const UserChatView: React.FC = () => {
   const isOpponentTyping = adminInfo ? typingUsers[adminInfo.id] : false;
 
   return (
-    <div className="relative flex flex-col h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
+    <div className="relative flex flex-col flex-1 h-full w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
       
       {/* Top Header */}
       <header className="px-5 py-3.5 pt-safe flex items-center justify-between shrink-0 bg-white/45 dark:bg-[#12161E]/70 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.08] z-10">
@@ -275,7 +275,7 @@ export const UserChatView: React.FC = () => {
       </main>
 
       {/* Floating Pill Input Bar with Telegram Send Button INSIDE the Pill */}
-      <footer className="p-4 sm:px-6 sm:pt-3 sm:pb-8 md:pb-9 pb-safe shrink-0">
+      <footer className="px-3.5 sm:px-6 pt-2 pb-safe shrink-0">
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
           {/* Selected Image Preview Chip */}
           {imagePreviewUrl && (

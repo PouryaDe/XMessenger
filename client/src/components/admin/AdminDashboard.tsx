@@ -274,7 +274,7 @@ export const AdminDashboard: React.FC = () => {
   const isUserTyping = activeUserId ? typingUsers[activeUserId] : false;
 
   return (
-    <div className="flex h-full w-full bg-ambient-canvas overflow-hidden font-sans">
+    <div className="flex flex-1 h-full w-full bg-ambient-canvas overflow-hidden font-sans">
       {/* Left/Right Sidebar (Responsive: full width on mobile when no user selected) */}
       <div className={`${activeUserId ? 'hidden sm:flex' : 'flex'} w-full sm:w-auto h-full`}>
         <AdminSidebar
@@ -299,7 +299,7 @@ export const AdminDashboard: React.FC = () => {
                 </button>
 
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold font-mono text-xs uppercase shadow-xs border border-white dark:border-white/[0.08] overflow-hidden">
+                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold text-xs uppercase shadow-xs border border-white dark:border-white/[0.08] overflow-hidden">
                     {activeUser.avatarUrl ? (
                       <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
                     ) : (
@@ -417,7 +417,7 @@ export const AdminDashboard: React.FC = () => {
             </main>
 
             {/* Bottom Floating Pill Input Area */}
-            <footer className="p-4 sm:px-6 sm:pt-3 sm:pb-8 md:pb-9 pb-safe shrink-0">
+            <footer className="px-3.5 sm:px-6 pt-2 pb-safe shrink-0">
               <form
                 onSubmit={handleSend}
                 className="max-w-3xl mx-auto"
@@ -521,7 +521,7 @@ export const AdminDashboard: React.FC = () => {
             <p className="text-xs text-slate-400 max-w-[260px] mt-1.5 leading-relaxed">
               {t('selectConversationDesc')}
             </p>
-            <div className="mt-4 px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/[0.06] text-[11px] font-mono text-slate-400 select-none">
+            <div className="mt-4 px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/[0.06] text-[11px] text-slate-400 select-none">
               XMessenger v{APP_VERSION}
             </div>
           </div>

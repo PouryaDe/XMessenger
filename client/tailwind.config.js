@@ -11,6 +11,7 @@ export default {
         vazir: ['Vazirmatn', 'sans-serif'],
         inter: ['Inter', 'sans-serif'],
         sans: ['var(--font-family)', 'Inter', 'Vazirmatn', 'system-ui', '-apple-system', 'sans-serif'],
+        mono: ['var(--font-mono)', 'monospace'],
       },
       colors: {
         cream: {

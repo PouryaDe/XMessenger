@@ -129,7 +129,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="w-12 h-12 rounded-full bg-white dark:bg-white/[0.08] text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] text-sm font-mono uppercase overflow-hidden relative group/avatar focus:outline-none"
+                className="w-12 h-12 rounded-full bg-white dark:bg-white/[0.08] text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] text-sm uppercase overflow-hidden relative group/avatar focus:outline-none"
                 title={t('uploadAvatar')}
               >
                 {user?.avatarUrl ? (
@@ -222,7 +222,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
                 <p className="text-[10px] text-slate-400 font-normal mt-0.5">{t('updateAppDesc')}</p>
               </div>
             </div>
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-500 font-mono shrink-0 font-bold">
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-black/[0.04] dark:bg-white/[0.08] text-slate-500 shrink-0 font-bold">
               {isUpdatingApp ? t('updatingApp') : `v${APP_VERSION}`}
             </span>
           </button>
@@ -237,7 +237,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
             <LogOut className="w-4 h-4" />
             <span>{t('logout')}</span>
           </button>
-          <div className="text-center text-[10px] text-slate-400 dark:text-slate-500 font-mono mt-3 select-none">
+          <div className="text-center text-[10px] text-slate-400 dark:text-slate-500 mt-3 select-none">
             XMessenger v{APP_VERSION}
           </div>
         </div>

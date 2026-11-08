@@ -194,7 +194,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <h3 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none">
                   {t('settings')} - {t('adminPanel')}
                 </h3>
-                <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                   v{APP_VERSION}
                 </span>
               </div>
@@ -281,7 +281,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     {t('systemVersionDesc')}
                   </p>
                 </div>
-                <span className="text-xs font-mono font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                   v{APP_VERSION}
                 </span>
               </div>
@@ -355,7 +355,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     <Clock className="w-4 h-4 text-amber-500" />
                     <span>{t('defaultTtl')}</span>
                   </span>
-                  <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
+                  <span className="text-[11px] px-2.5 py-0.5 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 font-bold">
                     {Math.round(settings.defaultTtlSeconds / 60)} {t('minutesUnit')}
                   </span>
                 </label>
@@ -377,7 +377,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                         defaultTtlSeconds: isNaN(val) ? 60 : Math.max(1, val) * 60
                       });
                     }}
-                    className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
+                    className="w-full pl-5 pr-20 rtl:pr-5 rtl:pl-20 py-2.5 rounded-full border border-stone-200 dark:border-white/[0.08] bg-white dark:bg-white/[0.05] text-xs text-slate-900 dark:text-white focus:outline-none focus:ring-0 focus:border-stone-400 dark:focus:border-white/20 shadow-none transition-colors"
                     placeholder="1440"
                   />
                   <span className="absolute end-4 text-xs text-slate-400 font-semibold pointer-events-none">
