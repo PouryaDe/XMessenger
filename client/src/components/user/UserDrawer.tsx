@@ -11,8 +11,7 @@ import { getAvatarPalette } from '../../utils/avatar.js';
 import { 
   getCurrentSubscription, 
   subscribeToPush, 
-  unsubscribeFromPush, 
-  sendTestNotification
+  unsubscribeFromPush
 } from '../../services/push.js';
 import { 
   X, 
@@ -24,7 +23,6 @@ import {
   RefreshCw,
   Bell,
   BellRing,
-  Send,
   Loader2
 } from 'lucide-react';
 
@@ -46,7 +44,6 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
   // Push Notifications state
   const [isPushSubscribed, setIsPushSubscribed] = useState(false);
   const [isPushLoading, setIsPushLoading] = useState(false);
-  const [isSendingTest, setIsSendingTest] = useState(false);
   const [pushErrorMsg, setPushErrorMsg] = useState<string | null>(null);
 
   useEffect(() => {
@@ -83,18 +80,6 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
       setPushErrorMsg(getErrorMessage(e, 'pushUnsupported'));
     } finally {
       setIsPushLoading(false);
-    }
-  };
-
-  const handleSendTestPush = async () => {
-    setIsSendingTest(true);
-    try {
-      const ok = await sendTestNotification();
-      alert(ok ? t('pushTestSent') : t('pushTestFailed'));
-    } catch {
-      alert(t('pushTestFailed'));
-    } finally {
-      setIsSendingTest(false);
     }
   };
 
@@ -320,24 +305,6 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
               {pushErrorMsg && (
                 <div className="p-2 rounded-lg bg-amber-500/10 border border-amber-500/20 text-[10px] text-amber-700 dark:text-amber-300 leading-relaxed font-sans break-words overflow-hidden">
                   {pushErrorMsg}
-                </div>
-              )}
-
-              {isPushSubscribed && (
-                <div className="flex justify-end pt-0.5">
-                  <button
-                    type="button"
-                    onClick={handleSendTestPush}
-                    disabled={isSendingTest}
-                    className="text-[10px] font-medium text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1 cursor-pointer disabled:opacity-60"
-                  >
-                    {isSendingTest ? (
-                      <Loader2 className="w-2.5 h-2.5 animate-spin shrink-0" />
-                    ) : (
-                      <Send className="w-2.5 h-2.5 shrink-0" />
-                    )}
-                    <span>{isSendingTest ? t('pushSendingTest') : t('pushSendTest')}</span>
-                  </button>
                 </div>
               )}
             </div>

@@ -55833,18 +55833,10 @@ async function dispatchPushForMessage(sender, recipientId, rawText) {
     const appName = getSettingValue("app_name", "XMessenger");
     const pwaIconUrl = getSettingValue("pwa_icon_url", "");
     const senderTitle = sender.role === "admin" ? appName : sender.username;
-    let preview = rawText.trim();
-    if (preview.startsWith("[image:")) {
-      const match = preview.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
-      const caption = match && match[2] ? match[2].trim() : "";
-      preview = caption ? `\u{1F4F7} ${caption}` : "\u{1F4F7} \u062A\u0635\u0648\u06CC\u0631 \u062C\u062F\u06CC\u062F";
-    }
-    if (preview.length > 100) {
-      preview = preview.substring(0, 97) + "...";
-    }
+    const notificationBody = "\u0634\u0645\u0627 \u06CC\u06A9 \u067E\u06CC\u0627\u0645 \u062C\u062F\u06CC\u062F \u062F\u0627\u0631\u06CC\u062F";
     await sendPushToUser(recipientId, {
       title: senderTitle,
-      body: preview,
+      body: notificationBody,
       icon: pwaIconUrl || "/icon-192.png",
       badge: "/icon-192.png",
       tag: `msg-${sender.id}`,
@@ -57211,7 +57203,7 @@ app.get("/manifest.json", (req, res) => {
   res.json({
     name: appName,
     short_name: pwaShortName,
-    description: "\u067E\u06CC\u0627\u0645\u200C\u0631\u0633\u0627\u0646 \u0645\u062A\u0645\u0631\u06A9\u0632 \u0627\u0645\u0646 \u06CC\u06A9\u200C\u0637\u0631\u0641\u0647 \u0628\u0627 \u067E\u06CC\u0627\u0645\u200C\u0647\u0627\u06CC \u06AF\u0630\u0631\u0627 \u0648 \u0631\u0645\u0632\u0646\u06AF\u0627\u0631\u06CC AES-256",
+    description: "\u067E\u06CC\u0627\u0645\u200C\u0631\u0633\u0627\u0646 \u0645\u062A\u0645\u0631\u06A9\u0632 \u0627\u0645\u0646 \u06CC\u06A9\u200C\u0637\u0631\u0641\u0647 \u0628\u0627 \u067E\u06CC\u0627\u0645\u200C\u0647\u0627\u06CC \u06AF\u0630\u0631\u0627 \u0648 \u0631\u0645\u0632\u0646\u06AF\u0627\u0631\u06CC \u067E\u06CC\u0634\u0631\u0641\u062A\u0647",
     start_url: "/",
     scope: "/",
     display: "standalone",

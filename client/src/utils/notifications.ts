@@ -30,7 +30,7 @@ export function clearNotificationCount() {
   }
 }
 
-export function notifyIncomingMessage(senderName: string, text: string) {
+export function notifyIncomingMessage(senderName: string, _text?: string) {
   if (typeof window === 'undefined') return;
 
   // Only notify when tab is backgrounded / hidden
@@ -40,9 +40,10 @@ export function notifyIncomingMessage(senderName: string, text: string) {
 
     if (typeof Notification !== 'undefined' && Notification.permission === 'granted') {
       try {
-        const preview = text.startsWith('[image:') ? '📷 عکس' : text;
-        const n = new Notification(senderName || 'پیام جدید', {
-          body: preview.length > 80 ? preview.substring(0, 80) + '...' : preview,
+        const isFa = typeof document !== 'undefined' && document.documentElement.lang === 'fa';
+        const bodyText = isFa ? 'شما یک پیام جدید دارید' : 'You have a new message';
+        const n = new Notification(senderName || (isFa ? 'پیام جدید' : 'New Message'), {
+          body: bodyText,
           icon: '/icon-192.png',
           badge: '/icon-192.png',
           tag: 'xmessenger-new-msg'

@@ -162,18 +162,11 @@ async function dispatchPushForMessage(sender, recipientId, rawText) {
         const senderTitle = sender.role === 'admin'
             ? appName
             : sender.username;
-        let preview = rawText.trim();
-        if (preview.startsWith('[image:')) {
-            const match = preview.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
-            const caption = match && match[2] ? match[2].trim() : '';
-            preview = caption ? `📷 ${caption}` : '📷 تصویر جدید';
-        }
-        if (preview.length > 100) {
-            preview = preview.substring(0, 97) + '...';
-        }
+        // Privacy-preserving notification body: never leak private chat content onto device lockscreens
+        const notificationBody = 'شما یک پیام جدید دارید';
         await sendPushToUser(recipientId, {
             title: senderTitle,
-            body: preview,
+            body: notificationBody,
             icon: pwaIconUrl || '/icon-192.png',
             badge: '/icon-192.png',
             tag: `msg-${sender.id}`,

@@ -121,7 +121,7 @@ app.get('/manifest.json', (req, res) => {
   res.json({
     name: appName,
     short_name: pwaShortName,
-    description: "پیام‌رسان متمرکز امن یک‌طرفه با پیام‌های گذرا و رمزنگاری AES-256",
+    description: "پیام‌رسان متمرکز امن یک‌طرفه با پیام‌های گذرا و رمزنگاری پیشرفته",
     start_url: "/",
     scope: "/",
     display: "standalone",

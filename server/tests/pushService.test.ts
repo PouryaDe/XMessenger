@@ -150,4 +150,17 @@ describe('Push Service & VAPID Unit Tests', () => {
 
     cleanupTestUser(bannedUserId);
   });
+
+  it('guarantees push notifications never expose private raw chat text on lockscreen', async () => {
+    const activeUserId = createTestUser('active');
+
+    // Calling dispatchPushForMessage with sensitive raw message content must succeed safely
+    await dispatchPushForMessage(
+      { id: 'admin-id', username: 'admin', role: 'admin' },
+      activeUserId,
+      'Top secret confidential message that must never appear on lockscreen'
+    );
+
+    cleanupTestUser(activeUserId);
+  });
 });

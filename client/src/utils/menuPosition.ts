@@ -89,3 +89,4 @@ export function calculateMessageMenuPosition(options: MenuPositionOptions): Calc
     transformOrigin: `${vOrigin} ${hOrigin}`
   };
 }
+
