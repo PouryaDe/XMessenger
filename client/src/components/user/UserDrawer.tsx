@@ -21,7 +21,7 @@ interface Props {
 }
 
 export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user, logout, updateUserAvatar } = useAuthStore();
   const { clearMessages } = useChatStore();
   const avatarInputRef = useRef<HTMLInputElement>(null);
@@ -78,7 +78,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex justify-end rtl:justify-start">
+    <div className="fixed inset-0 z-50 flex justify-end">
       {/* Backdrop */}
       <div 
         className="fixed inset-0 bg-slate-950/40 backdrop-blur-xs transition-opacity"
@@ -86,7 +86,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer content */}
-      <div className="relative w-full max-w-xs sm:max-w-sm h-full bg-white/85 dark:bg-slate-900/85 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/10 shadow-xl flex flex-col z-10 animate-message font-sans">
+      <div className={`relative w-full max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-slate-900/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/10 shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
         {/* Header */}
         <div className="p-6 pt-safe border-b border-stone-200/50 dark:border-slate-800 flex items-center justify-between">
           <div className="flex items-center gap-3">

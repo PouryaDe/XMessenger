@@ -118,3 +118,17 @@ This design system contract defines the visual identity, color harmony, typograp
   - **Inputs & Search Bars**: `shadow-none` with hairline border `border border-black/[0.05] dark:border-white/5`.
   - **Modals & Drawers**: Tight layered elevations (`shadow-floating` or `shadow-xl`) constrained to small blur radii (`0 4px 16px -2px rgba(0,0,0,0.08)`), anchored by clean 1px borders.
 
+---
+
+## 7. Floating Banners & Drawer Direction Harmony
+
+- **Ephemeral 24h Auto-Purge Banner**:
+  - Must NEVER be bare unstyled text touching the top header border.
+  - Standard container: Centered floating pill card with vertical margin `my-2.5` (`px-4 my-2.5 flex justify-center`).
+  - Card style: `inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-white/70 dark:bg-slate-800/80 backdrop-blur-md border border-black/[0.06] dark:border-white/10 shadow-xs text-[11px] font-medium text-amber-700 dark:text-amber-400`.
+- **Drawer Direction & Trigger Alignment**:
+  - **CRITICAL UX RULE**: The side navigation drawer MUST open from the exact same side of the screen as the button that opened it.
+  - In RTL (Persian): The menu button is on the top-left; the drawer must open on the **LEFT** with slide-in animation `animate-drawer-left` (`translateX(-100%)` to `0`).
+  - In LTR (English): The menu button is on the top-right; the drawer must open on the **RIGHT** with slide-in animation `animate-drawer-right` (`translateX(100%)` to `0`).
+  - Never allow cross-screen dissonance where a left-side button triggers a right-side drawer.
+
