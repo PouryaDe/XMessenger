@@ -121,7 +121,7 @@ export function setupSocketServer(io: Server) {
     });
 
     // Send Message via Socket
-    socket.on('message:send', ({ text, targetUserId, ttlSeconds }: { text: string; targetUserId?: string; ttlSeconds?: number }, callback) => {
+    socket.on('message:send', ({ text, targetUserId, ttlSeconds, replyToId }: { text: string; targetUserId?: string; ttlSeconds?: number; replyToId?: string | null }, callback) => {
       try {
         if (user.status === 'pending') {
           if (callback) callback({ error: 'ACCOUNT_PENDING_APPROVAL' });
@@ -132,6 +132,10 @@ export function setupSocketServer(io: Server) {
           if (callback) callback({ error: 'EMPTY_TEXT' });
           return;
         }
+
+        const validReplyToId = (typeof replyToId === 'string' && replyToId.trim().length > 0 && replyToId.length <= 64)
+          ? replyToId.trim()
+          : null;
 
         let recipientId: string;
         if (user.role === 'admin') {
@@ -162,9 +166,9 @@ export function setupSocketServer(io: Server) {
         const encrypted = encryptMessage(text.trim());
 
         db.prepare(`
-          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-        `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt);
+          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
 
         const messagePayload = {
           id: messageId,
@@ -173,7 +177,8 @@ export function setupSocketServer(io: Server) {
           text: text.trim(),
           createdAt,
           expiresAt,
-          isRead: false
+          isRead: false,
+          replyToId: validReplyToId
         };
 
         // Emit to recipient and sender with exact message types

@@ -89,7 +89,7 @@ function createMessagesRouter(io) {
             const now = new Date().toISOString();
             // Fetch non-expired messages in chronological order
             const rows = index_js_1.db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -124,7 +124,8 @@ function createMessagesRouter(io) {
                 createdAt: r.created_at,
                 expiresAt: r.expires_at,
                 isRead: Boolean(r.is_read),
-                isOwn: r.sender_id === currentUser.id
+                isOwn: r.sender_id === currentUser.id,
+                replyToId: r.reply_to_id || null
             }));
             res.json({ messages });
         }
@@ -137,10 +138,13 @@ function createMessagesRouter(io) {
     router.post('/', (req, res) => {
         try {
             const currentUser = req.user;
-            const { text, targetUserId, ttlSeconds } = req.body;
+            const { text, targetUserId, ttlSeconds, replyToId } = req.body;
             if (!text || typeof text !== 'string' || !text.trim()) {
                 return res.status(400).json({ error: 'INVALID_TEXT', message: 'Message text cannot be empty' });
             }
+            const validReplyToId = (typeof replyToId === 'string' && replyToId.trim().length > 0 && replyToId.length <= 64)
+                ? replyToId.trim()
+                : null;
             let recipientId;
             if (currentUser.role === 'admin') {
                 if (!targetUserId) {
@@ -171,9 +175,9 @@ function createMessagesRouter(io) {
             // Encrypt message at rest
             const encrypted = (0, crypto_js_1.encryptMessage)(text.trim());
             index_js_1.db.prepare(`
-        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-      `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt);
+        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+      `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
             const messagePayload = {
                 id: messageId,
                 senderId: currentUser.id,
@@ -181,7 +185,8 @@ function createMessagesRouter(io) {
                 text: text.trim(),
                 createdAt,
                 expiresAt,
-                isRead: false
+                isRead: false,
+                replyToId: validReplyToId
             };
             // Emit to sockets
             if (io) {

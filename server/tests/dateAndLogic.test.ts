@@ -1,5 +1,8 @@
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
+import { v4 as uuidv4 } from 'uuid';
+import { db, initDatabase } from '../src/database/index.js';
+import { encryptMessage, decryptMessage } from '../src/utils/crypto.js';
 
 // Unit logic for isSameDay
 function isSameDay(d1: Date | string, d2: Date | string): boolean {
@@ -88,5 +91,54 @@ describe('Date Separator & Chat Scroll Diffing Tests', () => {
 
     // Message deleted (empty)
     assert.strictEqual(haveMessagesChanged(base, []), true);
+  });
+
+  it('persists and retrieves reply_to_id on encrypted messages and handles parent deletion', () => {
+    initDatabase();
+    const userId = uuidv4();
+    const adminId = uuidv4();
+    const now = new Date().toISOString();
+    const expires = new Date(Date.now() + 3600_000).toISOString();
+
+    db.prepare(`
+      INSERT INTO users (id, username, password_hash, role, status, created_at, last_seen)
+      VALUES (?, ?, 'hash', 'user', 'active', ?, ?)
+    `).run(userId, `reply-u-${userId.slice(0, 8)}`, now, now);
+
+    db.prepare(`
+      INSERT INTO users (id, username, password_hash, role, status, created_at, last_seen)
+      VALUES (?, ?, 'hash', 'user', 'active', ?, ?)
+    `).run(adminId, `reply-a-${adminId.slice(0, 8)}`, now, now);
+
+    const parentMsgId = uuidv4();
+    const replyMsgId = uuidv4();
+    const enc1 = encryptMessage('Original parent message');
+    const enc2 = encryptMessage('Reply child message');
+
+    // Insert parent message (no reply_to_id)
+    db.prepare(`
+      INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+    `).run(parentMsgId, userId, adminId, enc1.ciphertext, enc1.iv, enc1.authTag, now, expires, null);
+
+    // Insert reply message referencing parentMsgId
+    db.prepare(`
+      INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+    `).run(replyMsgId, adminId, userId, enc2.ciphertext, enc2.iv, enc2.authTag, now, expires, parentMsgId);
+
+    const fetchedReply = db.prepare('SELECT id, reply_to_id, ciphertext, iv, auth_tag FROM messages WHERE id = ?').get(replyMsgId) as any;
+    assert.ok(fetchedReply);
+    assert.strictEqual(fetchedReply.reply_to_id, parentMsgId);
+    assert.strictEqual(decryptMessage(fetchedReply.ciphertext, fetchedReply.iv, fetchedReply.auth_tag), 'Reply child message');
+
+    // Delete parent message and ensure reply message still retains reply_to_id (for "Deleted message" UI state)
+    db.prepare('DELETE FROM messages WHERE id = ?').run(parentMsgId);
+    const afterParentDeleted = db.prepare('SELECT id, reply_to_id FROM messages WHERE id = ?').get(replyMsgId) as any;
+    assert.ok(afterParentDeleted);
+    assert.strictEqual(afterParentDeleted.reply_to_id, parentMsgId);
+
+    // Cleanup
+    db.prepare('DELETE FROM users WHERE id IN (?, ?)').run(userId, adminId);
   });
 });

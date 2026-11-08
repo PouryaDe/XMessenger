@@ -50,6 +50,7 @@ export function initDatabase() {
       created_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       is_read INTEGER DEFAULT 0,
+      reply_to_id TEXT,
       FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -57,6 +58,13 @@ export function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_messages_expires_at ON messages(expires_at);
     CREATE INDEX IF NOT EXISTS idx_messages_participants ON messages(sender_id, recipient_id);
   `);
+
+  // Ensure reply_to_id column exists for existing databases
+  try {
+    db.exec('ALTER TABLE messages ADD COLUMN reply_to_id TEXT;');
+  } catch (_) {
+    // Column already exists
+  }
 
   // 3. Push Subscriptions table
   db.exec(`

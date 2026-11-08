@@ -1,5 +1,5 @@
 // XMessenger PWA Service Worker (Automated Build Stamping)
-const BUILD_VERSION = 'vmw7916hv-20261108';
+const BUILD_VERSION = 'vmw79mmuq-20261108';
 const CACHE_NAME = 'xmessenger-' + BUILD_VERSION;
 
 const PRECACHE_ASSETS = [

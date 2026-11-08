@@ -9,22 +9,39 @@ import {
   Flame, 
   Copy,
   X,
-  Download
+  Download,
+  Reply
 } from 'lucide-react';
 
 interface Props {
   message: Message;
   isOwn: boolean;
   onDelete: (id: string) => void;
+  onReply?: (message: Message) => void;
+  repliedMessage?: Message | null;
+  repliedSenderName?: string;
+  onScrollToMessage?: (id: string) => void;
+  isHighlighted?: boolean;
 }
 
-export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
+export const MessageItem: React.FC<Props> = ({
+  message,
+  isOwn,
+  onDelete,
+  onReply,
+  repliedMessage,
+  repliedSenderName,
+  onScrollToMessage,
+  isHighlighted = false
+}) => {
   const { t } = useTranslation();
   const [timeLeft, setTimeLeft] = useState<string>('');
   const [copied, setCopied] = useState(false);
   const [showMenu, setShowMenu] = useState(false);
   const [menuDirection, setMenuDirection] = useState<'up' | 'down'>('up');
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [swipeOffset, setSwipeOffset] = useState(0);
+  const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const menuRef = useRef<HTMLDivElement>(null);
   const bubbleRef = useRef<HTMLDivElement>(null);
 
@@ -32,6 +49,15 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
   const imageMatch = message.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
   const imageUrl = imageMatch ? imageMatch[1] : null;
   const caption = imageMatch ? (imageMatch[2] || '').trim() : message.text;
+
+  // Parse replied message preview if present
+  const repliedImageMatch = repliedMessage?.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
+  const repliedImageUrl = repliedImageMatch ? repliedImageMatch[1] : null;
+  const repliedTextSnippet = repliedMessage
+    ? (repliedImageMatch
+        ? ((repliedImageMatch[2] || '').trim() || `📷 ${t('photo')}`)
+        : repliedMessage.text)
+    : '';
 
   // Close context menu on click outside
   useEffect(() => {
@@ -76,6 +102,12 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
     return () => clearInterval(interval);
   }, [message.expiresAt]);
 
+  const handleReplyClick = (e?: React.MouseEvent) => {
+    e?.stopPropagation();
+    setShowMenu(false);
+    onReply?.(message);
+  };
+
   const handleCopy = (e?: React.MouseEvent) => {
     e?.stopPropagation();
     navigator.clipboard.writeText(caption || message.text);
@@ -106,11 +138,10 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
       const spaceAbove = rect.top - topBoundary;
       const spaceBelow = bottomBoundary - rect.bottom;
 
-      // Context menu is ~95px tall with padding and margins.
-      // If space above is tight (< 115px), open downwards to prevent clipping under header/banner.
-      if (spaceAbove < 115) {
+      // Context menu with 3 actions is ~135px tall with padding and margins.
+      if (spaceAbove < 145) {
         setMenuDirection('down');
-      } else if (spaceBelow < 115) {
+      } else if (spaceBelow < 145) {
         setMenuDirection('up');
       } else {
         setMenuDirection(spaceAbove >= spaceBelow ? 'up' : 'down');
@@ -138,6 +169,36 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
     }
   };
 
+  // Mobile Touch Swipe-to-Reply Gesture
+  const handleTouchStart = (e: React.TouchEvent) => {
+    if (!onReply || e.touches.length !== 1) return;
+    touchStartRef.current = {
+      x: e.touches[0].clientX,
+      y: e.touches[0].clientY
+    };
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    if (!touchStartRef.current || !onReply) return;
+    const dx = e.touches[0].clientX - touchStartRef.current.x;
+    const dy = e.touches[0].clientY - touchStartRef.current.y;
+
+    // Only trigger horizontal swipe if movement is predominantly horizontal
+    if (Math.abs(dx) > 12 && Math.abs(dx) > Math.abs(dy) * 1.5) {
+      // Allow swiping towards the center of the chat
+      const clamped = Math.max(-56, Math.min(56, dx * 0.65));
+      setSwipeOffset(clamped);
+    }
+  };
+
+  const handleTouchEnd = () => {
+    if (Math.abs(swipeOffset) >= 38 && onReply) {
+      onReply(message);
+    }
+    setSwipeOffset(0);
+    touchStartRef.current = null;
+  };
+
   const formattedTime = new Date(message.createdAt).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit'
@@ -145,22 +206,91 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
 
   return (
     <div
+      id={`msg-${message.id}`}
       dir="ltr"
       className={`w-full flex my-1.5 px-3 animate-message select-none ${isOwn ? 'justify-end' : 'justify-start'} ${showMenu ? 'relative z-40' : 'relative z-0'}`}
     >
-      <div className="relative max-w-[85%] sm:max-w-md md:max-w-lg">
-        
+      <div
+        className="relative max-w-[85%] sm:max-w-md md:max-w-lg transition-transform duration-150 ease-out"
+        style={swipeOffset ? { transform: `translateX(${swipeOffset}px)` } : undefined}
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
+        {/* Swipe-to-Reply visual indicator */}
+        {Math.abs(swipeOffset) > 18 && (
+          <div
+            className={`absolute top-1/2 -translate-y-1/2 ${
+              swipeOffset > 0 ? '-left-9' : '-right-9'
+            } w-7 h-7 rounded-full bg-amber-500/20 text-amber-500 flex items-center justify-center transition-opacity`}
+          >
+            <Reply className="w-3.5 h-3.5" />
+          </div>
+        )}
+
         {/* Message Bubble Card with Modern Rounded Corners */}
         <div
           ref={bubbleRef}
           onContextMenu={handleContextMenu}
           onClick={handleBubbleClick}
+          onDoubleClick={(e) => {
+            e.stopPropagation();
+            onReply?.(message);
+          }}
           className={`relative px-4 py-2.5 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${
             isOwn
               ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.06] dark:bg-[#232936] dark:text-white dark:border-white/[0.08] rounded-[20px] rounded-br-[6px]'
               : 'bg-white text-slate-900 border-black/[0.04] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06] rounded-[20px] rounded-bl-[6px]'
+          } ${
+            isHighlighted
+              ? 'ring-2 ring-amber-500 dark:ring-amber-400 scale-[1.02]'
+              : ''
           }`}
         >
+          {/* Replied Message Quote Block */}
+          {message.replyToId && (
+            <div
+              dir="auto"
+              onClick={(e) => {
+                e.stopPropagation();
+                if (repliedMessage && onScrollToMessage) {
+                  onScrollToMessage(repliedMessage.id);
+                }
+              }}
+              className={`mb-2 px-3 py-1.5 rounded-xl border-s-[3px] border-amber-500 dark:border-amber-400 flex items-center gap-2.5 text-xs transition-colors ${
+                repliedMessage ? 'cursor-pointer' : 'cursor-default opacity-75'
+              } ${
+                isOwn
+                  ? 'bg-black/[0.05] hover:bg-black/[0.08] dark:bg-white/[0.07] dark:hover:bg-white/[0.11]'
+                  : 'bg-stone-100/90 hover:bg-stone-200/70 dark:bg-white/[0.05] dark:hover:bg-white/[0.09]'
+              }`}
+            >
+              {repliedImageUrl && (
+                <img
+                  src={repliedImageUrl}
+                  alt=""
+                  className="w-8 h-8 rounded-lg object-cover shrink-0 border border-black/5 dark:border-white/10"
+                />
+              )}
+              <div className="min-w-0 flex-1 overflow-hidden">
+                {repliedMessage ? (
+                  <>
+                    <div className="font-bold text-[11px] text-amber-600 dark:text-amber-400 truncate leading-tight">
+                      {repliedSenderName || t('reply')}
+                    </div>
+                    <div className="text-[11px] text-slate-600 dark:text-slate-300 truncate mt-0.5 leading-snug">
+                      {repliedTextSnippet}
+                    </div>
+                  </>
+                ) : (
+                  <div className="italic text-[11px] text-slate-400 dark:text-slate-500 py-0.5">
+                    {t('deletedMessage')}
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+
           {/* Image attachment if present */}
           {imageUrl && (
             <div className="relative mb-2 -mx-2 -mt-1 overflow-hidden rounded-2xl bg-black/5 dark:bg-black/20">
@@ -226,9 +356,19 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
               onClick={(e) => e.stopPropagation()}
               className={`absolute ${menuDirection === 'down' ? 'top-full mt-2' : 'bottom-full mb-2'} ${isOwn ? 'end-0' : 'start-0'} w-44 bg-white/95 dark:bg-[#151A24]/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-1.5 shadow-floating z-50 animate-message font-sans`}
             >
+              {onReply && (
+                <button
+                  onClick={handleReplyClick}
+                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
+                >
+                  <Reply className="w-4 h-4 text-amber-500 shrink-0" />
+                  <span>{t('reply')}</span>
+                </button>
+              )}
+
               <button
                 onClick={handleCopy}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer"
               >
                 <Copy className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0" />
                 <span>{t('copyText')}</span>
@@ -236,7 +376,7 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
 
               <button
                 onClick={handleDelete}
-                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors"
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors cursor-pointer"
               >
                 <Trash2 className="w-4 h-4 shrink-0" />
                 <span>{t('deleteForEveryone')}</span>

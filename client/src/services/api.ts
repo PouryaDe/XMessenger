@@ -42,6 +42,7 @@ export interface Message {
   expiresAt: string;
   isRead: boolean;
   isOwn?: boolean;
+  replyToId?: string | null;
 }
 
 export interface AdminSettings {
@@ -163,11 +164,11 @@ export const api = {
     return safeJson<{ messages: Message[] }>(res, 'Failed to fetch messages');
   },
 
-  async sendMessage(text: string, targetUserId?: string, ttlSeconds?: number): Promise<{ message: Message }> {
+  async sendMessage(text: string, targetUserId?: string, ttlSeconds?: number, replyToId?: string | null): Promise<{ message: Message }> {
     const res = await fetch(`${API_BASE}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
-      body: JSON.stringify({ text, targetUserId, ttlSeconds })
+      body: JSON.stringify({ text, targetUserId, ttlSeconds, replyToId })
     });
     return safeJson<{ message: Message }>(res, 'Failed to send message');
   },

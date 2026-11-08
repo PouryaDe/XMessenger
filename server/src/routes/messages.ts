@@ -92,7 +92,7 @@ export function createMessagesRouter(io?: Server) {
 
       // Fetch non-expired messages in chronological order
       const rows = db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -107,6 +107,7 @@ export function createMessagesRouter(io?: Server) {
         created_at: string;
         expires_at: string;
         is_read: number;
+        reply_to_id?: string | null;
       }>;
 
       // Mark incoming messages as read
@@ -141,7 +142,8 @@ export function createMessagesRouter(io?: Server) {
         createdAt: r.created_at,
         expiresAt: r.expires_at,
         isRead: Boolean(r.is_read),
-        isOwn: r.sender_id === currentUser.id
+        isOwn: r.sender_id === currentUser.id,
+        replyToId: r.reply_to_id || null
       }));
 
       res.json({ messages });
@@ -155,11 +157,15 @@ export function createMessagesRouter(io?: Server) {
   router.post('/', (req: AuthenticatedRequest, res) => {
     try {
       const currentUser = req.user!;
-      const { text, targetUserId, ttlSeconds } = req.body;
+      const { text, targetUserId, ttlSeconds, replyToId } = req.body;
 
       if (!text || typeof text !== 'string' || !text.trim()) {
         return res.status(400).json({ error: 'INVALID_TEXT', message: 'Message text cannot be empty' });
       }
+
+      const validReplyToId = (typeof replyToId === 'string' && replyToId.trim().length > 0 && replyToId.length <= 64)
+        ? replyToId.trim()
+        : null;
 
       let recipientId: string;
       if (currentUser.role === 'admin') {
@@ -195,9 +201,9 @@ export function createMessagesRouter(io?: Server) {
       const encrypted = encryptMessage(text.trim());
 
       db.prepare(`
-        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-      `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt);
+        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+      `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
 
       const messagePayload = {
         id: messageId,
@@ -206,7 +212,8 @@ export function createMessagesRouter(io?: Server) {
         text: text.trim(),
         createdAt,
         expiresAt,
-        isRead: false
+        isRead: false,
+        replyToId: validReplyToId
       };
 
       // Emit to sockets

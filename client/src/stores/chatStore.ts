@@ -21,7 +21,7 @@ interface ChatState {
   markConversationAsRead: (partnerId: string) => void;
   markMessagesReadByRecipient: (readerId: string) => void;
   syncReadUser: (userId: string) => void;
-  sendMessage: (text: string, targetUserId?: string, ttlSeconds?: number) => Promise<void>;
+  sendMessage: (text: string, targetUserId?: string, ttlSeconds?: number, replyToId?: string | null) => Promise<void>;
   deleteMessage: (messageId: string) => Promise<void>;
   addMessage: (msg: Message) => void;
   removeMessage: (messageId: string) => void;
@@ -111,7 +111,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
             cm.id !== nm.id ||
             cm.text !== nm.text ||
             cm.isRead !== nm.isRead ||
-            cm.expiresAt !== nm.expiresAt
+            cm.expiresAt !== nm.expiresAt ||
+            cm.replyToId !== nm.replyToId
           );
         });
 
@@ -165,7 +166,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }));
   },
 
-  sendMessage: async (text, targetUserId, ttlSeconds) => {
+  sendMessage: async (text, targetUserId, ttlSeconds, replyToId) => {
     const socket = getSocket();
     if (socket && socket.connected) {
       return new Promise<void>((resolve, reject) => {
@@ -176,7 +177,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           if (!settled) {
             settled = true;
             try {
-              const res = await api.sendMessage(text, targetUserId, ttlSeconds);
+              const res = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
               get().addMessage({ ...res.message, isOwn: true });
               resolve();
             } catch (err: any) {
@@ -185,7 +186,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           }
         }, 2500);
 
-        socket.emit('message:send', { text, targetUserId, ttlSeconds }, async (res: any) => {
+        socket.emit('message:send', { text, targetUserId, ttlSeconds, replyToId }, async (res: any) => {
           if (settled) return;
           settled = true;
           clearTimeout(timeout);
@@ -193,7 +194,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           if (res?.error) {
             console.warn('[Socket] message:send error from server:', res.error);
             try {
-              const apiRes = await api.sendMessage(text, targetUserId, ttlSeconds);
+              const apiRes = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
               get().addMessage({ ...apiRes.message, isOwn: true });
               resolve();
             } catch (err: any) {
@@ -209,7 +210,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       });
     } else {
       // Direct REST delivery
-      const res = await api.sendMessage(text, targetUserId, ttlSeconds);
+      const res = await api.sendMessage(text, targetUserId, ttlSeconds, replyToId);
       get().addMessage({ ...res.message, isOwn: true });
     }
   },

@@ -112,7 +112,7 @@ function setupSocketServer(io) {
             }
         });
         // Send Message via Socket
-        socket.on('message:send', ({ text, targetUserId, ttlSeconds }, callback) => {
+        socket.on('message:send', ({ text, targetUserId, ttlSeconds, replyToId }, callback) => {
             try {
                 if (user.status === 'pending') {
                     if (callback)
@@ -124,6 +124,9 @@ function setupSocketServer(io) {
                         callback({ error: 'EMPTY_TEXT' });
                     return;
                 }
+                const validReplyToId = (typeof replyToId === 'string' && replyToId.trim().length > 0 && replyToId.length <= 64)
+                    ? replyToId.trim()
+                    : null;
                 let recipientId;
                 if (user.role === 'admin') {
                     if (!targetUserId) {
@@ -152,9 +155,9 @@ function setupSocketServer(io) {
                 // Encrypt at rest
                 const encrypted = (0, crypto_js_1.encryptMessage)(text.trim());
                 index_js_2.db.prepare(`
-          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-        `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt);
+          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
                 const messagePayload = {
                     id: messageId,
                     senderId: user.id,
@@ -162,7 +165,8 @@ function setupSocketServer(io) {
                     text: text.trim(),
                     createdAt,
                     expiresAt,
-                    isRead: false
+                    isRead: false,
+                    replyToId: validReplyToId
                 };
                 // Emit to recipient and sender with exact message types
                 if (user.role === 'admin') {

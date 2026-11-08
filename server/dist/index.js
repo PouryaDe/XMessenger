@@ -54561,6 +54561,7 @@ function initDatabase() {
       created_at TEXT NOT NULL,
       expires_at TEXT NOT NULL,
       is_read INTEGER DEFAULT 0,
+      reply_to_id TEXT,
       FOREIGN KEY (sender_id) REFERENCES users(id) ON DELETE CASCADE,
       FOREIGN KEY (recipient_id) REFERENCES users(id) ON DELETE CASCADE
     );
@@ -54568,6 +54569,10 @@ function initDatabase() {
     CREATE INDEX IF NOT EXISTS idx_messages_expires_at ON messages(expires_at);
     CREATE INDEX IF NOT EXISTS idx_messages_participants ON messages(sender_id, recipient_id);
   `);
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN reply_to_id TEXT;");
+  } catch (_) {
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS push_subscriptions (
       id TEXT PRIMARY KEY,
@@ -55935,7 +55940,7 @@ function setupSocketServer(io3) {
         });
       }
     });
-    socket.on("message:send", ({ text, targetUserId, ttlSeconds }, callback) => {
+    socket.on("message:send", ({ text, targetUserId, ttlSeconds, replyToId }, callback) => {
       try {
         if (user.status === "pending") {
           if (callback) callback({ error: "ACCOUNT_PENDING_APPROVAL" });
@@ -55945,6 +55950,7 @@ function setupSocketServer(io3) {
           if (callback) callback({ error: "EMPTY_TEXT" });
           return;
         }
+        const validReplyToId = typeof replyToId === "string" && replyToId.trim().length > 0 && replyToId.length <= 64 ? replyToId.trim() : null;
         let recipientId;
         if (user.role === "admin") {
           if (!targetUserId) {
@@ -55968,9 +55974,9 @@ function setupSocketServer(io3) {
         const createdAt = nowTime.toISOString();
         const encrypted = encryptMessage(text.trim());
         db.prepare(`
-          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-        `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt);
+          INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+        `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
         const messagePayload = {
           id: messageId,
           senderId: user.id,
@@ -55978,7 +55984,8 @@ function setupSocketServer(io3) {
           text: text.trim(),
           createdAt,
           expiresAt,
-          isRead: false
+          isRead: false,
+          replyToId: validReplyToId
         };
         if (user.role === "admin") {
           io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
@@ -56680,7 +56687,7 @@ function createMessagesRouter(io3) {
       }
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const rows = db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -56711,7 +56718,8 @@ function createMessagesRouter(io3) {
         createdAt: r.created_at,
         expiresAt: r.expires_at,
         isRead: Boolean(r.is_read),
-        isOwn: r.sender_id === currentUser.id
+        isOwn: r.sender_id === currentUser.id,
+        replyToId: r.reply_to_id || null
       }));
       res.json({ messages });
     } catch (err) {
@@ -56722,10 +56730,11 @@ function createMessagesRouter(io3) {
   router.post("/", (req, res) => {
     try {
       const currentUser = req.user;
-      const { text, targetUserId, ttlSeconds } = req.body;
+      const { text, targetUserId, ttlSeconds, replyToId } = req.body;
       if (!text || typeof text !== "string" || !text.trim()) {
         return res.status(400).json({ error: "INVALID_TEXT", message: "Message text cannot be empty" });
       }
+      const validReplyToId = typeof replyToId === "string" && replyToId.trim().length > 0 && replyToId.length <= 64 ? replyToId.trim() : null;
       let recipientId;
       if (currentUser.role === "admin") {
         if (!targetUserId) {
@@ -56751,9 +56760,9 @@ function createMessagesRouter(io3) {
       const createdAt = now.toISOString();
       const encrypted = encryptMessage(text.trim());
       db.prepare(`
-        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0)
-      `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt);
+        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+      `).run(messageId, currentUser.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt, validReplyToId);
       const messagePayload = {
         id: messageId,
         senderId: currentUser.id,
@@ -56761,7 +56770,8 @@ function createMessagesRouter(io3) {
         text: text.trim(),
         createdAt,
         expiresAt,
-        isRead: false
+        isRead: false,
+        replyToId: validReplyToId
       };
       if (io3) {
         io3.to(`user:${recipientId}`).emit("message:new", messagePayload);

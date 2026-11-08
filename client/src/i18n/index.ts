@@ -230,7 +230,12 @@ const resources = {
       activeDevicesLabel: 'دستگاه‌های فعال ثبت‌شده شما',
       activeDevicesCount: '{{count}} دستگاه',
       activeDevicesCount_plural: '{{count}} دستگاه',
-      pushSystemInfo: 'سیستم پوش نوتیفیکیشن بر پایه استاندارد وب‌پوش، در صورت بسته بودن اپلیکیشن روی اندروید، دسکتاپ و آیفون (iOS 16.4 به بعد در حالت PWA) پیام‌ها را تحویل می‌دهد.'
+      pushSystemInfo: 'سیستم پوش نوتیفیکیشن بر پایه استاندارد وب‌پوش، در صورت بسته بودن اپلیکیشن روی اندروید، دسکتاپ و آیفون (iOS 16.4 به بعد در حالت PWA) پیام‌ها را تحویل می‌دهد.',
+      reply: 'پاسخ',
+      replyingTo: 'پاسخ به',
+      replyToSelf: 'شما',
+      deletedMessage: 'پیام حذف شده',
+      cancelReply: 'لغو پاسخ'
     }
   },
   en: {
@@ -462,7 +467,12 @@ const resources = {
       activeDevicesLabel: 'Your Active Registered Devices',
       activeDevicesCount: '{{count}} device',
       activeDevicesCount_plural: '{{count}} devices',
-      pushSystemInfo: 'The Web Push system delivers messages even when the app is closed on Android, Desktop, and iPhone (iOS 16.4+ in PWA mode).'
+      pushSystemInfo: 'The Web Push system delivers messages even when the app is closed on Android, Desktop, and iPhone (iOS 16.4+ in PWA mode).',
+      reply: 'Reply',
+      replyingTo: 'Replying to',
+      replyToSelf: 'You',
+      deletedMessage: 'Deleted message',
+      cancelReply: 'Cancel reply'
     }
   }
 };

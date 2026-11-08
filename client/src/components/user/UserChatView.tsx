@@ -8,7 +8,7 @@ import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
 import { getSocket } from '../../services/socket.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
-import { api } from '../../services/api.js';
+import { api, Message } from '../../services/api.js';
 import { 
   ShieldCheck, 
   Flame, 
@@ -17,7 +17,8 @@ import {
   Lock,
   X,
   Loader2,
-  ChevronDown
+  ChevronDown,
+  Reply
 } from 'lucide-react';
 
 export const UserChatView: React.FC = () => {
@@ -46,17 +47,45 @@ export const UserChatView: React.FC = () => {
   const [inputText, setInputText] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
+  const [replyingTo, setReplyingTo] = useState<Message | null>(null);
+  const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messageInputRef = useRef<HTMLInputElement>(null);
+  const highlightTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const isNearBottomRef = useRef(true);
   const initialScrollDoneRef = useRef(false);
   const prevMessagesLengthRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // Clear replyingTo if the referenced message was deleted
+  useEffect(() => {
+    if (replyingTo && !messages.some((m) => m.id === replyingTo.id)) {
+      setReplyingTo(null);
+    }
+  }, [messages, replyingTo]);
+
+  const handleReply = (msg: Message) => {
+    setReplyingTo(msg);
+    setTimeout(() => messageInputRef.current?.focus(), 50);
+  };
+
+  const handleScrollToMessage = (msgId: string) => {
+    const el = document.getElementById(`msg-${msgId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setHighlightedMsgId(msgId);
+      if (highlightTimeoutRef.current) clearTimeout(highlightTimeoutRef.current);
+      highlightTimeoutRef.current = setTimeout(() => {
+        setHighlightedMsgId(null);
+      }, 1800);
+    }
+  };
 
   const handleImageFile = (file: File) => {
     if (!file.type.startsWith('image/')) {
@@ -219,8 +248,10 @@ export const UserChatView: React.FC = () => {
 
     const text = inputText.trim();
     const currentImg = selectedImage;
+    const currentReplyId = replyingTo?.id || null;
 
     setInputText('');
+    setReplyingTo(null);
     handleRemoveImage();
     sendTyping(false);
 
@@ -229,9 +260,9 @@ export const UserChatView: React.FC = () => {
         setIsUploading(true);
         const uploadRes = await api.uploadChatImage(currentImg);
         const finalMessage = `[image:${uploadRes.url}]${text ? '\n' + text : ''}`;
-        await sendMessage(finalMessage);
+        await sendMessage(finalMessage, undefined, undefined, currentReplyId);
       } else {
-        await sendMessage(text);
+        await sendMessage(text, undefined, undefined, currentReplyId);
       }
       setTimeout(() => scrollToBottom('smooth'), 50);
     } catch (err) {
@@ -333,6 +364,12 @@ export const UserChatView: React.FC = () => {
           messages.map((msg, index) => {
             const prevMsg = index > 0 ? messages[index - 1] : null;
             const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+            const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
+            const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
+            const repliedSenderName = repliedMsg
+              ? (repliedIsOwn ? t('replyToSelf') : t('chatWithAdmin'))
+              : '';
+
             return (
               <React.Fragment key={msg.id}>
                 {showDateSeparator && <DateSeparator date={msg.createdAt} />}
@@ -340,6 +377,11 @@ export const UserChatView: React.FC = () => {
                   message={msg}
                   isOwn={msg.senderId === user?.id || msg.isOwn === true}
                   onDelete={deleteMessage}
+                  onReply={handleReply}
+                  repliedMessage={repliedMsg}
+                  repliedSenderName={repliedSenderName}
+                  onScrollToMessage={handleScrollToMessage}
+                  isHighlighted={highlightedMsgId === msg.id}
                 />
               </React.Fragment>
             );
@@ -363,6 +405,48 @@ export const UserChatView: React.FC = () => {
       {/* Floating Pill Input Bar with Telegram Send Button INSIDE the Pill */}
       <footer className="px-3.5 sm:px-6 pt-2 pb-safe shrink-0">
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
+          {/* Active Reply Preview Banner */}
+          {replyingTo && (() => {
+            const replyImgMatch = replyingTo.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
+            const replyImgUrl = replyImgMatch ? replyImgMatch[1] : null;
+            const replyPreviewText = replyImgMatch
+              ? ((replyImgMatch[2] || '').trim() || `📷 ${t('photo')}`)
+              : replyingTo.text;
+            const isReplyingSelf = replyingTo.senderId === user?.id || replyingTo.isOwn === true;
+
+            return (
+              <div className="mb-2 px-3.5 py-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-sm animate-message">
+                <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
+                  <Reply className="w-4 h-4 text-amber-500 shrink-0" />
+                  <div className="w-0.5 h-7 rounded-full bg-amber-500 shrink-0" />
+                  {replyImgUrl && (
+                    <img
+                      src={replyImgUrl}
+                      alt=""
+                      className="w-8 h-8 rounded-lg object-cover border border-black/5 dark:border-white/10 shrink-0"
+                    />
+                  )}
+                  <div className="min-w-0 flex-1 overflow-hidden text-xs">
+                    <p className="font-bold text-[11px] text-amber-600 dark:text-amber-400 truncate leading-tight">
+                      {t('replyingTo')} {isReplyingSelf ? t('replyToSelf') : t('chatWithAdmin')}
+                    </p>
+                    <p className="text-[11px] text-slate-600 dark:text-slate-300 truncate mt-0.5">
+                      {replyPreviewText}
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setReplyingTo(null)}
+                  className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-black/5 dark:hover:bg-white/5 transition-colors shrink-0 cursor-pointer"
+                  title={t('cancelReply')}
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+            );
+          })()}
+
           {/* Selected Image Preview Chip */}
           {imagePreviewUrl && (
             <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/5 dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-sm animate-message">
@@ -416,11 +500,17 @@ export const UserChatView: React.FC = () => {
 
             {/* Input Field with Auto-Direction & Paste Support */}
             <input
+              ref={messageInputRef}
               type="text"
               dir={isInputRtl ? 'rtl' : 'ltr'}
               value={inputText}
               onChange={handleInputChange}
               onPaste={handlePaste}
+              onKeyDown={(e) => {
+                if (e.key === 'Escape' && replyingTo) {
+                  setReplyingTo(null);
+                }
+              }}
               placeholder={selectedImage ? t('imageCaptionPlaceholder') : t('typeMessage')}
               className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-slate-100 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-sans px-3 ${
                 isInputRtl ? 'text-right' : 'text-left'
