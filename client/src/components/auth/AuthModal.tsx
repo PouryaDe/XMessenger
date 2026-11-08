@@ -56,31 +56,31 @@ export const AuthModal: React.FC = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ambient-canvas font-sans overflow-y-auto overscroll-none">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 bg-ambient-canvas font-sans overflow-y-auto overscroll-none py-6 sm:py-8">
       {/* Top action controls respecting iOS notch and Dynamic Island */}
       <div className="fixed top-[max(1.25rem,calc(env(safe-area-inset-top,0px)+0.85rem))] end-4 z-50 flex items-center gap-2">
         <LanguageToggle />
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative">
+      <div className="w-full max-w-[360px] sm:max-w-[400px] bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-black/[0.06] dark:border-white/[0.08] rounded-[28px] shadow-floating p-6 sm:p-7 relative my-auto">
         {/* Brand Header */}
-        <div className="flex flex-col items-center text-center mb-7">
-          <div className="relative mb-4 group">
+        <div className="flex flex-col items-center text-center mb-5">
+          <div className="relative mb-3.5 group shrink-0">
             {/* Ambient soft glow underneath */}
-            <div className="absolute -inset-1 rounded-[22px] sm:rounded-[24px] bg-gradient-to-tr from-amber-500/20 via-amber-400/10 to-blue-500/20 blur-md opacity-60 dark:opacity-30 group-hover:opacity-90 transition-opacity" />
-            <div className="relative w-13 h-13 sm:w-16 sm:h-16 rounded-[18px] sm:rounded-[20px] overflow-hidden border border-black/[0.06] dark:border-white/[0.10] shadow-md dark:shadow-[0_8px_20px_rgba(0,0,0,0.45)] bg-[#0E1218] flex items-center justify-center">
+            <div className="absolute -inset-1 rounded-[18px] sm:rounded-[20px] bg-gradient-to-tr from-amber-500/20 via-amber-400/10 to-blue-500/20 blur-md opacity-60 dark:opacity-30 group-hover:opacity-90 transition-opacity" />
+            <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-[16px] sm:rounded-[18px] overflow-hidden border border-black/[0.06] dark:border-white/[0.10] shadow-md dark:shadow-[0_6px_16px_rgba(0,0,0,0.45)] bg-[#0E1218] flex items-center justify-center shrink-0">
               <img 
                 src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
                 alt={appMeta?.appName || 'XMessenger'} 
-                className="w-full h-full object-cover" 
+                className="w-full h-full object-cover shrink-0" 
               />
             </div>
           </div>
-          <h1 className="text-2xl sm:text-[26px] font-extrabold tracking-tight text-slate-900 dark:text-white">
+          <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
             {appMeta?.appName || 'XMessenger'}
           </h1>
-          <p className="text-xs sm:text-sm text-slate-500 dark:text-slate-400 mt-1.5 max-w-xs leading-relaxed">
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs leading-relaxed">
             {t('tagline')}
           </p>
         </div>
@@ -94,7 +94,7 @@ export const AuthModal: React.FC = () => {
         )}
 
         {/* Form */}
-        <form onSubmit={handleSubmit} className="space-y-4 sm:space-y-4.5">
+        <form onSubmit={handleSubmit} className="space-y-3.5 sm:space-y-4">
           <div>
             <label className="block text-xs sm:text-sm font-semibold text-slate-700 dark:text-slate-300 mb-1.5 px-1 rtl:text-right ltr:text-left">
               {t('username')}
