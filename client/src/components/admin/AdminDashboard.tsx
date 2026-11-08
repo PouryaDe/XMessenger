@@ -10,6 +10,7 @@ import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getAvatarPalette } from '../../utils/avatar.js';
 import { 
   Paperclip,
   CheckCircle, 
@@ -339,11 +340,15 @@ export const AdminDashboard: React.FC = () => {
                 </button>
 
                 <div className="relative">
-                  <div className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-slate-100 flex items-center justify-center font-bold text-xs uppercase shadow-xs border border-white dark:border-white/[0.08] overflow-hidden">
+                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-xs overflow-hidden shrink-0 ${
+                    activeUser.avatarUrl
+                      ? 'bg-stone-200/60 dark:bg-white/[0.08] border border-black/5 dark:border-white/10'
+                      : getAvatarPalette(activeUser.username)
+                  }`}>
                     {activeUser.avatarUrl ? (
                       <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
                     ) : (
-                      <span>{activeUser.username.substring(0, 2)}</span>
+                      <span className="select-none tracking-wider">{activeUser.username.substring(0, 2)}</span>
                     )}
                   </div>
                   <div

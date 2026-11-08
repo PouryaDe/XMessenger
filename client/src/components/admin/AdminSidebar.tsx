@@ -6,6 +6,7 @@ import { api, AdminUserItem } from '../../services/api.js';
 import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
+import { getAvatarPalette } from '../../utils/avatar.js';
 import { 
   Users, 
   Search, 
@@ -121,7 +122,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             <span className="relative inline-flex items-center">
               <span>{t('allUsers')}</span>
               {unreadChatsCount > 0 && (
-                <span className="absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218] pointer-events-none">
+                <span className="absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-emerald-500 text-white text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218] pointer-events-none">
                   {unreadChatsCount}
                 </span>
               )}
@@ -195,17 +196,21 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                   className={`px-3 py-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
                     isSelected
                       ? 'bg-white dark:bg-white/[0.12] border border-black/10 dark:border-amber-400/35 shadow-xs backdrop-blur-md'
-                      : 'bg-white/50 dark:bg-white/[0.03] hover:bg-white/80 dark:hover:bg-white/[0.07] border border-black/[0.04] dark:border-white/[0.06] backdrop-blur-xs'
+                      : 'bg-white/65 dark:bg-white/[0.04] hover:bg-white/90 dark:hover:bg-white/[0.08] border border-black/[0.06] dark:border-white/[0.06] backdrop-blur-xs'
                   }`}
                 >
-                  <div className="flex items-center gap-2.5 overflow-hidden">
+                  <div className="flex items-center gap-2.5 overflow-hidden min-w-0">
                     {/* Avatar with status indicator */}
                     <div className="relative shrink-0">
-                      <div className="w-9 h-9 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-slate-200 flex items-center justify-center font-bold text-xs uppercase shadow-xs border border-white dark:border-white/[0.08] overflow-hidden">
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-xs overflow-hidden shrink-0 ${
+                        u.avatarUrl
+                          ? 'bg-stone-200/60 dark:bg-white/[0.08] border border-black/5 dark:border-white/10'
+                          : getAvatarPalette(u.username)
+                      }`}>
                         {u.avatarUrl ? (
                           <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
                         ) : (
-                          <span>{u.username.substring(0, 2)}</span>
+                          <span className="select-none tracking-wider">{u.username.substring(0, 2)}</span>
                         )}
                       </div>
                       <div
@@ -216,18 +221,18 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                     </div>
 
                     {/* Username & Last message snippet */}
-                    <div className="overflow-hidden">
+                    <div className="overflow-hidden min-w-0">
                       <div className="flex items-center gap-1.5">
                         <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
                           {u.username}
                         </span>
                         {u.status === 'pending' && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">
                             {t('statusPending')}
                           </span>
                         )}
                         {u.status === 'banned' && (
-                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold shrink-0">
                             {t('bannedUsers')}
                           </span>
                         )}
@@ -250,17 +255,24 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                     </div>
                   </div>
 
-                  {/* Unread badge & timestamp */}
-                  <div className="flex flex-col items-end shrink-0 gap-1 text-[10px]">
-                    {u.unreadCount && u.unreadCount > 0 ? (
-                      <span className="px-1.5 py-0.2 rounded-full bg-slate-900 text-white dark:bg-white dark:text-slate-900 font-bold text-[9px]">
-                        {u.unreadCount}
-                      </span>
-                    ) : null}
-                    {u.lastMessage && (
-                      <span className="text-slate-400 font-sans text-[10px]">
+                  {/* Timestamp (top) & Telegram-style Unread badge (bottom) */}
+                  <div className="flex flex-col items-end justify-between shrink-0 self-stretch py-0.5 min-w-[50px]">
+                    {/* Top: Timestamp (always aligned with contact username) */}
+                    {u.lastMessage ? (
+                      <span className="text-slate-400 dark:text-slate-400 font-sans text-[10px] leading-tight select-none">
                         {new Date(u.lastMessage.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                       </span>
+                    ) : (
+                      <span className="h-3" />
+                    )}
+
+                    {/* Bottom: Telegram-style vibrant unread badge (aligned with message preview) */}
+                    {u.unreadCount && u.unreadCount > 0 ? (
+                      <span className="min-w-[19px] h-[19px] px-1.5 rounded-full bg-emerald-500 text-white text-[10px] font-bold flex items-center justify-center leading-none shadow-xs select-none">
+                        {u.unreadCount}
+                      </span>
+                    ) : (
+                      <span className="h-[19px]" />
                     )}
                   </div>
                 </div>

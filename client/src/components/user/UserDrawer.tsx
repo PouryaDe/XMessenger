@@ -7,6 +7,7 @@ import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { getAvatarPalette } from '../../utils/avatar.js';
 import { 
   getCurrentSubscription, 
   subscribeToPush, 
@@ -207,13 +208,17 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
                 type="button"
                 onClick={() => avatarInputRef.current?.click()}
                 disabled={isUploadingAvatar}
-                className="w-10 h-10 rounded-full bg-stone-100 dark:bg-white/[0.08] text-slate-800 dark:text-white flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] text-xs uppercase overflow-hidden relative group/avatar focus:outline-none cursor-pointer"
+                className={`w-10 h-10 rounded-full flex items-center justify-center font-bold shadow-xs text-xs uppercase overflow-hidden relative group/avatar focus:outline-none cursor-pointer ${
+                  user?.avatarUrl
+                    ? 'bg-stone-200/60 dark:bg-white/[0.08] border border-black/5 dark:border-white/[0.09]'
+                    : getAvatarPalette(user?.username)
+                }`}
                 title={t('uploadAvatar')}
               >
                 {user?.avatarUrl ? (
                   <img src={user.avatarUrl} alt={user.username} className="w-full h-full object-cover" />
                 ) : (
-                  <span>{user?.username.substring(0, 2)}</span>
+                  <span className="select-none tracking-wider">{user?.username.substring(0, 2)}</span>
                 )}
                 {/* Camera Overlay on Hover */}
                 <div className="absolute inset-0 bg-black/40 text-white flex items-center justify-center opacity-0 group-hover/avatar:opacity-100 transition-opacity">

@@ -190,8 +190,23 @@ This design system contract defines the visual identity, color harmony, typograp
 - **Top-Corner Floating Badges**:
   - Badges must be styled as small circular/pill indicators floating at the top-left of the text label in RTL (top-right in LTR): `absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218]`.
 - **Targeted Notification Scopes**:
-  - **All Chats Tab (`all`)**: Display only the count of unread chats (`unreadChatsCount`), and only when `> 0`. Styled with `bg-slate-900 text-white dark:bg-white dark:text-slate-900`.
+  - **All Chats Tab (`all`)**: Display only the count of unread chats (`unreadChatsCount`), and only when `> 0`. Styled with Telegram emerald indicator `bg-emerald-500 text-white`.
   - **Pending Approval Tab (`pending`)**: Display only pending approval users count (`pendingCount`), and only when `> 0`. Styled with amber indicator `bg-amber-500 text-white`.
   - **Active (`active`) & Banned (`banned`) Tabs**: Never display numerical count badges.
+
+---
+
+## 11. Chat List Layout, Unread Badges & Avatar Identity Standard
+
+- **Deterministic Avatar Color Harmony**:
+  - **CRITICAL UX RULE**: Initials avatars must NEVER use pale gray `bg-stone-100` with invisible white borders, which blend into light mode linen cards (`bg-white/50` on `#DFDDD6`).
+  - Always use `getAvatarPalette(username)` to deterministically assign vibrant, high-contrast, distinct pastel colors with defined borders in light mode (`bg-*-100 text-*-800 border-*-300/80`) and frosted neon tints in dark mode (`dark:bg-*-500/20 dark:text-*-300 dark:border-*-500/30`).
+- **Chat Row Alignment & Visual Hierarchy**:
+  - **Top Row (Start to End)**: Contact username and status pills on start side; **Message Timestamp** (`text-[10px] text-slate-400 font-sans leading-tight`) strictly on the end side. This guarantees timestamps are positioned at the exact same horizontal baseline across all chats.
+  - **Bottom Row (Start to End)**: Last message snippet on start side; **Vibrant Unread Badge** strictly on the end side.
+- **Telegram Unread Message Badge**:
+  - Never use harsh solid black blobs (`bg-slate-900 text-white`) in light mode.
+  - Always use Telegram standard vibrant emerald green: `bg-emerald-500 text-white min-w-[19px] h-[19px] px-1.5 rounded-full text-[10px] font-bold flex items-center justify-center leading-none shadow-xs`.
+
 
 
