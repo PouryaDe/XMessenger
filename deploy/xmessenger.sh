@@ -265,20 +265,16 @@ while true; do
       echo -e "${YELLOW}Syncing and updating XMessenger to latest version...${NC}\n"
       cd "${BASE_DIR}"
       git config --global --add safe.directory "${BASE_DIR}" 2>/dev/null || true
-      git fetch origin main
-      git reset --hard origin/main
+      rm -f "${BASE_DIR}/.git/index.lock" "${BASE_DIR}/.git/FETCH_HEAD.lock" "${BASE_DIR}/.git/refs/heads/main.lock" 2>/dev/null || true
+      export GIT_TERMINAL_PROMPT=0
 
-      # Live symlinks
+      echo -e "${BLUE}▶ Fetching latest changes from GitHub...${NC}"
+      timeout 25 git fetch origin main 2>/dev/null || git fetch origin main 2>/dev/null || true
+      git reset --hard origin/main 2>/dev/null || true
+
+      chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" "${BASE_DIR}/deploy/autoupdate.sh" 2>/dev/null || true
       ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
       ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
-      chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" 2>/dev/null || true
-
-      # Explicit injection
-      echo -e "${BLUE}Copying client and server dist directly into containers...${NC}"
-      docker cp client/dist/. xmessenger-xchat-iranistream-com:/app/client-dist/ 2>/dev/null || true
-      docker cp server/dist/. xmessenger-xchat-iranistream-com:/app/dist/ 2>/dev/null || true
-      docker restart xmessenger-xchat-iranistream-com 2>/dev/null || true
-      docker restart xmessenger-nginx 2>/dev/null || true
 
       bash "${BASE_DIR}/update.sh"
       read -p "Press Enter to continue..." dummy

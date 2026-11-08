@@ -38,21 +38,15 @@ echo -e "${NC}"
 # 1. Force sync with latest code from GitHub (immune to local merge conflicts)
 echo -e "${BLUE}[1/4] Syncing latest updates from GitHub...${NC}"
 git config --global --add safe.directory "${BASE_DIR}" 2>/dev/null || true
-git fetch origin main
-git reset --hard origin/main
+rm -f "${BASE_DIR}/.git/index.lock" "${BASE_DIR}/.git/FETCH_HEAD.lock" "${BASE_DIR}/.git/refs/heads/main.lock" 2>/dev/null || true
+export GIT_TERMINAL_PROMPT=0
+timeout 25 git fetch origin main 2>/dev/null || git fetch origin main 2>/dev/null || true
+git reset --hard origin/main 2>/dev/null || true
 
 # Ensure live symlinks for xmessenger and xupdate immediately
 ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
 chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" /usr/local/bin/xmessenger /usr/local/bin/xupdate 2>/dev/null || true
-
-# Explicit direct update for primary container
-if docker ps -a --format '{{.Names}}' | grep -q 'xmessenger-xchat-iranistream-com'; then
-  echo -e "${YELLOW}Injecting latest build directly into xmessenger-xchat-iranistream-com...${NC}"
-  docker cp client/dist/. xmessenger-xchat-iranistream-com:/app/client-dist/ 2>/dev/null || true
-  docker cp server/dist/. xmessenger-xchat-iranistream-com:/app/dist/ 2>/dev/null || true
-  docker restart xmessenger-xchat-iranistream-com 2>/dev/null || true
-fi
 
 # 2. Hot-deploy compiled assets directly into all running containers (Instant update)
 echo -e "\n${BLUE}[2/4] Live-updating all running messenger containers...${NC}"
@@ -82,13 +76,6 @@ for c in $CONTAINERS; do
     echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
     docker cp client/dist/. "${c}:/app/client-dist/"
     docker cp server/dist/. "${c}:/app/dist/"
-
-    # Check and install multer if missing in container
-    if ! docker exec "${c}" node -e "require('multer')" >/dev/null 2>&1; then
-      echo -e "${YELLOW}Installing upload dependencies inside container ${c}...${NC}"
-      docker exec "${c}" npm install --no-audit --no-fund multer >/dev/null 2>&1 || true
-    fi
-
     docker restart "${c}"
     echo -e "${GREEN}✓ Container ${c} updated and restarted!${NC}"
     UPDATED_COUNT=$((UPDATED_COUNT + 1))
