@@ -167,7 +167,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
       {/* Drawer content */}
       <div className={`relative w-[86vw] max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/[0.08] shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
         {/* Header */}
-        <div className="px-4 py-3.5 pt-safe border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between">
+        <div className="px-4 pb-3.5 pt-[max(0.875rem,calc(env(safe-area-inset-top,0px)+0.6rem))] border-b border-black/[0.06] dark:border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-3">
             {/* Clickable Profile Avatar with Upload Camera */}
             <div className="relative group">
@@ -395,7 +395,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
         </div>
 
         {/* Footer Logout & App Version */}
-        <div className="p-3.5 pb-safe border-t border-black/[0.06] dark:border-white/[0.06] flex flex-col gap-2">
+        <div className="px-3.5 pt-3.5 pb-[max(0.875rem,calc(env(safe-area-inset-bottom,0px)+0.5rem))] border-t border-black/[0.06] dark:border-white/[0.06] flex flex-col gap-2">
           <button
             onClick={logout}
             className="w-full py-2.5 px-3 rounded-xl bg-slate-900 text-white dark:bg-white dark:text-slate-900 text-xs font-bold transition-all shadow-xs hover:opacity-90 active:scale-98 flex items-center justify-center gap-2 cursor-pointer"

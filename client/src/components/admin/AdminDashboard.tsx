@@ -420,8 +420,8 @@ export const AdminDashboard: React.FC = () => {
       <div className={`${!activeUserId ? 'hidden sm:flex' : 'flex'} flex-1 flex-col h-full bg-transparent relative overflow-hidden`}>
         {activeUser ? (
           <>
-            {/* Top Chat Header */}
-            <header className="h-16 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/35 dark:bg-[#12161E]/60 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
+            {/* Top Chat Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
+            <header className="pt-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.6rem))] pb-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-white/40 dark:bg-[#12161E]/70 backdrop-blur-xl z-10 border-b border-black/[0.05] dark:border-white/[0.07]">
               <div className="flex items-center gap-3">
                 {/* Back button for mobile */}
                 <button
@@ -600,8 +600,8 @@ export const AdminDashboard: React.FC = () => {
               )}
             </div>
 
-            {/* Bottom Floating Pill Input Area */}
-            <footer className="px-3 sm:px-6 pt-1.5 pb-safe shrink-0">
+            {/* Bottom Docked Input Area with frosted glass spanning into safe-area */}
+            <footer className="px-3 sm:px-6 pt-2 pb-[max(0.65rem,calc(env(safe-area-inset-bottom,0px)+0.45rem))] shrink-0 bg-white/70 dark:bg-[#12161E]/80 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.08]">
               <form
                 onSubmit={handleSend}
                 className="max-w-3xl mx-auto"

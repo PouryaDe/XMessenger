@@ -350,8 +350,8 @@ export const UserChatView: React.FC = () => {
   return (
     <div className="relative flex flex-col flex-1 h-full min-h-0 w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden font-sans">
       
-      {/* Top Header */}
-      <header className="h-16 px-4 sm:px-5 flex items-center justify-between shrink-0 bg-white/45 dark:bg-[#12161E]/70 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.08] z-10">
+      {/* Top Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
+      <header className="pt-[max(0.75rem,calc(env(safe-area-inset-top,0px)+0.6rem))] pb-2.5 px-4 sm:px-5 flex items-center justify-between shrink-0 bg-white/60 dark:bg-[#12161E]/80 backdrop-blur-xl border-b border-black/[0.05] dark:border-white/[0.08] z-10">
         {/* Admin Avatar & Live Status */}
         <div className="flex items-center gap-3">
           <div className="relative">
@@ -513,8 +513,8 @@ export const UserChatView: React.FC = () => {
         )}
       </div>
 
-      {/* Floating Pill Input Bar with Telegram Send Button INSIDE the Pill */}
-      <footer className="px-3 sm:px-6 pt-1.5 pb-safe shrink-0">
+      {/* Docked Telegram-style Input Bar with frosted glass spanning into safe-area */}
+      <footer className="px-3 sm:px-6 pt-2 pb-[max(0.65rem,calc(env(safe-area-inset-bottom,0px)+0.45rem))] shrink-0 bg-white/70 dark:bg-[#12161E]/80 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.08]">
         <form onSubmit={handleSend} className="max-w-xl mx-auto">
           {/* Active Reply Preview Banner */}
           {replyingTo && (() => {
