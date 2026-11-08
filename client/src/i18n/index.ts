@@ -206,6 +206,9 @@ const resources = {
       lastSeenToday: 'آخرین بازدید امروز ساعت {{time}}',
       lastSeenYesterday: 'آخرین بازدید دیروز ساعت {{time}}',
       lastSeenAt: 'آخرین بازدید {{date}} ساعت {{time}}',
+      dateToday: 'امروز',
+      dateYesterday: 'دیروز',
+      scrollToBottom: 'رفتن به پیام‌های جدید',
       changeLanguage: 'تغییر زبان',
       onlyImagesAllowed: 'فقط فایل‌های تصویری مجاز هستند'
     }
@@ -415,6 +418,9 @@ const resources = {
       lastSeenToday: 'last seen today at {{time}}',
       lastSeenYesterday: 'last seen yesterday at {{time}}',
       lastSeenAt: 'last seen {{date}} at {{time}}',
+      dateToday: 'Today',
+      dateYesterday: 'Yesterday',
+      scrollToBottom: 'Scroll to bottom',
       changeLanguage: 'Change Language',
       onlyImagesAllowed: 'Only image files are allowed'
     }

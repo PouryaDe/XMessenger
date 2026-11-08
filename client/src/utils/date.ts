@@ -71,3 +71,55 @@ export function formatLastSeen(
     return i18n.t('lastSeenOffline');
   }
 }
+
+export function isSameDay(d1: Date | string, d2: Date | string): boolean {
+  try {
+    const date1 = typeof d1 === 'string' ? new Date(d1) : d1;
+    const date2 = typeof d2 === 'string' ? new Date(d2) : d2;
+    if (isNaN(date1.getTime()) || isNaN(date2.getTime())) return false;
+    return (
+      date1.getFullYear() === date2.getFullYear() &&
+      date1.getMonth() === date2.getMonth() &&
+      date1.getDate() === date2.getDate()
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function formatChatDateSeparator(dateIso: string, language?: string): string {
+  try {
+    const date = new Date(dateIso);
+    if (isNaN(date.getTime())) return '';
+
+    const now = new Date();
+    if (isSameDay(date, now)) {
+      return i18n.t('dateToday');
+    }
+
+    const yesterday = new Date(now);
+    yesterday.setDate(now.getDate() - 1);
+    if (isSameDay(date, yesterday)) {
+      return i18n.t('dateYesterday');
+    }
+
+    const lang = language || i18n.language || 'fa';
+    const locale = lang === 'fa' ? 'fa-IR' : 'en-US';
+    const isCurrentYear = date.getFullYear() === now.getFullYear();
+
+    if (isCurrentYear) {
+      return new Intl.DateTimeFormat(locale, {
+        month: 'long',
+        day: 'numeric'
+      }).format(date);
+    } else {
+      return new Intl.DateTimeFormat(locale, {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      }).format(date);
+    }
+  } catch {
+    return '';
+  }
+}

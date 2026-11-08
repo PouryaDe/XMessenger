@@ -96,11 +96,29 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   syncMessages: async () => {
-    const { activeUserId } = get();
+    const { activeUserId, messages: currentMessages } = get();
     try {
       const data = await api.getMessages(activeUserId || undefined);
-      // Merge silently without flickering loading state
-      set({ messages: data.messages });
+      const newMessages = data.messages || [];
+
+      // Check if messages have meaningfully changed before updating Zustand state
+      const hasChanged =
+        currentMessages.length !== newMessages.length ||
+        newMessages.some((nm, idx) => {
+          const cm = currentMessages[idx];
+          return (
+            !cm ||
+            cm.id !== nm.id ||
+            cm.text !== nm.text ||
+            cm.isRead !== nm.isRead ||
+            cm.expiresAt !== nm.expiresAt
+          );
+        });
+
+      if (hasChanged) {
+        set({ messages: newMessages });
+      }
+
       if (activeUserId) {
         set((state) => ({
           adminUsers: state.adminUsers.map((u) => 

@@ -7,8 +7,9 @@ import { APP_VERSION } from '../../config/version.js';
 import { AdminSidebar } from './AdminSidebar.js';
 import { AdminSettingsModal } from './AdminSettingsModal.js';
 import { MessageItem } from '../common/MessageItem.js';
+import { DateSeparator } from '../common/DateSeparator.js';
 import { getSocket } from '../../services/socket.js';
-import { formatLastSeen } from '../../utils/date.js';
+import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { 
   Paperclip,
@@ -19,7 +20,8 @@ import {
   UserX, 
   MessageSquare,
   X,
-  Loader2
+  Loader2,
+  ChevronDown
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -52,7 +54,12 @@ export const AdminDashboard: React.FC = () => {
   const [selectedImage, setSelectedImage] = useState<File | null>(null);
   const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
+  const [showScrollBottom, setShowScrollBottom] = useState(false);
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const isNearBottomRef = useRef(true);
+  const initialScrollDoneRef = useRef(false);
+  const prevMessagesLengthRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -186,10 +193,51 @@ export const AdminDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, [activeUserId]);
 
-  // Auto-scroll
+  // Reset scroll state when changing active chat user
   useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+    initialScrollDoneRef.current = false;
+    prevMessagesLengthRef.current = 0;
+    setShowScrollBottom(false);
+  }, [activeUserId]);
+
+  const handleScroll = () => {
+    const el = scrollContainerRef.current;
+    if (!el) return;
+    const distanceFromBottom = el.scrollHeight - el.scrollTop - el.clientHeight;
+    isNearBottomRef.current = distanceFromBottom <= 120;
+    setShowScrollBottom(distanceFromBottom > 160);
+  };
+
+  const scrollToBottom = (behavior: ScrollBehavior = 'smooth') => {
+    messagesEndRef.current?.scrollIntoView({ behavior });
+    isNearBottomRef.current = true;
+    setShowScrollBottom(false);
+  };
+
+  // Smart Auto-scroll (Preserves scroll position when reading history)
+  useEffect(() => {
+    if (!messages || messages.length === 0) {
+      prevMessagesLengthRef.current = 0;
+      return;
+    }
+
+    const isInitial = !initialScrollDoneRef.current;
+    const prevLen = prevMessagesLengthRef.current;
+    const hasNewMessages = messages.length > prevLen;
+    const lastMsg = messages[messages.length - 1];
+    const isOwnLastMsg = lastMsg?.senderId === user?.id || lastMsg?.isOwn === true;
+
+    if (isInitial) {
+      initialScrollDoneRef.current = true;
+      scrollToBottom('auto');
+    } else if (hasNewMessages && isOwnLastMsg) {
+      scrollToBottom('smooth');
+    } else if (isNearBottomRef.current) {
+      scrollToBottom('smooth');
+    }
+
+    prevMessagesLengthRef.current = messages.length;
+  }, [messages, user?.id]);
 
   const activeUser = adminUsers.find((u) => u.id === activeUserId);
 
@@ -217,6 +265,7 @@ export const AdminDashboard: React.FC = () => {
       } else {
         await sendMessage(text, activeUserId);
       }
+      setTimeout(() => scrollToBottom('smooth'), 50);
     } catch (err) {
       console.error('Failed to send:', err);
       alert(t('imageUploadFailed'));
@@ -402,7 +451,11 @@ export const AdminDashboard: React.FC = () => {
             </header>
 
             {/* Messages Area */}
-            <main className="flex-1 overflow-y-auto px-6 py-3 space-y-1">
+            <main 
+              ref={scrollContainerRef}
+              onScroll={handleScroll}
+              className="flex-1 overflow-y-auto px-6 py-3 space-y-1"
+            >
               {messages.length === 0 ? (
                 <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
                   <div className="w-16 h-16 rounded-3xl bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
@@ -416,17 +469,35 @@ export const AdminDashboard: React.FC = () => {
                   </p>
                 </div>
               ) : (
-                messages.map((msg) => (
-                  <MessageItem
-                    key={msg.id}
-                    message={msg}
-                    isOwn={msg.senderId === user?.id || msg.isOwn === true}
-                    onDelete={deleteMessage}
-                  />
-                ))
+                messages.map((msg, index) => {
+                  const prevMsg = index > 0 ? messages[index - 1] : null;
+                  const showDateSeparator = !prevMsg || !isSameDay(prevMsg.createdAt, msg.createdAt);
+                  return (
+                    <React.Fragment key={msg.id}>
+                      {showDateSeparator && <DateSeparator date={msg.createdAt} />}
+                      <MessageItem
+                        message={msg}
+                        isOwn={msg.senderId === user?.id || msg.isOwn === true}
+                        onDelete={deleteMessage}
+                      />
+                    </React.Fragment>
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </main>
+
+            {/* Floating Scroll to Bottom Button */}
+            {showScrollBottom && (
+              <button
+                type="button"
+                onClick={() => scrollToBottom('smooth')}
+                className="absolute bottom-20 sm:bottom-24 end-6 sm:end-8 z-30 w-10 h-10 rounded-full bg-white/95 dark:bg-[#1C222D]/95 text-slate-700 dark:text-slate-200 border border-black/[0.08] dark:border-white/[0.12] shadow-floating backdrop-blur-md flex items-center justify-center hover:scale-105 active:scale-95 transition-all animate-fade-in"
+                title={t('scrollToBottom')}
+              >
+                <ChevronDown className="w-5 h-5 text-slate-700 dark:text-slate-200" />
+              </button>
+            )}
 
             {/* Bottom Floating Pill Input Area */}
             <footer className="px-3.5 sm:px-6 pt-2 pb-safe shrink-0">
