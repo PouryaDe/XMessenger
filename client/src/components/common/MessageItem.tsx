@@ -94,11 +94,25 @@ export const MessageItem: React.FC<Props> = ({ message, isOwn, onDelete }) => {
   const calculateMenuDirection = () => {
     if (bubbleRef.current) {
       const rect = bubbleRef.current.getBoundingClientRect();
-      // Menu height + margins is ~105px. If space above is less than 135px, open downwards
-      if (rect.top < 135) {
+      const scrollParent = bubbleRef.current.closest('main');
+      const parentRect = scrollParent ? scrollParent.getBoundingClientRect() : null;
+
+      // Top boundary of visible scroll container (<main>), fallback to top banner/header offset (~170px)
+      const topBoundary = parentRect ? parentRect.top : 170;
+      const bottomBoundary = parentRect ? parentRect.bottom : (window.innerHeight - 80);
+
+      // Available space above and below the message bubble
+      const spaceAbove = rect.top - topBoundary;
+      const spaceBelow = bottomBoundary - rect.bottom;
+
+      // Context menu is ~95px tall with padding and margins.
+      // If space above is tight (< 115px), open downwards to prevent clipping under header/banner.
+      if (spaceAbove < 115) {
         setMenuDirection('down');
-      } else {
+      } else if (spaceBelow < 115) {
         setMenuDirection('up');
+      } else {
+        setMenuDirection(spaceAbove >= spaceBelow ? 'up' : 'down');
       }
     }
   };
