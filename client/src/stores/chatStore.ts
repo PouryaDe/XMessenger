@@ -52,6 +52,31 @@ const initialCachedMessages: Message[] = typeof window !== 'undefined' ? (() => 
   }
 })() : [];
 
+export const getAdminUserSortTime = (u: AdminUserItem): number => {
+  if (u.lastMessage?.createdAt) {
+    const t = new Date(u.lastMessage.createdAt).getTime();
+    if (!isNaN(t)) return t;
+  }
+  return 0;
+};
+
+export const sortAdminUsersByLastMessage = (users: AdminUserItem[]): AdminUserItem[] => {
+  return [...users].sort((a, b) => {
+    const timeA = getAdminUserSortTime(a);
+    const timeB = getAdminUserSortTime(b);
+
+    if (timeA > 0 && timeB > 0) {
+      return timeB - timeA;
+    }
+    if (timeA > 0 && timeB === 0) return -1;
+    if (timeA === 0 && timeB > 0) return 1;
+
+    const fallbackA = a.created_at ? new Date(a.created_at).getTime() : (a.last_seen ? new Date(a.last_seen).getTime() : 0);
+    const fallbackB = b.created_at ? new Date(b.created_at).getTime() : (b.last_seen ? new Date(b.last_seen).getTime() : 0);
+    return fallbackB - fallbackA;
+  });
+};
+
 export const useChatStore = create<ChatState>((set, get) => ({
   messages: initialCachedMessages,
   messagesByConversation: {},
@@ -99,7 +124,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const onlineMap: Record<string, boolean> = { ...onlineUsers };
     const lastSeenMap: Record<string, string> = { ...lastSeenUsers };
 
-    const sanitizedUsers = users.map((u) => {
+    const sanitizedUsers = sortAdminUsersByLastMessage(users.map((u) => {
       if (typeof u.isOnline === 'boolean') {
         onlineMap[u.id] = u.isOnline;
       }
@@ -111,7 +136,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
         return { ...u, unreadCount: 0 };
       }
       return u;
-    });
+    }));
 
     set({ adminUsers: sanitizedUsers, onlineUsers: onlineMap, lastSeenUsers: lastSeenMap });
   },
@@ -119,13 +144,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   addAdminUser: (user) => {
     set((state) => {
       const exists = state.adminUsers.some((u) => u.id === user.id);
+      let updated: AdminUserItem[];
       if (exists) {
-        return {
-          adminUsers: state.adminUsers.map((u) => u.id === user.id ? { ...u, ...user } : u)
-        };
+        updated = state.adminUsers.map((u) => u.id === user.id ? { ...u, ...user } : u);
+      } else {
+        updated = [user, ...state.adminUsers];
       }
       return {
-        adminUsers: [user, ...state.adminUsers]
+        adminUsers: sortAdminUsersByLastMessage(updated)
       };
     });
   },
@@ -533,7 +559,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
           ...state.messagesByConversation,
           [convKey]: newMessages
         },
-        adminUsers: updatedAdminUsers
+        adminUsers: sortAdminUsersByLastMessage(updatedAdminUsers)
       };
     });
   },

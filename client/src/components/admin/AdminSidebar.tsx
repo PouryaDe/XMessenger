@@ -1,7 +1,7 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
-import { useChatStore } from '../../stores/chatStore.js';
+import { useChatStore, sortAdminUsersByLastMessage } from '../../stores/chatStore.js';
 import { api, AdminUserItem } from '../../services/api.js';
 import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
@@ -34,14 +34,15 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
     }).catch(() => {});
   }, []);
 
-  // Filter users
+  // Filter and sort users by latest message timestamp DESC (most active conversations at top)
   const filteredUsers = useMemo(() => {
-    return adminUsers.filter((u) => {
+    const matched = adminUsers.filter((u) => {
       const matchesSearch = u.username.toLowerCase().includes(searchTerm.toLowerCase().trim());
       if (!matchesSearch) return false;
       if (filterTab === 'all') return true;
       return u.status === filterTab;
     });
+    return sortAdminUsersByLastMessage(matched);
   }, [adminUsers, searchTerm, filterTab]);
 
   const pendingCount = useMemo(() => {

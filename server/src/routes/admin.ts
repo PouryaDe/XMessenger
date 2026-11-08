@@ -122,6 +122,23 @@ export function createAdminRouter(io?: Server) {
         };
       });
 
+      // Sort users: conversations with messages first (by latest message timestamp DESC),
+      // followed by users with no messages yet (sorted by created_at DESC)
+      usersWithMeta.sort((a, b) => {
+        const timeA = a.lastMessage?.createdAt ? new Date(a.lastMessage.createdAt).getTime() : 0;
+        const timeB = b.lastMessage?.createdAt ? new Date(b.lastMessage.createdAt).getTime() : 0;
+
+        if (timeA > 0 && timeB > 0) {
+          return timeB - timeA;
+        }
+        if (timeA > 0 && timeB === 0) return -1;
+        if (timeA === 0 && timeB > 0) return 1;
+
+        const fallbackA = a.created_at ? new Date(a.created_at).getTime() : (a.last_seen ? new Date(a.last_seen).getTime() : 0);
+        const fallbackB = b.created_at ? new Date(b.created_at).getTime() : (b.last_seen ? new Date(b.last_seen).getTime() : 0);
+        return fallbackB - fallbackA;
+      });
+
       res.json({ users: usersWithMeta });
     } catch (err) {
       console.error('Error fetching admin users:', err);
