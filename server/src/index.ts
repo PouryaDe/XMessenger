@@ -6,7 +6,7 @@ import fs from 'fs';
 import { Server } from 'socket.io';
 import { config } from './config/index.js';
 import { initDatabase, getSettingValue } from './database/index.js';
-import { authRouter } from './routes/auth.js';
+import { createAuthRouter } from './routes/auth.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createMessagesRouter } from './routes/messages.js';
 import { pushRouter } from './routes/push.js';
@@ -41,7 +41,7 @@ app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 
 // 6. API Routes
-app.use('/api/auth', authRouter);
+app.use('/api/auth', createAuthRouter(io));
 app.use('/api/admin', createAdminRouter(io));
 app.use('/api/messages', createMessagesRouter(io));
 app.use('/api/push', pushRouter);

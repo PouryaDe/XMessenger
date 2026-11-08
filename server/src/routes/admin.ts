@@ -145,9 +145,10 @@ export function createAdminRouter(io?: Server) {
         return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
       }
 
-      // Notify user in real-time
+      // Notify user and admin room in real-time
       if (io) {
         io.to(`user:${id}`).emit('user:status_changed', { status });
+        io.to('room:admin').emit('user:status_changed', { userId: id, status });
       }
 
       res.json({ success: true, status });
@@ -172,6 +173,7 @@ export function createAdminRouter(io?: Server) {
 
       if (io) {
         io.to(`user:${id}`).emit('user:deleted');
+        io.to('room:admin').emit('user:deleted', { userId: id });
       }
 
       res.json({ success: true, message: 'User and all conversation history deleted' });

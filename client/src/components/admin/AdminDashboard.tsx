@@ -34,6 +34,9 @@ export const AdminDashboard: React.FC = () => {
     setActiveUserId, 
     adminUsers, 
     setAdminUsers, 
+    addAdminUser,
+    updateAdminUserStatus,
+    removeAdminUser,
     sendMessage, 
     deleteMessage, 
     addMessage, 
@@ -209,6 +212,27 @@ export const AdminDashboard: React.FC = () => {
       syncReadUser(userId);
     });
 
+    // Real-time user registration & pending approval listener
+    socket.on('user:registered', (newUser: AdminUserItem) => {
+      addAdminUser(newUser);
+      refreshUsers();
+    });
+
+    socket.on('user:pending_approval', (newUser: AdminUserItem) => {
+      addAdminUser(newUser);
+      refreshUsers();
+    });
+
+    socket.on('user:status_changed', ({ userId, status }: { userId: string; status: 'active' | 'pending' | 'banned' }) => {
+      updateAdminUserStatus(userId, status);
+      refreshUsers();
+    });
+
+    socket.on('user:deleted', ({ userId }: { userId: string }) => {
+      removeAdminUser(userId);
+      refreshUsers();
+    });
+
     return () => {
       socket.off('message:new');
       socket.off('message:sent');
@@ -220,6 +244,10 @@ export const AdminDashboard: React.FC = () => {
       socket.off('messages:read');
       socket.off('message:reaction');
       socket.off('conversation:read_sync');
+      socket.off('user:registered');
+      socket.off('user:pending_approval');
+      socket.off('user:status_changed');
+      socket.off('user:deleted');
     };
   }, [activeUserId, user?.id]);
 

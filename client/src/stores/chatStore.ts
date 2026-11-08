@@ -18,6 +18,9 @@ interface ChatState {
   // Actions
   setActiveUserId: (id: string | null) => void;
   setAdminUsers: (users: AdminUserItem[]) => void;
+  addAdminUser: (user: AdminUserItem) => void;
+  updateAdminUserStatus: (userId: string, status: 'active' | 'pending' | 'banned') => void;
+  removeAdminUser: (userId: string) => void;
   loadMessages: (targetUserId?: string) => Promise<void>;
   syncMessages: () => Promise<void>;
   markConversationAsRead: (partnerId: string) => void;
@@ -111,6 +114,35 @@ export const useChatStore = create<ChatState>((set, get) => ({
     });
 
     set({ adminUsers: sanitizedUsers, onlineUsers: onlineMap, lastSeenUsers: lastSeenMap });
+  },
+
+  addAdminUser: (user) => {
+    set((state) => {
+      const exists = state.adminUsers.some((u) => u.id === user.id);
+      if (exists) {
+        return {
+          adminUsers: state.adminUsers.map((u) => u.id === user.id ? { ...u, ...user } : u)
+        };
+      }
+      return {
+        adminUsers: [user, ...state.adminUsers]
+      };
+    });
+  },
+
+  updateAdminUserStatus: (userId, status) => {
+    set((state) => ({
+      adminUsers: state.adminUsers.map((u) => 
+        u.id === userId ? { ...u, status } : u
+      )
+    }));
+  },
+
+  removeAdminUser: (userId) => {
+    set((state) => ({
+      adminUsers: state.adminUsers.filter((u) => u.id !== userId),
+      activeUserId: state.activeUserId === userId ? null : state.activeUserId
+    }));
   },
 
   loadMessages: async (targetUserId) => {

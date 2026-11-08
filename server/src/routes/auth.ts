@@ -3,13 +3,15 @@ import { v4 as uuidv4 } from 'uuid';
 import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
+import { Server } from 'socket.io';
 import { config } from '../config/index.js';
 import { db, getSettingValue, updateSettingValue } from '../database/index.js';
 import { hashPassword, comparePassword } from '../utils/crypto.js';
 import { generateToken, authenticate, AuthenticatedRequest } from '../middleware/auth.js';
 import { isAnyAdminOnline } from '../socket/index.js';
 
-export const authRouter = Router();
+export function createAuthRouter(io?: Server) {
+  const authRouter = Router();
 
 // Setup Multer for User/Admin Avatar uploads
 const avatarsDir = path.join(config.dataDir, 'uploads', 'avatars');
@@ -122,6 +124,26 @@ authRouter.post('/register', async (req, res) => {
     };
 
     const token = generateToken(newUser);
+
+    // Real-time: Notify admin room instantly about new user registration / pending approval
+    if (io) {
+      const adminUserItem = {
+        id: userId,
+        username: trimmedUsername,
+        role: 'user',
+        status: initialStatus,
+        avatarUrl: undefined,
+        created_at: now,
+        last_seen: now,
+        lastMessage: null,
+        unreadCount: 0,
+        isOnline: false
+      };
+      io.to('room:admin').emit('user:registered', adminUserItem);
+      if (initialStatus === 'pending') {
+        io.to('room:admin').emit('user:pending_approval', adminUserItem);
+      }
+    }
 
     res.status(201).json({
       token,
@@ -307,3 +329,8 @@ authRouter.post('/change-password', authenticate, async (req: AuthenticatedReque
     res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to update password' });
   }
 });
+
+  return authRouter;
+}
+
+export const authRouter = createAuthRouter();
