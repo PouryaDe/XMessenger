@@ -42,9 +42,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
   }, [adminUsers]);
 
   return (
-    <aside className="w-full sm:w-80 md:w-96 h-full bg-white/65 dark:bg-[#0E121A]/75 backdrop-blur-2xl border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/[0.07] shadow-[1px_0_3px_rgba(0,0,0,0.03)] rtl:shadow-[-1px_0_3px_rgba(0,0,0,0.03)] flex flex-col shrink-0 font-sans z-20">
+    <aside className="w-full sm:w-80 md:w-96 h-full bg-white/45 dark:bg-[#0E1218]/50 backdrop-blur-2xl border-r rtl:border-r-0 rtl:border-l border-black/[0.06] dark:border-white/[0.08] shadow-[1px_0_3px_rgba(0,0,0,0.03)] rtl:shadow-[-1px_0_3px_rgba(0,0,0,0.03)] flex flex-col shrink-0 font-sans z-20">
       {/* Top Header */}
-      <div className="p-5 pt-safe border-b border-black/[0.05] dark:border-white/[0.07] flex items-center justify-between">
+      <div className="p-5 pt-safe border-b border-black/[0.05] dark:border-white/[0.08] flex items-center justify-between bg-white/30 dark:bg-[#0E1218]/40 backdrop-blur-xl">
         <div className="flex items-center gap-3">
           <div className="w-10 h-10 rounded-full bg-amber-50 dark:bg-white/[0.08] text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] shrink-0">
             <Users className="w-5 h-5" />
@@ -80,7 +80,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
       </div>
 
       {/* Modern Search & Segmented Filter Bar */}
-      <div className="px-4 pt-3 pb-3 space-y-2.5 border-b border-black/[0.04] dark:border-white/5">
+      <div className="px-4 pt-3 pb-3 space-y-2.5 border-b border-black/[0.04] dark:border-white/[0.06]">
         {/* Search Bar with Quick Clear Button */}
         <div className="relative flex items-center">
           <Search className="w-4 h-4 text-slate-400 absolute start-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -89,7 +89,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             placeholder={t('searchUsers')}
-            className="w-full h-10 ps-10 pe-9 rounded-2xl bg-black/[0.035] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] focus:bg-white dark:focus:bg-white/[0.08] text-xs text-slate-900 dark:text-white border border-black/[0.05] dark:border-white/[0.06] focus:border-stone-400 dark:focus:border-white/20 focus:outline-none transition-all placeholder:text-slate-400 font-sans shadow-none"
+            className="w-full h-10 ps-10 pe-9 rounded-2xl bg-black/[0.035] dark:bg-white/[0.05] hover:bg-black/[0.05] dark:hover:bg-white/[0.08] focus:bg-white dark:focus:bg-[#12161E] text-xs text-slate-900 dark:text-white border border-black/[0.05] dark:border-white/[0.08] focus:border-amber-500/50 dark:focus:border-amber-400/50 focus:outline-none transition-all placeholder:text-slate-400 font-sans shadow-none"
           />
           {searchTerm && (
             <button
@@ -102,7 +102,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
         </div>
 
         {/* Modern iOS / Telegram Segmented Control */}
-        <div className="grid grid-cols-4 p-1 rounded-2xl bg-black/[0.035] dark:bg-black/30 border border-black/[0.04] dark:border-white/5 select-none">
+        <div className="grid grid-cols-4 p-1 rounded-2xl bg-black/[0.035] dark:bg-black/40 border border-black/[0.04] dark:border-white/[0.06] select-none">
           <button
             onClick={() => setFilterTab('all')}
             className={`flex items-center justify-center gap-1 py-1.5 px-1 rounded-xl text-xs transition-all ${
@@ -172,8 +172,8 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                 onClick={() => onSelectUser(u)}
                 className={`px-3 py-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between gap-3 ${
                   isSelected
-                    ? 'bg-white dark:bg-white/[0.12] border border-black/10 dark:border-white/15 shadow-sm'
-                    : 'bg-white/70 dark:bg-white/[0.04] hover:bg-white dark:hover:bg-white/[0.08] border border-black/[0.04] dark:border-white/[0.05] shadow-[0_1px_2px_rgba(0,0,0,0.02)]'
+                    ? 'bg-white dark:bg-white/[0.12] border border-black/10 dark:border-amber-400/35 shadow-xs backdrop-blur-md'
+                    : 'bg-white/50 dark:bg-white/[0.03] hover:bg-white/80 dark:hover:bg-white/[0.07] border border-black/[0.04] dark:border-white/[0.06] backdrop-blur-xs'
                 }`}
               >
                 <div className="flex items-center gap-2.5 overflow-hidden">
@@ -187,7 +187,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                       )}
                     </div>
                     <div
-                      className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#0E121A] ${
+                      className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#0E1218] ${
                         isOnline ? 'bg-emerald-500' : 'bg-slate-300 dark:bg-slate-600'
                       }`}
                     />
@@ -248,7 +248,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
       </div>
 
       {/* Sidebar Footer with Version */}
-      <div className="p-3.5 border-t border-black/[0.04] dark:border-white/[0.06] flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 select-none shrink-0 bg-black/[0.01] dark:bg-white/[0.01]">
+      <div className="p-3.5 border-t border-black/[0.04] dark:border-white/[0.08] flex items-center justify-between text-[11px] text-slate-400 dark:text-slate-500 select-none shrink-0 bg-white/20 dark:bg-[#0E1218]/30 backdrop-blur-md">
         <span className="font-semibold tracking-tight text-slate-600 dark:text-slate-400">XMessenger</span>
         <span className="text-[10px] px-1.5 py-0.5 rounded-md bg-black/[0.04] dark:bg-white/[0.06] text-slate-500 dark:text-slate-400 font-bold">
           v{APP_VERSION}

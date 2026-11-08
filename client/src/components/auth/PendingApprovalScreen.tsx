@@ -33,7 +33,7 @@ export const PendingApprovalScreen: React.FC = () => {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E121A]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] p-8 text-center shadow-floating relative">
+      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] p-8 text-center shadow-floating relative">
         <div className="w-16 h-16 rounded-3xl bg-amber-50 dark:bg-white/[0.08] border border-stone-200/50 dark:border-white/[0.09] text-amber-500 mx-auto flex items-center justify-center mb-5 shadow-xs animate-pulse">
           <Clock className="w-8 h-8" />
         </div>

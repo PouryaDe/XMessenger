@@ -112,7 +112,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose }) => {
       />
 
       {/* Drawer content */}
-      <div className={`relative w-full max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-[#0E121A]/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/[0.08] shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
+      <div className={`relative w-full max-w-xs sm:max-w-sm h-full bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border-x border-black/[0.06] dark:border-white/[0.08] shadow-2xl flex flex-col z-10 font-sans ${i18n.language === 'fa' ? 'animate-drawer-left' : 'animate-drawer-right'}`}>
         {/* Header */}
         <div className="p-6 pt-safe border-b border-stone-200/50 dark:border-white/[0.06] flex items-center justify-between">
           <div className="flex items-center gap-3">

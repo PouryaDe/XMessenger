@@ -63,7 +63,7 @@ export const AuthModal: React.FC = () => {
         <ThemeToggle />
       </div>
 
-      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E121A]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative overflow-hidden">
+      <div className="w-full max-w-sm sm:max-w-md bg-white/95 dark:bg-[#0E1218]/95 backdrop-blur-2xl border border-stone-200/60 dark:border-white/[0.08] rounded-[32px] shadow-floating p-7 sm:p-9 relative overflow-hidden">
         {/* Soft Ambient Glow */}
         <div className="absolute -top-16 -right-16 w-36 h-36 bg-amber-300/20 dark:bg-amber-500/10 rounded-full blur-3xl pointer-events-none" />
         <div className="absolute -bottom-16 -left-16 w-36 h-36 bg-emerald-300/20 dark:bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
