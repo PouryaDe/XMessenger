@@ -444,14 +444,12 @@ export const UserChatView: React.FC = () => {
         </div>
       </div>
 
-      {/* Messages Stream with Ambient Gradient Fades */}
+      {/* Messages Stream */}
       <div className="relative flex-1 flex flex-col min-h-0 overflow-hidden">
-        <div className="pointer-events-none absolute top-0 inset-x-0 h-6 bg-gradient-to-b from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
-
         <main 
           ref={scrollContainerRef}
           onScroll={handleScroll}
-          className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 chat-fade-mask relative"
+          className="flex-1 overflow-y-auto px-2 sm:px-4 py-2 relative"
         >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
@@ -501,8 +499,6 @@ export const UserChatView: React.FC = () => {
           )}
           <div ref={messagesEndRef} />
         </main>
-
-        <div className="pointer-events-none absolute bottom-0 inset-x-0 h-6 bg-gradient-to-t from-[#DFDDD6]/90 via-[#DFDDD6]/35 to-transparent dark:from-[#0E1218]/90 dark:via-[#0E1218]/35 z-10" />
 
         {/* Floating Scroll to Bottom Button - Fixed directly above the input bar */}
         {showScrollBottom && (

@@ -168,12 +168,6 @@ html.dark body::before {
   padding-top: max(0.75rem, env(safe-area-inset-top, 0.75rem));
 }
 
-/* Telegram-style chat stream top and bottom smooth fade mask */
-.chat-fade-mask {
-  mask-image: linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%);
-  -webkit-mask-image: linear-gradient(to bottom, transparent 0px, black 24px, black calc(100% - 24px), transparent 100%);
-}
-
 /* Smooth message animations */
 @keyframes fadeInSlide {
   from {
