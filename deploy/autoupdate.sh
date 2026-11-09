@@ -45,6 +45,7 @@ check_and_update() {
     # 2. Update primary container xmessenger-xchat-iranistream-com
     if docker ps -a --format '{{.Names}}' | grep -q 'xmessenger-xchat-iranistream-com'; then
       echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AutoUpdate] Injecting dist into xmessenger-xchat-iranistream-com..."
+      docker cp VERSION xmessenger-xchat-iranistream-com:/app/VERSION 2>/dev/null || true
       docker cp client/dist/. xmessenger-xchat-iranistream-com:/app/client-dist/ 2>/dev/null || true
       docker cp server/dist/. xmessenger-xchat-iranistream-com:/app/dist/ 2>/dev/null || true
       docker restart xmessenger-xchat-iranistream-com >/dev/null 2>&1 || true
@@ -55,6 +56,7 @@ check_and_update() {
     for c in $CONTAINERS; do
       [ -z "$c" ] && continue
       [ "$c" == "xmessenger-xchat-iranistream-com" ] && continue
+      docker cp VERSION "${c}:/app/VERSION" 2>/dev/null || true
       docker cp client/dist/. "${c}:/app/client-dist/" 2>/dev/null || true
       docker cp server/dist/. "${c}:/app/dist/" 2>/dev/null || true
       docker restart "${c}" >/dev/null 2>&1 || true

@@ -18,9 +18,33 @@ const APP_VERSION = (() => {
     path.resolve(__dirname, '../../../VERSION')
   ];
   for (const p of candidates) {
-    if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8').trim();
+    if (fs.existsSync(p)) {
+      try {
+        const v = fs.readFileSync(p, 'utf-8').trim();
+        if (v) return v;
+      } catch {}
+    }
   }
-  throw new Error('VERSION file not found. Ensure VERSION file exists at project root.');
+
+  // Fallback 1: Read from client-dist/version.json
+  try {
+    const vJson = path.resolve(process.cwd(), 'client-dist/version.json');
+    if (fs.existsSync(vJson)) {
+      const data = JSON.parse(fs.readFileSync(vJson, 'utf-8'));
+      if (data.version) return data.version;
+    }
+  } catch {}
+
+  // Fallback 2: Read from package.json
+  try {
+    const pkgJson = path.resolve(process.cwd(), 'package.json');
+    if (fs.existsSync(pkgJson)) {
+      const pkg = JSON.parse(fs.readFileSync(pkgJson, 'utf-8'));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {}
+
+  return '2.2.1';
 })();
 
 // Ensure a fallback 32-byte key if none provided in development

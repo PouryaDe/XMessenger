@@ -21,10 +21,36 @@ const APP_VERSION = (() => {
         path_1.default.resolve(__dirname, '../../../VERSION')
     ];
     for (const p of candidates) {
-        if (fs_1.default.existsSync(p))
-            return fs_1.default.readFileSync(p, 'utf-8').trim();
+        if (fs_1.default.existsSync(p)) {
+            try {
+                const v = fs_1.default.readFileSync(p, 'utf-8').trim();
+                if (v)
+                    return v;
+            }
+            catch { }
+        }
     }
-    throw new Error('VERSION file not found. Ensure VERSION file exists at project root.');
+    // Fallback 1: Read from client-dist/version.json
+    try {
+        const vJson = path_1.default.resolve(process.cwd(), 'client-dist/version.json');
+        if (fs_1.default.existsSync(vJson)) {
+            const data = JSON.parse(fs_1.default.readFileSync(vJson, 'utf-8'));
+            if (data.version)
+                return data.version;
+        }
+    }
+    catch { }
+    // Fallback 2: Read from package.json
+    try {
+        const pkgJson = path_1.default.resolve(process.cwd(), 'package.json');
+        if (fs_1.default.existsSync(pkgJson)) {
+            const pkg = JSON.parse(fs_1.default.readFileSync(pkgJson, 'utf-8'));
+            if (pkg.version)
+                return pkg.version;
+        }
+    }
+    catch { }
+    return '2.2.1';
 })();
 // Ensure a fallback 32-byte key if none provided in development
 const DEFAULT_KEY = process.env.ENCRYPTION_KEY || crypto_1.default.createHash('sha256').update(process.env.JWT_SECRET || 'xmessenger-default-secret-key-2026').digest('hex');

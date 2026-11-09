@@ -245,15 +245,22 @@ export const AdminDashboard: React.FC = () => {
     try {
       if (currentImg) {
         setIsUploading(true);
-        const uploadRes = await api.uploadChatImage(currentImg);
+        let uploadRes;
+        try {
+          uploadRes = await api.uploadChatImage(currentImg);
+        } catch (uploadErr) {
+          console.error('Failed to upload image:', uploadErr);
+          alert(getErrorMessage(uploadErr, 'imageUploadFailed'));
+          return;
+        }
         const finalMessage = `[image:${uploadRes.url}]${text ? '\n' + text : ''}`;
         await sendMessage(finalMessage, activeUserId, undefined, currentReplyId);
       } else {
         await sendMessage(text, activeUserId, undefined, currentReplyId);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to send:', err);
-      alert(t('imageUploadFailed'));
+      alert(getErrorMessage(err, 'errSendMessage'));
     } finally {
       setIsUploading(false);
     }

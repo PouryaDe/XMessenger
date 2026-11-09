@@ -52726,9 +52726,31 @@ var APP_VERSION = (() => {
     import_path.default.resolve(__dirname, "../../../VERSION")
   ];
   for (const p of candidates) {
-    if (import_fs.default.existsSync(p)) return import_fs.default.readFileSync(p, "utf-8").trim();
+    if (import_fs.default.existsSync(p)) {
+      try {
+        const v = import_fs.default.readFileSync(p, "utf-8").trim();
+        if (v) return v;
+      } catch {
+      }
+    }
   }
-  throw new Error("VERSION file not found. Ensure VERSION file exists at project root.");
+  try {
+    const vJson = import_path.default.resolve(process.cwd(), "client-dist/version.json");
+    if (import_fs.default.existsSync(vJson)) {
+      const data = JSON.parse(import_fs.default.readFileSync(vJson, "utf-8"));
+      if (data.version) return data.version;
+    }
+  } catch {
+  }
+  try {
+    const pkgJson = import_path.default.resolve(process.cwd(), "package.json");
+    if (import_fs.default.existsSync(pkgJson)) {
+      const pkg = JSON.parse(import_fs.default.readFileSync(pkgJson, "utf-8"));
+      if (pkg.version) return pkg.version;
+    }
+  } catch {
+  }
+  return "2.2.1";
 })();
 var DEFAULT_KEY = process.env.ENCRYPTION_KEY || import_crypto.default.createHash("sha256").update(process.env.JWT_SECRET || "xmessenger-default-secret-key-2026").digest("hex");
 var config = {

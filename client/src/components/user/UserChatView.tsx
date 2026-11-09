@@ -7,6 +7,7 @@ import { DateSeparator } from '../common/DateSeparator.js';
 import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
+import { getErrorMessage } from '../../utils/errors.js';
 import { api, Message } from '../../services/api.js';
 import { 
   isPushSupported, 
@@ -266,15 +267,22 @@ export const UserChatView: React.FC = () => {
     try {
       if (currentImg) {
         setIsUploading(true);
-        const uploadRes = await api.uploadChatImage(currentImg);
+        let uploadRes;
+        try {
+          uploadRes = await api.uploadChatImage(currentImg);
+        } catch (uploadErr) {
+          console.error('Failed to upload image:', uploadErr);
+          alert(getErrorMessage(uploadErr, 'imageUploadFailed'));
+          return;
+        }
         const finalMessage = `[image:${uploadRes.url}]${text ? '\n' + text : ''}`;
         await sendMessage(finalMessage, undefined, undefined, currentReplyId);
       } else {
         await sendMessage(text, undefined, undefined, currentReplyId);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to send:', err);
-      alert(t('imageUploadFailed'));
+      alert(getErrorMessage(err, 'errSendMessage'));
     } finally {
       setIsUploading(false);
     }

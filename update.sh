@@ -86,6 +86,7 @@ for c in $CONTAINERS; do
   [ -z "$c" ] && continue
   if docker ps -a --format '{{.Names}}' | grep -q "^${c}$"; then
     echo -e "${YELLOW}Injecting latest build into container: ${c}...${NC}"
+    docker cp VERSION "${c}:/app/VERSION" 2>/dev/null || true
     docker cp client/dist/. "${c}:/app/client-dist/"
     docker cp server/dist/. "${c}:/app/dist/"
     docker restart "${c}"
