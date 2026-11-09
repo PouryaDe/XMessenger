@@ -1,2 +1,2 @@
-// Single source of truth for client-side app version
-export const APP_VERSION = typeof __APP_VERSION__ !== 'undefined' ? __APP_VERSION__ : '2.2.0';
+// Single source of truth for client-side app version (strictly injected from root VERSION file)
+export const APP_VERSION = __APP_VERSION__;

@@ -3,9 +3,12 @@ import react from '@vitejs/plugin-react';
 import fs from 'fs';
 import path from 'path';
 
-// Read version from root VERSION file
+// Read version strictly from root VERSION file (Single Source of Truth)
 const rootVersionPath = path.resolve(__dirname, '../VERSION');
-const appVersion = fs.existsSync(rootVersionPath) ? fs.readFileSync(rootVersionPath, 'utf-8').trim() : '2.1.0';
+if (!fs.existsSync(rootVersionPath)) {
+  throw new Error(`VERSION file missing at: ${rootVersionPath}`);
+}
+const appVersion = fs.readFileSync(rootVersionPath, 'utf-8').trim();
 
 function swVersionPlugin(): Plugin {
   return {

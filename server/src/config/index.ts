@@ -7,20 +7,20 @@ dotenv.config();
 
 const DATA_DIR = process.env.DATA_DIR || path.resolve(process.cwd(), 'data');
 
-// Read app version from VERSION file
+// Read app version strictly from the root VERSION file (Single Source of Truth)
 const APP_VERSION = (() => {
-  try {
-    const candidates = [
-      path.resolve(process.cwd(), '../VERSION'),
-      path.resolve(process.cwd(), './VERSION'),
-      path.resolve(__dirname, '../../../VERSION'),
-      path.resolve(__dirname, '../../VERSION')
-    ];
-    for (const p of candidates) {
-      if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8').trim();
-    }
-  } catch {}
-  return '2.2.0';
+  const candidates = [
+    path.resolve(process.cwd(), 'VERSION'),
+    path.resolve(process.cwd(), '../VERSION'),
+    path.resolve(__dirname, 'VERSION'),
+    path.resolve(__dirname, '../VERSION'),
+    path.resolve(__dirname, '../../VERSION'),
+    path.resolve(__dirname, '../../../VERSION')
+  ];
+  for (const p of candidates) {
+    if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8').trim();
+  }
+  throw new Error('VERSION file not found. Ensure VERSION file exists at project root.');
 })();
 
 // Ensure a fallback 32-byte key if none provided in development

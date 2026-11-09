@@ -52717,19 +52717,18 @@ var import_fs = __toESM(require("fs"));
 import_dotenv.default.config();
 var DATA_DIR = process.env.DATA_DIR || import_path.default.resolve(process.cwd(), "data");
 var APP_VERSION = (() => {
-  try {
-    const candidates = [
-      import_path.default.resolve(process.cwd(), "../VERSION"),
-      import_path.default.resolve(process.cwd(), "./VERSION"),
-      import_path.default.resolve(__dirname, "../../../VERSION"),
-      import_path.default.resolve(__dirname, "../../VERSION")
-    ];
-    for (const p of candidates) {
-      if (import_fs.default.existsSync(p)) return import_fs.default.readFileSync(p, "utf-8").trim();
-    }
-  } catch {
+  const candidates = [
+    import_path.default.resolve(process.cwd(), "VERSION"),
+    import_path.default.resolve(process.cwd(), "../VERSION"),
+    import_path.default.resolve(__dirname, "VERSION"),
+    import_path.default.resolve(__dirname, "../VERSION"),
+    import_path.default.resolve(__dirname, "../../VERSION"),
+    import_path.default.resolve(__dirname, "../../../VERSION")
+  ];
+  for (const p of candidates) {
+    if (import_fs.default.existsSync(p)) return import_fs.default.readFileSync(p, "utf-8").trim();
   }
-  return "2.2.0";
+  throw new Error("VERSION file not found. Ensure VERSION file exists at project root.");
 })();
 var DEFAULT_KEY = process.env.ENCRYPTION_KEY || import_crypto.default.createHash("sha256").update(process.env.JWT_SECRET || "xmessenger-default-secret-key-2026").digest("hex");
 var config = {

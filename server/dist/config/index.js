@@ -10,22 +10,21 @@ const crypto_1 = __importDefault(require("crypto"));
 const fs_1 = __importDefault(require("fs"));
 dotenv_1.default.config();
 const DATA_DIR = process.env.DATA_DIR || path_1.default.resolve(process.cwd(), 'data');
-// Read app version from VERSION file
+// Read app version strictly from the root VERSION file (Single Source of Truth)
 const APP_VERSION = (() => {
-    try {
-        const candidates = [
-            path_1.default.resolve(process.cwd(), '../VERSION'),
-            path_1.default.resolve(process.cwd(), './VERSION'),
-            path_1.default.resolve(__dirname, '../../../VERSION'),
-            path_1.default.resolve(__dirname, '../../VERSION')
-        ];
-        for (const p of candidates) {
-            if (fs_1.default.existsSync(p))
-                return fs_1.default.readFileSync(p, 'utf-8').trim();
-        }
+    const candidates = [
+        path_1.default.resolve(process.cwd(), 'VERSION'),
+        path_1.default.resolve(process.cwd(), '../VERSION'),
+        path_1.default.resolve(__dirname, 'VERSION'),
+        path_1.default.resolve(__dirname, '../VERSION'),
+        path_1.default.resolve(__dirname, '../../VERSION'),
+        path_1.default.resolve(__dirname, '../../../VERSION')
+    ];
+    for (const p of candidates) {
+        if (fs_1.default.existsSync(p))
+            return fs_1.default.readFileSync(p, 'utf-8').trim();
     }
-    catch { }
-    return '2.2.0';
+    throw new Error('VERSION file not found. Ensure VERSION file exists at project root.');
 })();
 // Ensure a fallback 32-byte key if none provided in development
 const DEFAULT_KEY = process.env.ENCRYPTION_KEY || crypto_1.default.createHash('sha256').update(process.env.JWT_SECRET || 'xmessenger-default-secret-key-2026').digest('hex');
