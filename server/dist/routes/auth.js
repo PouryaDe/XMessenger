@@ -47,6 +47,7 @@ function createAuthRouter(io) {
     authRouter.get('/meta', (req, res) => {
         const regEnabled = (0, index_js_2.getSettingValue)('registration_enabled', 'true') === 'true';
         const requireApproval = (0, index_js_2.getSettingValue)('require_approval', 'true') === 'true';
+        const systemEnabled = (0, index_js_2.getSettingValue)('system_enabled', 'true') === 'true';
         const defaultTtl = parseInt((0, index_js_2.getSettingValue)('default_ttl_seconds', '86400'), 10);
         const appName = (0, index_js_2.getSettingValue)('app_name', 'XMessenger');
         const pwaShortName = (0, index_js_2.getSettingValue)('pwa_short_name', 'XMessenger');
@@ -65,6 +66,7 @@ function createAuthRouter(io) {
         res.json({
             registrationEnabled: regEnabled,
             requireApproval,
+            systemEnabled,
             defaultTtl,
             appName,
             pwaShortName,
@@ -196,19 +198,23 @@ function createAuthRouter(io) {
         const userRow = index_js_2.db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(req.user.id);
         const adminRow = index_js_2.db.prepare("SELECT id, username, last_seen, avatar_url FROM users WHERE role = 'admin'").get();
         const adminAvatarSetting = (0, index_js_2.getSettingValue)('admin_avatar_url', '');
+        const systemEnabled = (0, index_js_2.getSettingValue)('system_enabled', 'true') === 'true';
+        const showAdminPresence = (0, index_js_2.getSettingValue)('show_admin_presence', 'true') === 'true';
         res.json({
             user: userRow ? {
                 id: userRow.id,
                 username: userRow.username,
                 role: userRow.role,
                 status: userRow.status,
-                avatarUrl: userRow.avatar_url || undefined
+                avatarUrl: userRow.avatar_url || (userRow.role === 'admin' ? adminAvatarSetting : undefined) || undefined
             } : req.user,
+            systemEnabled,
             adminInfo: req.user.role === 'user' && adminRow ? {
                 id: adminRow.id,
                 username: adminRow.username,
-                lastSeen: adminRow.last_seen,
-                isOnline: (0, index_js_3.isAnyAdminOnline)(),
+                lastSeen: showAdminPresence ? adminRow.last_seen : null,
+                isOnline: showAdminPresence ? (0, index_js_3.isAnyAdminOnline)() : false,
+                showPresence: showAdminPresence,
                 avatarUrl: adminRow.avatar_url || adminAvatarSetting || undefined
             } : null
         });

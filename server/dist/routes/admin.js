@@ -58,7 +58,7 @@ function createAdminRouter(io) {
     router.get('/users', (req, res) => {
         try {
             const users = index_js_2.db.prepare(`
-        SELECT id, username, role, status, created_at, last_seen, avatar_url
+        SELECT id, username, role, status, created_at, last_seen, avatar_url, category
         FROM users
         WHERE role = 'user'
         ORDER BY last_seen DESC
@@ -100,6 +100,7 @@ function createAdminRouter(io) {
                     created_at: user.created_at,
                     last_seen: user.last_seen,
                     avatarUrl: user.avatar_url || undefined,
+                    category: user.category || null,
                     isOnline: (0, index_js_3.isUserOnline)(user.id),
                     unreadCount: unreadCount ? unreadCount.count : 0,
                     lastMessage
@@ -142,8 +143,22 @@ function createAdminRouter(io) {
             }
             // Notify user and admin room in real-time
             if (io) {
-                io.to(`user:${id}`).emit('user:status_changed', { status });
+                io.to(`user:${id}`).emit('user:status_changed', { userId: id, status });
                 io.to('room:admin').emit('user:status_changed', { userId: id, status });
+                // If user is banned, disconnect active sockets after notifying
+                if (status === 'banned') {
+                    const userRoom = `user:${id}`;
+                    const socketsInRoom = io.sockets.adapter.rooms.get(userRoom);
+                    if (socketsInRoom) {
+                        for (const socketId of socketsInRoom) {
+                            const clientSocket = io.sockets.sockets.get(socketId);
+                            if (clientSocket) {
+                                clientSocket.emit('user:status_changed', { userId: id, status: 'banned' });
+                                clientSocket.disconnect(true);
+                            }
+                        }
+                    }
+                }
             }
             res.json({ success: true, status });
         }
@@ -172,10 +187,81 @@ function createAdminRouter(io) {
             res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to delete user' });
         }
     });
+    // 3.5. Get encrypted admin notes for user (Admin Only)
+    router.get('/users/:id/notes', (req, res) => {
+        try {
+            const { id } = req.params;
+            const row = index_js_2.db.prepare('SELECT ciphertext, iv, auth_tag, updated_at FROM admin_user_notes WHERE user_id = ?').get(id);
+            if (!row) {
+                return res.json({ notes: '', updatedAt: null });
+            }
+            const notes = (0, crypto_js_1.decryptMessage)(row.ciphertext, row.iv, row.auth_tag);
+            res.json({ notes, updatedAt: row.updated_at });
+        }
+        catch (err) {
+            console.error('Failed to get user notes:', err);
+            res.status(500).json({ error: 'FAILED_TO_GET_NOTES', message: 'Could not fetch user notes' });
+        }
+    });
+    // 3.6. Update encrypted admin notes for user (Admin Only)
+    router.put('/users/:id/notes', (req, res) => {
+        try {
+            const { id } = req.params;
+            const { notes } = req.body;
+            const targetUser = index_js_2.db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+            if (!targetUser) {
+                return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
+            }
+            const text = typeof notes === 'string' ? notes.trim() : '';
+            const now = new Date().toISOString();
+            if (!text) {
+                index_js_2.db.prepare('DELETE FROM admin_user_notes WHERE user_id = ?').run(id);
+                return res.json({ success: true, notes: '', updatedAt: null });
+            }
+            const encrypted = (0, crypto_js_1.encryptMessage)(text);
+            index_js_2.db.prepare(`
+        INSERT INTO admin_user_notes (user_id, ciphertext, iv, auth_tag, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+          ciphertext = excluded.ciphertext,
+          iv = excluded.iv,
+          auth_tag = excluded.auth_tag,
+          updated_at = excluded.updated_at
+      `).run(id, encrypted.ciphertext, encrypted.iv, encrypted.authTag, now);
+            res.json({ success: true, notes: text, updatedAt: now });
+        }
+        catch (err) {
+            console.error('Failed to update user notes:', err);
+            res.status(500).json({ error: 'FAILED_TO_SAVE_NOTES', message: 'Could not save user notes' });
+        }
+    });
+    // 3.7. Update user category (Admin Only)
+    router.put('/users/:id/category', (req, res) => {
+        try {
+            const { id } = req.params;
+            const { category } = req.body;
+            const targetUser = index_js_2.db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+            if (!targetUser) {
+                return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
+            }
+            const sanitizedCategory = (typeof category === 'string' && category.trim()) ? category.trim() : null;
+            index_js_2.db.prepare('UPDATE users SET category = ? WHERE id = ?').run(sanitizedCategory, id);
+            if (io) {
+                io.to('room:admin').emit('user:category_updated', { userId: id, category: sanitizedCategory });
+            }
+            res.json({ success: true, category: sanitizedCategory });
+        }
+        catch (err) {
+            console.error('Failed to update user category:', err);
+            res.status(500).json({ error: 'FAILED_TO_UPDATE_CATEGORY', message: 'Could not update user category' });
+        }
+    });
     // 4. Get System Settings & Branding
     router.get('/settings', (req, res) => {
         const regEnabled = (0, index_js_2.getSettingValue)('registration_enabled', 'true') === 'true';
         const requireApproval = (0, index_js_2.getSettingValue)('require_approval', 'true') === 'true';
+        const systemEnabled = (0, index_js_2.getSettingValue)('system_enabled', 'true') === 'true';
+        const showAdminPresence = (0, index_js_2.getSettingValue)('show_admin_presence', 'true') === 'true';
         const defaultTtlSeconds = parseInt((0, index_js_2.getSettingValue)('default_ttl_seconds', '86400'), 10);
         const appName = (0, index_js_2.getSettingValue)('app_name', 'XMessenger');
         const pwaShortName = (0, index_js_2.getSettingValue)('pwa_short_name', 'XMessenger');
@@ -184,6 +270,8 @@ function createAdminRouter(io) {
         res.json({
             registrationEnabled: regEnabled,
             requireApproval,
+            systemEnabled,
+            showAdminPresence,
             defaultTtlSeconds,
             appName,
             pwaShortName,
@@ -194,12 +282,30 @@ function createAdminRouter(io) {
     // 5. Update System Settings & Branding
     router.post('/settings', (req, res) => {
         try {
-            const { registrationEnabled, requireApproval, defaultTtlSeconds, appName, pwaShortName } = req.body;
+            const { registrationEnabled, requireApproval, systemEnabled, showAdminPresence, defaultTtlSeconds, appName, pwaShortName, pwaIconUrl, adminAvatarUrl } = req.body;
             if (typeof registrationEnabled === 'boolean') {
                 (0, index_js_2.updateSettingValue)('registration_enabled', registrationEnabled ? 'true' : 'false');
             }
             if (typeof requireApproval === 'boolean') {
                 (0, index_js_2.updateSettingValue)('require_approval', requireApproval ? 'true' : 'false');
+            }
+            if (typeof systemEnabled === 'boolean') {
+                (0, index_js_2.updateSettingValue)('system_enabled', systemEnabled ? 'true' : 'false');
+                if (io) {
+                    io.emit('system:status_changed', { systemEnabled });
+                }
+            }
+            if (typeof showAdminPresence === 'boolean') {
+                (0, index_js_2.updateSettingValue)('show_admin_presence', showAdminPresence ? 'true' : 'false');
+                if (io) {
+                    if (!showAdminPresence) {
+                        io.emit('admin:online_status', { isOnline: false, lastSeen: null, showPresence: false });
+                    }
+                    else {
+                        const adminUser = index_js_2.db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get();
+                        io.emit('admin:online_status', { isOnline: (0, index_js_3.isAnyAdminOnline)(), lastSeen: adminUser?.last_seen, showPresence: true });
+                    }
+                }
             }
             if (typeof defaultTtlSeconds === 'number' && defaultTtlSeconds > 0) {
                 (0, index_js_2.updateSettingValue)('default_ttl_seconds', defaultTtlSeconds.toString());
@@ -209,6 +315,15 @@ function createAdminRouter(io) {
             }
             if (typeof pwaShortName === 'string' && pwaShortName.trim().length > 0) {
                 (0, index_js_2.updateSettingValue)('pwa_short_name', pwaShortName.trim());
+            }
+            if (typeof pwaIconUrl === 'string') {
+                (0, index_js_2.updateSettingValue)('pwa_icon_url', pwaIconUrl.trim());
+            }
+            if (typeof adminAvatarUrl === 'string') {
+                (0, index_js_2.updateSettingValue)('admin_avatar_url', adminAvatarUrl.trim());
+                if (adminAvatarUrl.trim()) {
+                    index_js_2.db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(adminAvatarUrl.trim());
+                }
             }
             res.json({ success: true, message: 'Settings updated successfully' });
         }

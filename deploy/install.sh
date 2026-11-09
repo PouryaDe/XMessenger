@@ -38,6 +38,25 @@ BASE_DIR="/opt/xmessenger"
 SHARED_DIR="${BASE_DIR}/shared"
 INSTANCES_DIR="${BASE_DIR}/instances"
 
+# 2. Proactive Datacenter Mirror Healing (Fixes 404s on Afranet, Asiatech, etc.)
+echo -e "${BLUE}Auditing package repositories for broken datacenter mirrors...${NC}"
+rm -f /etc/apt/sources.list.d/docker.list 2>/dev/null || true
+
+for src_file in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do
+  [ -f "$src_file" ] || continue
+  if grep -q -E '(afranet|parsonline|asiatech|rasanegar|hostiran)' "$src_file" 2>/dev/null; then
+    echo -e "${YELLOW}Detected local datacenter mirror in ${src_file}. Switching to canonical archive.ubuntu.com...${NC}"
+    sed -i -E 's|http://[^ ]*(afranet|parsonline|asiatech|rasanegar|hostiran)[^ ]*/ubuntu|http://archive.ubuntu.com/ubuntu|g' "$src_file" 2>/dev/null || true
+  fi
+done
+
+# Ensure basic packages (curl, openssl, git) exist
+if ! command -v curl &> /dev/null || ! command -v openssl &> /dev/null || ! command -v git &> /dev/null; then
+  echo -e "${YELLOW}Updating package index and installing base system utilities...${NC}"
+  apt-get update -y || apt-get update --fix-missing -y || true
+  apt-get install -y --fix-missing curl openssl git || apt-get install -y curl openssl git
+fi
+
 # Detect if running from cloned repository or remote curl
 if [ -f "Dockerfile" ]; then
   PROJECT_ROOT="$(pwd)"
@@ -46,65 +65,60 @@ elif [ -f "../Dockerfile" ]; then
 elif [ -f "${BASE_DIR}/Dockerfile" ]; then
   PROJECT_ROOT="${BASE_DIR}"
 else
-  # Remote curl execution: clone/update to /opt/xmessenger
-  echo -e "${BLUE}Setting up repository at ${BASE_DIR}...${NC}"
-  rm -f /etc/apt/sources.list.d/docker.list 2>/dev/null || true
-  if ! command -v git &> /dev/null; then
-    apt-get update -y && apt-get install -y git curl openssl
-  fi
-
-  if [ -d "${BASE_DIR}/.git" ]; then
-    cd "${BASE_DIR}"
-    git pull origin main || true
-  else
-    rm -rf "${BASE_DIR}"
-    if [ -n "$GITHUB_TOKEN" ]; then
-      git clone "https://${GITHUB_TOKEN}@github.com/PouryaDe/XMessenger.git" "${BASE_DIR}"
-    else
-      git clone "https://github.com/PouryaDe/XMessenger.git" "${BASE_DIR}"
-    fi
-    cd "${BASE_DIR}"
-  fi
   PROJECT_ROOT="${BASE_DIR}"
 fi
 
-# 2. Check and Install Docker (Native docker.io avoids 403 sanction blocks on IR IPs)
-echo -e "${BLUE}[1/6] Checking system packages and Docker engine...${NC}"
-
-# Clean up broken repositories if any
-rm -f /etc/apt/sources.list.d/docker.list 2>/dev/null || true
-
-if ! command -v curl &> /dev/null || ! command -v openssl &> /dev/null; then
-  echo -e "${YELLOW}Installing base system utilities...${NC}"
-  apt-get update -y && apt-get install -y curl openssl git
+# Ensure /opt/xmessenger has repository files without ever wiping instances or shared directories
+if [ ! -f "${BASE_DIR}/Dockerfile" ]; then
+  echo -e "${BLUE}Setting up repository at ${BASE_DIR}...${NC}"
+  mkdir -p "${BASE_DIR}"
+  if [ -d "${BASE_DIR}/.git" ]; then
+    cd "${BASE_DIR}"
+    git config --global --add safe.directory "${BASE_DIR}" 2>/dev/null || true
+    git pull origin main || true
+  else
+    TEMP_CLONE=$(mktemp -d)
+    if [ -n "$GITHUB_TOKEN" ]; then
+      git clone "https://${GITHUB_TOKEN}@github.com/PouryaDe/XMessenger.git" "${TEMP_CLONE}"
+    else
+      git clone "https://github.com/PouryaDe/XMessenger.git" "${TEMP_CLONE}"
+    fi
+    cp -r "${TEMP_CLONE}/." "${BASE_DIR}/"
+    rm -rf "${TEMP_CLONE}"
+  fi
 fi
+
+cd "${BASE_DIR}"
+PROJECT_ROOT="${BASE_DIR}"
+
+# 3. Check and Install Docker (Native docker.io avoids 403 sanction blocks on IR IPs)
+echo -e "${BLUE}[1/6] Checking system packages and Docker engine...${NC}"
 
 if ! command -v docker &> /dev/null; then
   echo -e "${YELLOW}Docker not found. Installing Docker engine from system repositories...${NC}"
-  # Check if broken local datacenter mirrors (e.g. ubuntu.mirror.afranet.com) exist and replace them
-  if grep -q "mirror.afranet.com" /etc/apt/sources.list 2>/dev/null; then
-    echo -e "${YELLOW}Detected outdated Afranet local mirror. Updating sources to canonical Ubuntu archive...${NC}"
-    sed -i 's|http://ubuntu.mirror.afranet.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list 2>/dev/null || true
+  apt-get update -y || apt-get update --fix-missing -y || true
+  if ! apt-get install -y docker.io docker-buildx; then
+    apt-get install -y --fix-missing docker.io || true
   fi
-
-  apt-get update -y || apt-get update --fix-missing -y
-  if ! apt-get install -y docker.io; then
-    echo -e "${YELLOW}First install attempt failed. Switching to standard archive.ubuntu.com and retrying...${NC}"
-    sed -i 's|http://[^ ]*/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list 2>/dev/null || true
-    apt-get update -y || apt-get update --fix-missing -y
-    apt-get install -y --fix-missing docker.io
-  fi
-  systemctl enable --now docker || service docker start || true
+  systemctl enable --now docker 2>/dev/null || service docker start 2>/dev/null || true
   echo -e "${GREEN}Docker installed successfully.${NC}"
 else
   echo -e "${GREEN}Docker is already installed.${NC}"
+  # Install docker-buildx if available in repositories
+  if ! docker buildx version &>/dev/null; then
+    apt-get install -y docker-buildx 2>/dev/null || true
+  fi
   systemctl enable --now docker 2>/dev/null || service docker start 2>/dev/null || true
 fi
 
 # Ensure docker daemon is alive
-if ! docker info &> /dev/null; then
-  systemctl start docker || service docker start || true
-fi
+for i in {1..15}; do
+  if docker info &> /dev/null; then
+    break
+  fi
+  systemctl start docker 2>/dev/null || service docker start 2>/dev/null || true
+  sleep 1
+done
 
 # Configure Docker Registry Mirrors to bypass Docker Hub 403 sanction blocks (Iran & restricted regions)
 echo -e "${BLUE}Configuring Docker registry mirrors (anti-sanction)...${NC}"
@@ -122,17 +136,30 @@ cat <<'EOF' > /etc/docker/daemon.json
 EOF
 systemctl daemon-reload 2>/dev/null || true
 systemctl restart docker 2>/dev/null || service docker restart 2>/dev/null || true
-sleep 3
+
+# Wait for docker daemon restart
+for i in {1..15}; do
+  if docker info &> /dev/null; then
+    break
+  fi
+  sleep 1
+done
 
 # Helper function to pull images through Docker daemon mirrors with direct fallback
 pull_docker_image() {
   local img="$1"
+  # Skip network download if image is already cached locally
+  if docker image inspect "${img}" &>/dev/null; then
+    echo -e "${GREEN}✓ Image ${img} is already present locally.${NC}"
+    return 0
+  fi
+
   echo -e "${CYAN}Checking / pulling image ${BOLD}${img}${NC}...${NC}"
   if docker pull "${img}"; then
     return 0
   fi
 
-  echo -e "${YELLOW}Standard pull returned 403 or error. Retrying ${img} through direct Iranian mirror proxies...${NC}"
+  echo -e "${YELLOW}Standard pull returned error. Retrying ${img} through direct Iranian mirror proxies...${NC}"
   local mirrors=("docker.arvancloud.ir" "docker.iranserver.com" "fdocker.ir" "docker.mcr.ir")
   for mirror in "${mirrors[@]}"; do
     echo -e "${YELLOW}Attempting to pull from ${mirror}/${img}...${NC}"
@@ -141,7 +168,6 @@ pull_docker_image() {
       echo -e "${GREEN}Successfully pulled and tagged ${img} from ${mirror}!${NC}"
       return 0
     fi
-    # If official library image without slash (like nginx:alpine or node:22-alpine), try library/ prefix
     if [[ "${img}" != *"/"* ]]; then
       if docker pull "${mirror}/library/${img}" 2>/dev/null; then
         docker tag "${mirror}/library/${img}" "${img}"
@@ -151,8 +177,8 @@ pull_docker_image() {
     fi
   done
 
-  echo -e "${RED}[WARNING] Could not pull ${img} through mirrors. Docker will try during run/build.${NC}"
-  return 1
+  echo -e "${YELLOW}[Notice] Could not pull ${img} through mirrors. Docker will try during run/build.${NC}"
+  return 0
 }
 
 # Pre-fetch required base images so build and run won't fail with 403 CloudFront blocks
@@ -168,8 +194,15 @@ if lsof -i :80 2>/dev/null | grep -qv docker || netstat -tulpn 2>/dev/null | gre
   systemctl stop nginx 2>/dev/null || true
 fi
 
-# 3. Interactive Configuration (Multi-Domain Aware)
+# 4. Interactive or CLI Argument Configuration (Multi-Domain Aware)
 echo -e "\n${BLUE}[2/6] Configuring Domain & Instance...${NC}"
+
+if [ -n "$1" ] && [ -z "$DOMAIN" ]; then
+  DOMAIN="$1"
+fi
+if [ -n "$2" ] && [ -z "$EMAIL" ]; then
+  EMAIL="$2"
+fi
 
 if [ -z "$DOMAIN" ]; then
   if [ -t 0 ]; then
@@ -178,6 +211,9 @@ if [ -z "$DOMAIN" ]; then
     read -p "Enter your domain for this messenger instance (e.g., chat.example.com): " DOMAIN < /dev/tty
   fi
 fi
+
+# Sanitize domain: strip http://, https://, trailing slashes, whitespace, lowercase
+DOMAIN=$(echo "$DOMAIN" | sed -e 's|^https\?://||' -e 's|/.*$||' | tr -d ' ' | tr '[:upper:]' '[:lower:]')
 
 if [ -z "$DOMAIN" ]; then
   echo -e "${RED}[ERROR] Domain cannot be empty.${NC}"
@@ -195,16 +231,40 @@ if [ -z "$EMAIL" ]; then
   fi
 fi
 
+EMAIL=$(echo "$EMAIL" | tr -d ' ')
 if [ -z "$EMAIL" ]; then
   EMAIL="admin@${DOMAIN}"
 fi
+
+# Preserve existing keys and passwords on re-install / upgrade to guarantee zero data loss
+ENV_FILE="${INSTANCES_DIR}/${DOMAIN}/.env"
+if [ -f "$ENV_FILE" ]; then
+  echo -e "${YELLOW}Existing instance configuration detected for ${DOMAIN}. Preserving encryption keys and credentials...${NC}"
+  EXISTING_JWT=$(grep '^JWT_SECRET=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r\n')
+  EXISTING_ENC=$(grep '^ENCRYPTION_KEY=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r\n')
+  EXISTING_PASS=$(grep '^ADMIN_PASSWORD=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r\n')
+  EXISTING_USER=$(grep '^ADMIN_USERNAME=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r\n')
+  EXISTING_TTL=$(grep '^DEFAULT_TTL_SECONDS=' "$ENV_FILE" | cut -d= -f2- | tr -d '\r\n')
+
+  [ -n "$EXISTING_JWT" ] && JWT_SECRET="$EXISTING_JWT" || JWT_SECRET=$(openssl rand -hex 32)
+  [ -n "$EXISTING_ENC" ] && ENCRYPTION_KEY="$EXISTING_ENC" || ENCRYPTION_KEY=$(openssl rand -hex 32)
+  [ -n "$EXISTING_PASS" ] && ADMIN_PASSWORD="$EXISTING_PASS"
+  [ -n "$EXISTING_USER" ] && ADMIN_USERNAME="$EXISTING_USER"
+  [ -n "$EXISTING_TTL" ] && DEFAULT_TTL_SECONDS="$EXISTING_TTL"
+else
+  [ -z "$JWT_SECRET" ] && JWT_SECRET=$(openssl rand -hex 32)
+  [ -z "$ENCRYPTION_KEY" ] && ENCRYPTION_KEY=$(openssl rand -hex 32)
+fi
+
+[ -z "$ADMIN_USERNAME" ] && ADMIN_USERNAME="admin"
+[ -z "$DEFAULT_TTL_SECONDS" ] && DEFAULT_TTL_SECONDS="86400"
 
 if [ -z "$ADMIN_PASSWORD" ]; then
   ADMIN_PASSWORD=$(openssl rand -base64 12)
   echo -e "${YELLOW}Generated secure Admin password:${NC} ${BOLD}${ADMIN_PASSWORD}${NC}"
 fi
 
-# 4. Prepare Shared Network and Folders
+# 5. Prepare Shared Network and Folders
 echo -e "\n${BLUE}[3/6] Initializing shared multi-domain infrastructure...${NC}"
 
 mkdir -p "${SHARED_DIR}/nginx/conf.d"
@@ -212,9 +272,14 @@ mkdir -p "${SHARED_DIR}/certbot/conf"
 mkdir -p "${SHARED_DIR}/certbot/www"
 mkdir -p "${INSTANCES_DIR}/${DOMAIN}"
 
-# Setup default HTTP server for shared Nginx gateway (handles ACME challenges and fallback)
-if [ ! -f "${SHARED_DIR}/nginx/conf.d/00-default.conf" ]; then
-  cat <<'EOF' > "${SHARED_DIR}/nginx/conf.d/00-default.conf"
+# Setup default HTTP server for shared Nginx gateway with WebSocket upgrade mapping
+cat <<'EOF' > "${SHARED_DIR}/nginx/conf.d/00-default.conf"
+# Shared WebSocket upgrade connection mapping
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
 server {
     listen 80 default_server;
     server_name _;
@@ -228,7 +293,6 @@ server {
     }
 }
 EOF
-fi
 
 # Create shared docker network if not exists
 docker network create xmessenger-net 2>/dev/null || true
@@ -236,22 +300,27 @@ docker network create xmessenger-net 2>/dev/null || true
 # Clean up any leftover temporary bootstrap containers
 docker rm -f xmessenger-acme 2>/dev/null || true
 
-# 5. Build or Update XMessenger Core Docker Image
+# 6. Build or Update XMessenger Core Docker Image (Zero-Failure Build Engine)
 echo -e "\n${BLUE}[4/6] Building / updating XMessenger core Docker image...${NC}"
-echo -e "${YELLOW}Building optimized container image. Please wait a moment...${NC}"
+echo -e "${YELLOW}Building optimized container image (xmessenger-core:latest)...${NC}"
 cd "${PROJECT_ROOT}"
 
-# Attempt to install docker-buildx if available in repositories
-apt-get install -y docker-buildx 2>/dev/null || true
-
-# If buildx is missing, disable BuildKit to use the rock-solid standard Docker engine builder
-if docker buildx version &>/dev/null; then
-  docker build -t xmessenger-core:latest -f Dockerfile .
-else
-  DOCKER_BUILDKIT=0 docker build -t xmessenger-core:latest -f Dockerfile .
+BUILD_OK=0
+# Method 1: Try legacy daemon builder (DOCKER_BUILDKIT=0) - 100% reliable, zero plugins/buildx required
+if DOCKER_BUILDKIT=0 docker build -t xmessenger-core:latest -f Dockerfile . ; then
+  BUILD_OK=1
+# Method 2: Fallback to standard builder if legacy is rejected
+elif docker build -t xmessenger-core:latest -f Dockerfile . ; then
+  BUILD_OK=1
 fi
 
-# 6. Ensure Shared Nginx Gateway is Running on Ports 80 & 443
+if [ "$BUILD_OK" -ne 1 ]; then
+  echo -e "${RED}[ERROR] Failed to build xmessenger-core:latest image.${NC}"
+  exit 1
+fi
+echo -e "${GREEN}✓ Core Docker image built successfully.${NC}"
+
+# 7. Ensure Shared Nginx Gateway is Running on Ports 80 & 443
 if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
   echo -e "${YELLOW}Starting shared Nginx Gateway on ports 80/443...${NC}"
   docker rm -f xmessenger-nginx 2>/dev/null || true
@@ -267,7 +336,7 @@ if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
     nginx:alpine
 fi
 
-# 7. Obtain or Verify SSL Certificate for this Domain
+# 8. Obtain or Verify SSL Certificate for this Domain
 echo -e "\n${BLUE}[5/6] Setting up SSL Certificate for ${DOMAIN}...${NC}"
 
 # Ensure SSL certificate directory and files exist (baseline fallback guarantees Nginx never fails on port 443)
@@ -280,7 +349,7 @@ if [ ! -f "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" ] || [ ! -f 
     -subj "/CN=${DOMAIN}"
 fi
 
-# 8. Deploy Production Nginx Reverse Proxy Route for this Domain
+# 9. Deploy Production Nginx Reverse Proxy Route for this Domain
 echo -e "${BLUE}Configuring Nginx routing for ${DOMAIN}...${NC}"
 cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
 server {
@@ -317,7 +386,7 @@ server {
         proxy_pass http://xmessenger-${SLUG}:3001/socket.io/;
         proxy_http_version 1.1;
         proxy_set_header Upgrade \$http_upgrade;
-        proxy_set_header Connection \$http_connection;
+        proxy_set_header Connection \$connection_upgrade;
         proxy_set_header Host \$host;
         proxy_set_header X-Real-IP \$remote_addr;
         proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
@@ -354,20 +423,17 @@ docker run --rm \
     echo -e "${YELLOW}[Notice] Let's Encrypt check finished. Messenger is securely live with HTTPS.${NC}"
 }
 
-# 9. Launch Isolated Backend Container for this Domain
+# 10. Launch Isolated Backend Container for this Domain
 echo -e "\n${BLUE}[6/6] Launching isolated backend for ${DOMAIN}...${NC}"
-
-JWT_SECRET=$(openssl rand -hex 32)
-ENCRYPTION_KEY=$(openssl rand -hex 32)
 
 cat <<EOF > "${INSTANCES_DIR}/${DOMAIN}/.env"
 DOMAIN=${DOMAIN}
 EMAIL=${EMAIL}
 JWT_SECRET=${JWT_SECRET}
 ENCRYPTION_KEY=${ENCRYPTION_KEY}
-ADMIN_USERNAME=admin
+ADMIN_USERNAME=${ADMIN_USERNAME}
 ADMIN_PASSWORD=${ADMIN_PASSWORD}
-DEFAULT_TTL_SECONDS=86400
+DEFAULT_TTL_SECONDS=${DEFAULT_TTL_SECONDS}
 SLUG=${SLUG}
 EOF
 
@@ -395,21 +461,29 @@ if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-certbot$'; then
     sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done;'
 fi
 
-# 10. Install Global Multi-Domain CLI Management Tool (xmessenger & xupdate)
+# 11. Install Global Multi-Domain CLI Management Tool (xmessenger & xupdate)
 ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || cp -f "${PROJECT_ROOT}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
 chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" /usr/local/bin/xmessenger /usr/local/bin/xupdate 2>/dev/null || true
+
+# 12. Configure Continuous GitHub Auto-Update Service
+if [ -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" ] && [ -d /etc/systemd/system ]; then
+  cp -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" /etc/systemd/system/xmessenger-autoupdate.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl enable --now xmessenger-autoupdate 2>/dev/null || true
+  systemctl restart xmessenger-autoupdate 2>/dev/null || true
+fi
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${GREEN}${BOLD}🎉 XMessenger for ${DOMAIN} successfully deployed!${NC}"
 echo -e "${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${CYAN}🌐 Web Address:${NC}       https://${DOMAIN}"
-echo -e "${CYAN}👤 Admin Username:${NC}   admin"
+echo -e "${CYAN}👤 Admin Username:${NC}   ${ADMIN_USERNAME}"
 echo -e "${CYAN}🔑 Admin Password:${NC}   ${ADMIN_PASSWORD}"
 echo -e "${CYAN}📦 Container Name:${NC}   xmessenger-${SLUG}"
 echo -e "${CYAN}💾 Database Volume:${NC}  xmessenger-data-${SLUG} (Isolated)"
 echo -e "${CYAN}🔒 Storage Encryption:${NC} AES-256-GCM (Active)"
-echo -e "${CYAN}⏱️ Ephemeral TTL:${NC}     24 Hours (Configurable in Admin Panel)"
+echo -e "${CYAN}⏱️ Ephemeral TTL:${NC}     ${DEFAULT_TTL_SECONDS}s (Configurable in Admin Panel)"
 echo -e "${GREEN}${BOLD}==================================================================${NC}"
 echo -e "${YELLOW}${BOLD}Multi-Domain Server Console:${NC}"
 echo -e "   Type ${CYAN}${BOLD}xmessenger${NC} anytime in terminal to view and manage all messenger instances."

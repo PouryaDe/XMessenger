@@ -63,5 +63,11 @@ function requireActive(req, res, next) {
             message: 'Account is pending administrative approval'
         });
     }
+    if (req.user.role === 'user' && (0, index_js_2.getSettingValue)('system_enabled', 'true') === 'false') {
+        return res.status(503).json({
+            error: 'SYSTEM_DISABLED',
+            message: 'System is currently disabled for maintenance'
+        });
+    }
     next();
 }

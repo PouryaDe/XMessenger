@@ -89,7 +89,10 @@ function setupSocketServer(io) {
                 io.to('room:admin').emit('user:online_status', { userId: user.id, isOnline: true });
             }
             else {
-                io.emit('admin:online_status', { isOnline: true });
+                const showPresence = (0, index_js_2.getSettingValue)('show_admin_presence', 'true') === 'true';
+                if (showPresence) {
+                    io.emit('admin:online_status', { isOnline: true, showPresence: true });
+                }
             }
         }
         // Immediately inform this newly connected client about counterpart presence state
@@ -97,8 +100,14 @@ function setupSocketServer(io) {
             socket.emit('presence:init', { onlineUserIds: getOnlineUserIds() });
         }
         else {
-            const adminUser = index_js_2.db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get();
-            socket.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen });
+            const showPresence = (0, index_js_2.getSettingValue)('show_admin_presence', 'true') === 'true';
+            if (!showPresence) {
+                socket.emit('admin:online_status', { isOnline: false, lastSeen: null, showPresence: false });
+            }
+            else {
+                const adminUser = index_js_2.db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get();
+                socket.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen, showPresence: true });
+            }
         }
         // Typing indicators
         socket.on('typing', ({ isTyping, targetUserId }) => {
@@ -120,9 +129,23 @@ function setupSocketServer(io) {
         // Send Message via Socket
         socket.on('message:send', ({ text, targetUserId, ttlSeconds, replyToId }, callback) => {
             try {
-                if (user.status === 'pending') {
+                const currentUserRow = index_js_2.db.prepare('SELECT id, status, role FROM users WHERE id = ?').get(user.id);
+                if (!currentUserRow || currentUserRow.status === 'banned') {
+                    if (callback)
+                        callback({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
+                    socket.emit('user:status_changed', { userId: user.id, status: 'banned' });
+                    socket.disconnect(true);
+                    return;
+                }
+                if (currentUserRow.status === 'pending') {
                     if (callback)
                         callback({ error: 'ACCOUNT_PENDING_APPROVAL' });
+                    return;
+                }
+                if (currentUserRow.role === 'user' && (0, index_js_2.getSettingValue)('system_enabled', 'true') === 'false') {
+                    if (callback)
+                        callback({ error: 'SYSTEM_DISABLED', message: 'System is currently disabled for maintenance' });
+                    socket.emit('system:status_changed', { systemEnabled: false });
                     return;
                 }
                 if (!text || !text.trim()) {
@@ -138,6 +161,12 @@ function setupSocketServer(io) {
                     if (!targetUserId) {
                         if (callback)
                             callback({ error: 'MISSING_RECIPIENT' });
+                        return;
+                    }
+                    const recipientCheck = index_js_2.db.prepare('SELECT id, status FROM users WHERE id = ?').get(targetUserId);
+                    if (!recipientCheck || recipientCheck.status === 'banned') {
+                        if (callback)
+                            callback({ error: 'RECIPIENT_BANNED', message: 'Recipient is banned' });
                         return;
                     }
                     recipientId = targetUserId;
@@ -238,6 +267,14 @@ function setupSocketServer(io) {
         // Delete message for everyone via Socket
         socket.on('message:delete', ({ messageId }, callback) => {
             try {
+                const currentUserRow = index_js_2.db.prepare('SELECT id, status, role FROM users WHERE id = ?').get(user.id);
+                if (!currentUserRow || currentUserRow.status === 'banned') {
+                    if (callback)
+                        callback({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
+                    socket.emit('user:status_changed', { userId: user.id, status: 'banned' });
+                    socket.disconnect(true);
+                    return;
+                }
                 const row = index_js_2.db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE id = ?').get(messageId);
                 if (!row) {
                     if (callback)
@@ -266,9 +303,23 @@ function setupSocketServer(io) {
         // Toggle reaction on message via Socket
         socket.on('message:react', ({ messageId, emoji }, callback) => {
             try {
-                if (user.status !== 'active') {
+                const currentUserRow = index_js_2.db.prepare('SELECT id, status, role FROM users WHERE id = ?').get(user.id);
+                if (!currentUserRow || currentUserRow.status === 'banned') {
                     if (callback)
-                        callback({ error: 'ACCOUNT_NOT_ACTIVE' });
+                        callback({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
+                    socket.emit('user:status_changed', { userId: user.id, status: 'banned' });
+                    socket.disconnect(true);
+                    return;
+                }
+                if (currentUserRow.status === 'pending') {
+                    if (callback)
+                        callback({ error: 'ACCOUNT_PENDING_APPROVAL' });
+                    return;
+                }
+                if (currentUserRow.role === 'user' && (0, index_js_2.getSettingValue)('system_enabled', 'true') === 'false') {
+                    if (callback)
+                        callback({ error: 'SYSTEM_DISABLED', message: 'System is currently disabled for maintenance' });
+                    socket.emit('system:status_changed', { systemEnabled: false });
                     return;
                 }
                 const rawEmoji = (typeof emoji === 'string' && emoji.trim()) ? emoji.trim() : '👍';
@@ -332,7 +383,10 @@ function setupSocketServer(io) {
                         io.to('room:admin').emit('user:online_status', { userId: user.id, isOnline: false, lastSeen: offlineTime });
                     }
                     else {
-                        io.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: offlineTime });
+                        const showPresence = (0, index_js_2.getSettingValue)('show_admin_presence', 'true') === 'true';
+                        if (showPresence) {
+                            io.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: offlineTime, showPresence: true });
+                        }
                     }
                 }
             }

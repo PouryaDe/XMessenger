@@ -100,6 +100,27 @@ fi
 
 # Ensure 100M client body limit & clean up any corrupted Nginx location blocks
 if [ -d "${BASE_DIR}/shared/nginx/conf.d" ]; then
+  # Ensure 00-default.conf has WebSocket connection upgrade mapping
+  cat <<'EOF' > "${BASE_DIR}/shared/nginx/conf.d/00-default.conf"
+# Shared WebSocket upgrade connection mapping
+map $http_upgrade $connection_upgrade {
+    default upgrade;
+    '' close;
+}
+
+server {
+    listen 80 default_server;
+    server_name _;
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 200 "XMessenger Gateway is running.\n";
+    }
+}
+EOF
   # Guarantee 100% clean Nginx config for xchat.iranistream.com
   if [ -f "${BASE_DIR}/shared/nginx/conf.d/xchat.iranistream.com.conf" ]; then
     cat <<'EOF' > "${BASE_DIR}/shared/nginx/conf.d/xchat.iranistream.com.conf"
@@ -171,7 +192,7 @@ echo -e "${GREEN}✓ Nginx gateway is online and active!${NC}"
 
 # 4. Synchronize Docker image for any future new container creation (without killing running containers)
 echo -e "\n${BLUE}[4/4] Updating base Docker image (xmessenger-core:latest)...${NC}"
-docker build -t xmessenger-core:latest -f Dockerfile . >/dev/null 2>&1 &
+( DOCKER_BUILDKIT=0 docker build -t xmessenger-core:latest -f Dockerfile . >/dev/null 2>&1 || docker build -t xmessenger-core:latest -f Dockerfile . >/dev/null 2>&1 ) &
 echo -e "${GREEN}✓ Base image update running in background.${NC}"
 
 # 5. Install & Activate Continuous Auto-Update Daemon (Runs every 10s via systemd)

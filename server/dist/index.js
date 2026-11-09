@@ -54550,6 +54550,10 @@ function initDatabase() {
     db.exec("ALTER TABLE users ADD COLUMN avatar_url TEXT;");
   } catch (_) {
   }
+  try {
+    db.exec("ALTER TABLE users ADD COLUMN category TEXT DEFAULT NULL;");
+  } catch (_) {
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS messages (
       id TEXT PRIMARY KEY,
@@ -54597,10 +54601,22 @@ function initDatabase() {
       value TEXT NOT NULL
     );
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS admin_user_notes (
+      user_id TEXT PRIMARY KEY,
+      ciphertext TEXT NOT NULL,
+      iv TEXT NOT NULL,
+      auth_tag TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
   const getSetting = db.prepare("SELECT value FROM settings WHERE key = ?");
   const setSetting = db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
   setSetting.run("registration_enabled", "true");
   setSetting.run("require_approval", "true");
+  setSetting.run("system_enabled", "true");
+  setSetting.run("show_admin_presence", "true");
   setSetting.run("default_ttl_seconds", config.defaultTtlSeconds.toString());
   setSetting.run("app_name", "XMessenger");
   setSetting.run("pwa_short_name", "XMessenger");
@@ -54730,6 +54746,12 @@ function requireActive(req, res, next) {
     return res.status(403).json({
       error: "ACCOUNT_PENDING_APPROVAL",
       message: "Account is pending administrative approval"
+    });
+  }
+  if (req.user.role === "user" && getSettingValue("system_enabled", "true") === "false") {
+    return res.status(503).json({
+      error: "SYSTEM_DISABLED",
+      message: "System is currently disabled for maintenance"
     });
   }
   next();
@@ -55918,14 +55940,22 @@ function setupSocketServer(io3) {
       if (user.role === "user") {
         io3.to("room:admin").emit("user:online_status", { userId: user.id, isOnline: true });
       } else {
-        io3.emit("admin:online_status", { isOnline: true });
+        const showPresence = getSettingValue("show_admin_presence", "true") === "true";
+        if (showPresence) {
+          io3.emit("admin:online_status", { isOnline: true, showPresence: true });
+        }
       }
     }
     if (user.role === "admin") {
       socket.emit("presence:init", { onlineUserIds: getOnlineUserIds() });
     } else {
-      const adminUser = db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get();
-      socket.emit("admin:online_status", { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen });
+      const showPresence = getSettingValue("show_admin_presence", "true") === "true";
+      if (!showPresence) {
+        socket.emit("admin:online_status", { isOnline: false, lastSeen: null, showPresence: false });
+      } else {
+        const adminUser = db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get();
+        socket.emit("admin:online_status", { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen, showPresence: true });
+      }
     }
     socket.on("typing", ({ isTyping, targetUserId }) => {
       if (user.role === "user") {
@@ -55944,8 +55974,20 @@ function setupSocketServer(io3) {
     });
     socket.on("message:send", ({ text, targetUserId, ttlSeconds, replyToId }, callback) => {
       try {
-        if (user.status === "pending") {
+        const currentUserRow = db.prepare("SELECT id, status, role FROM users WHERE id = ?").get(user.id);
+        if (!currentUserRow || currentUserRow.status === "banned") {
+          if (callback) callback({ error: "ACCOUNT_BANNED", message: "Account is suspended" });
+          socket.emit("user:status_changed", { userId: user.id, status: "banned" });
+          socket.disconnect(true);
+          return;
+        }
+        if (currentUserRow.status === "pending") {
           if (callback) callback({ error: "ACCOUNT_PENDING_APPROVAL" });
+          return;
+        }
+        if (currentUserRow.role === "user" && getSettingValue("system_enabled", "true") === "false") {
+          if (callback) callback({ error: "SYSTEM_DISABLED", message: "System is currently disabled for maintenance" });
+          socket.emit("system:status_changed", { systemEnabled: false });
           return;
         }
         if (!text || !text.trim()) {
@@ -55957,6 +55999,11 @@ function setupSocketServer(io3) {
         if (user.role === "admin") {
           if (!targetUserId) {
             if (callback) callback({ error: "MISSING_RECIPIENT" });
+            return;
+          }
+          const recipientCheck = db.prepare("SELECT id, status FROM users WHERE id = ?").get(targetUserId);
+          if (!recipientCheck || recipientCheck.status === "banned") {
+            if (callback) callback({ error: "RECIPIENT_BANNED", message: "Recipient is banned" });
             return;
           }
           recipientId = targetUserId;
@@ -56036,6 +56083,13 @@ function setupSocketServer(io3) {
     });
     socket.on("message:delete", ({ messageId }, callback) => {
       try {
+        const currentUserRow = db.prepare("SELECT id, status, role FROM users WHERE id = ?").get(user.id);
+        if (!currentUserRow || currentUserRow.status === "banned") {
+          if (callback) callback({ error: "ACCOUNT_BANNED", message: "Account is suspended" });
+          socket.emit("user:status_changed", { userId: user.id, status: "banned" });
+          socket.disconnect(true);
+          return;
+        }
         const row = db.prepare("SELECT id, sender_id, recipient_id FROM messages WHERE id = ?").get(messageId);
         if (!row) {
           if (callback) callback({ error: "NOT_FOUND" });
@@ -56056,8 +56110,20 @@ function setupSocketServer(io3) {
     });
     socket.on("message:react", ({ messageId, emoji }, callback) => {
       try {
-        if (user.status !== "active") {
-          if (callback) callback({ error: "ACCOUNT_NOT_ACTIVE" });
+        const currentUserRow = db.prepare("SELECT id, status, role FROM users WHERE id = ?").get(user.id);
+        if (!currentUserRow || currentUserRow.status === "banned") {
+          if (callback) callback({ error: "ACCOUNT_BANNED", message: "Account is suspended" });
+          socket.emit("user:status_changed", { userId: user.id, status: "banned" });
+          socket.disconnect(true);
+          return;
+        }
+        if (currentUserRow.status === "pending") {
+          if (callback) callback({ error: "ACCOUNT_PENDING_APPROVAL" });
+          return;
+        }
+        if (currentUserRow.role === "user" && getSettingValue("system_enabled", "true") === "false") {
+          if (callback) callback({ error: "SYSTEM_DISABLED", message: "System is currently disabled for maintenance" });
+          socket.emit("system:status_changed", { systemEnabled: false });
           return;
         }
         const rawEmoji = typeof emoji === "string" && emoji.trim() ? emoji.trim() : "\u{1F44D}";
@@ -56111,7 +56177,10 @@ function setupSocketServer(io3) {
           if (user.role === "user") {
             io3.to("room:admin").emit("user:online_status", { userId: user.id, isOnline: false, lastSeen: offlineTime });
           } else {
-            io3.emit("admin:online_status", { isOnline: isAnyAdminOnline(), lastSeen: offlineTime });
+            const showPresence = getSettingValue("show_admin_presence", "true") === "true";
+            if (showPresence) {
+              io3.emit("admin:online_status", { isOnline: isAnyAdminOnline(), lastSeen: offlineTime, showPresence: true });
+            }
           }
         }
       }
@@ -56150,6 +56219,7 @@ function createAuthRouter(io3) {
   authRouter2.get("/meta", (req, res) => {
     const regEnabled = getSettingValue("registration_enabled", "true") === "true";
     const requireApproval = getSettingValue("require_approval", "true") === "true";
+    const systemEnabled = getSettingValue("system_enabled", "true") === "true";
     const defaultTtl = parseInt(getSettingValue("default_ttl_seconds", "86400"), 10);
     const appName = getSettingValue("app_name", "XMessenger");
     const pwaShortName = getSettingValue("pwa_short_name", "XMessenger");
@@ -56168,6 +56238,7 @@ function createAuthRouter(io3) {
     res.json({
       registrationEnabled: regEnabled,
       requireApproval,
+      systemEnabled,
       defaultTtl,
       appName,
       pwaShortName,
@@ -56284,19 +56355,23 @@ function createAuthRouter(io3) {
     const userRow = db.prepare("SELECT id, username, role, status, avatar_url FROM users WHERE id = ?").get(req.user.id);
     const adminRow = db.prepare("SELECT id, username, last_seen, avatar_url FROM users WHERE role = 'admin'").get();
     const adminAvatarSetting = getSettingValue("admin_avatar_url", "");
+    const systemEnabled = getSettingValue("system_enabled", "true") === "true";
+    const showAdminPresence = getSettingValue("show_admin_presence", "true") === "true";
     res.json({
       user: userRow ? {
         id: userRow.id,
         username: userRow.username,
         role: userRow.role,
         status: userRow.status,
-        avatarUrl: userRow.avatar_url || void 0
+        avatarUrl: userRow.avatar_url || (userRow.role === "admin" ? adminAvatarSetting : void 0) || void 0
       } : req.user,
+      systemEnabled,
       adminInfo: req.user.role === "user" && adminRow ? {
         id: adminRow.id,
         username: adminRow.username,
-        lastSeen: adminRow.last_seen,
-        isOnline: isAnyAdminOnline(),
+        lastSeen: showAdminPresence ? adminRow.last_seen : null,
+        isOnline: showAdminPresence ? isAnyAdminOnline() : false,
+        showPresence: showAdminPresence,
         avatarUrl: adminRow.avatar_url || adminAvatarSetting || void 0
       } : null
     });
@@ -56419,7 +56494,7 @@ function createAdminRouter(io3) {
   router.get("/users", (req, res) => {
     try {
       const users = db.prepare(`
-        SELECT id, username, role, status, created_at, last_seen, avatar_url
+        SELECT id, username, role, status, created_at, last_seen, avatar_url, category
         FROM users
         WHERE role = 'user'
         ORDER BY last_seen DESC
@@ -56458,6 +56533,7 @@ function createAdminRouter(io3) {
           created_at: user.created_at,
           last_seen: user.last_seen,
           avatarUrl: user.avatar_url || void 0,
+          category: user.category || null,
           isOnline: isUserOnline(user.id),
           unreadCount: unreadCount ? unreadCount.count : 0,
           lastMessage
@@ -56493,8 +56569,21 @@ function createAdminRouter(io3) {
         return res.status(404).json({ error: "USER_NOT_FOUND", message: "User not found" });
       }
       if (io3) {
-        io3.to(`user:${id}`).emit("user:status_changed", { status });
+        io3.to(`user:${id}`).emit("user:status_changed", { userId: id, status });
         io3.to("room:admin").emit("user:status_changed", { userId: id, status });
+        if (status === "banned") {
+          const userRoom = `user:${id}`;
+          const socketsInRoom = io3.sockets.adapter.rooms.get(userRoom);
+          if (socketsInRoom) {
+            for (const socketId of socketsInRoom) {
+              const clientSocket = io3.sockets.sockets.get(socketId);
+              if (clientSocket) {
+                clientSocket.emit("user:status_changed", { userId: id, status: "banned" });
+                clientSocket.disconnect(true);
+              }
+            }
+          }
+        }
       }
       res.json({ success: true, status });
     } catch (err) {
@@ -56519,9 +56608,74 @@ function createAdminRouter(io3) {
       res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to delete user" });
     }
   });
+  router.get("/users/:id/notes", (req, res) => {
+    try {
+      const { id } = req.params;
+      const row = db.prepare("SELECT ciphertext, iv, auth_tag, updated_at FROM admin_user_notes WHERE user_id = ?").get(id);
+      if (!row) {
+        return res.json({ notes: "", updatedAt: null });
+      }
+      const notes = decryptMessage(row.ciphertext, row.iv, row.auth_tag);
+      res.json({ notes, updatedAt: row.updated_at });
+    } catch (err) {
+      console.error("Failed to get user notes:", err);
+      res.status(500).json({ error: "FAILED_TO_GET_NOTES", message: "Could not fetch user notes" });
+    }
+  });
+  router.put("/users/:id/notes", (req, res) => {
+    try {
+      const { id } = req.params;
+      const { notes } = req.body;
+      const targetUser = db.prepare("SELECT id FROM users WHERE id = ?").get(id);
+      if (!targetUser) {
+        return res.status(404).json({ error: "USER_NOT_FOUND", message: "User not found" });
+      }
+      const text = typeof notes === "string" ? notes.trim() : "";
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      if (!text) {
+        db.prepare("DELETE FROM admin_user_notes WHERE user_id = ?").run(id);
+        return res.json({ success: true, notes: "", updatedAt: null });
+      }
+      const encrypted = encryptMessage(text);
+      db.prepare(`
+        INSERT INTO admin_user_notes (user_id, ciphertext, iv, auth_tag, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+          ciphertext = excluded.ciphertext,
+          iv = excluded.iv,
+          auth_tag = excluded.auth_tag,
+          updated_at = excluded.updated_at
+      `).run(id, encrypted.ciphertext, encrypted.iv, encrypted.authTag, now);
+      res.json({ success: true, notes: text, updatedAt: now });
+    } catch (err) {
+      console.error("Failed to update user notes:", err);
+      res.status(500).json({ error: "FAILED_TO_SAVE_NOTES", message: "Could not save user notes" });
+    }
+  });
+  router.put("/users/:id/category", (req, res) => {
+    try {
+      const { id } = req.params;
+      const { category } = req.body;
+      const targetUser = db.prepare("SELECT id FROM users WHERE id = ?").get(id);
+      if (!targetUser) {
+        return res.status(404).json({ error: "USER_NOT_FOUND", message: "User not found" });
+      }
+      const sanitizedCategory = typeof category === "string" && category.trim() ? category.trim() : null;
+      db.prepare("UPDATE users SET category = ? WHERE id = ?").run(sanitizedCategory, id);
+      if (io3) {
+        io3.to("room:admin").emit("user:category_updated", { userId: id, category: sanitizedCategory });
+      }
+      res.json({ success: true, category: sanitizedCategory });
+    } catch (err) {
+      console.error("Failed to update user category:", err);
+      res.status(500).json({ error: "FAILED_TO_UPDATE_CATEGORY", message: "Could not update user category" });
+    }
+  });
   router.get("/settings", (req, res) => {
     const regEnabled = getSettingValue("registration_enabled", "true") === "true";
     const requireApproval = getSettingValue("require_approval", "true") === "true";
+    const systemEnabled = getSettingValue("system_enabled", "true") === "true";
+    const showAdminPresence = getSettingValue("show_admin_presence", "true") === "true";
     const defaultTtlSeconds = parseInt(getSettingValue("default_ttl_seconds", "86400"), 10);
     const appName = getSettingValue("app_name", "XMessenger");
     const pwaShortName = getSettingValue("pwa_short_name", "XMessenger");
@@ -56530,6 +56684,8 @@ function createAdminRouter(io3) {
     res.json({
       registrationEnabled: regEnabled,
       requireApproval,
+      systemEnabled,
+      showAdminPresence,
       defaultTtlSeconds,
       appName,
       pwaShortName,
@@ -56542,15 +56698,36 @@ function createAdminRouter(io3) {
       const {
         registrationEnabled,
         requireApproval,
+        systemEnabled,
+        showAdminPresence,
         defaultTtlSeconds,
         appName,
-        pwaShortName
+        pwaShortName,
+        pwaIconUrl,
+        adminAvatarUrl
       } = req.body;
       if (typeof registrationEnabled === "boolean") {
         updateSettingValue("registration_enabled", registrationEnabled ? "true" : "false");
       }
       if (typeof requireApproval === "boolean") {
         updateSettingValue("require_approval", requireApproval ? "true" : "false");
+      }
+      if (typeof systemEnabled === "boolean") {
+        updateSettingValue("system_enabled", systemEnabled ? "true" : "false");
+        if (io3) {
+          io3.emit("system:status_changed", { systemEnabled });
+        }
+      }
+      if (typeof showAdminPresence === "boolean") {
+        updateSettingValue("show_admin_presence", showAdminPresence ? "true" : "false");
+        if (io3) {
+          if (!showAdminPresence) {
+            io3.emit("admin:online_status", { isOnline: false, lastSeen: null, showPresence: false });
+          } else {
+            const adminUser = db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get();
+            io3.emit("admin:online_status", { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen, showPresence: true });
+          }
+        }
       }
       if (typeof defaultTtlSeconds === "number" && defaultTtlSeconds > 0) {
         updateSettingValue("default_ttl_seconds", defaultTtlSeconds.toString());
@@ -56560,6 +56737,15 @@ function createAdminRouter(io3) {
       }
       if (typeof pwaShortName === "string" && pwaShortName.trim().length > 0) {
         updateSettingValue("pwa_short_name", pwaShortName.trim());
+      }
+      if (typeof pwaIconUrl === "string") {
+        updateSettingValue("pwa_icon_url", pwaIconUrl.trim());
+      }
+      if (typeof adminAvatarUrl === "string") {
+        updateSettingValue("admin_avatar_url", adminAvatarUrl.trim());
+        if (adminAvatarUrl.trim()) {
+          db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(adminAvatarUrl.trim());
+        }
       }
       res.json({ success: true, message: "Settings updated successfully" });
     } catch (err) {

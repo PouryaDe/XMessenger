@@ -40,6 +40,13 @@ function initDatabase() {
     catch (_) {
         // Column already exists
     }
+    // Ensure category column exists for existing databases
+    try {
+        exports.db.exec('ALTER TABLE users ADD COLUMN category TEXT DEFAULT NULL;');
+    }
+    catch (_) {
+        // Column already exists
+    }
     // 2. Messages table
     exports.db.exec(`
     CREATE TABLE IF NOT EXISTS messages (
@@ -96,11 +103,24 @@ function initDatabase() {
       value TEXT NOT NULL
     );
   `);
+    // 5. Admin User Notes table (Encrypted at rest with AES-256-GCM, strictly invisible to regular users)
+    exports.db.exec(`
+    CREATE TABLE IF NOT EXISTS admin_user_notes (
+      user_id TEXT PRIMARY KEY,
+      ciphertext TEXT NOT NULL,
+      iv TEXT NOT NULL,
+      auth_tag TEXT NOT NULL,
+      updated_at TEXT NOT NULL,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+  `);
     // Seed default settings if not exists
     const getSetting = exports.db.prepare('SELECT value FROM settings WHERE key = ?');
     const setSetting = exports.db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
     setSetting.run('registration_enabled', 'true');
     setSetting.run('require_approval', 'true'); // Default requirement from prompt: approval can be enabled
+    setSetting.run('system_enabled', 'true');
+    setSetting.run('show_admin_presence', 'true');
     setSetting.run('default_ttl_seconds', index_js_1.config.defaultTtlSeconds.toString());
     setSetting.run('app_name', 'XMessenger');
     setSetting.run('pwa_short_name', 'XMessenger');
