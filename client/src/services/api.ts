@@ -194,16 +194,36 @@ export const api = {
     return safeJson<{ message: Message }>(res, 'Failed to send message');
   },
 
-  async uploadChatImage(file: File): Promise<{ success: boolean; url: string; filename: string; size: number }> {
+  async uploadChatAttachment(file: File): Promise<{
+    success: boolean;
+    url: string;
+    filename: string;
+    storedName: string;
+    size: number;
+    mimetype: string;
+    isImage: boolean;
+  }> {
     const formData = new FormData();
-    formData.append('image', file);
+    formData.append('file', file);
 
     const res = await fetch(`${API_BASE}/messages/upload`, {
       method: 'POST',
       headers: { ...getAuthHeader() },
       body: formData
     });
-    return safeJson<{ success: boolean; url: string; filename: string; size: number }>(res, 'Failed to upload image');
+    return safeJson<{
+      success: boolean;
+      url: string;
+      filename: string;
+      storedName: string;
+      size: number;
+      mimetype: string;
+      isImage: boolean;
+    }>(res, 'Failed to upload attachment');
+  },
+
+  async uploadChatImage(file: File): Promise<{ success: boolean; url: string; filename: string; size: number }> {
+    return this.uploadChatAttachment(file);
   },
 
   async deleteMessage(messageId: string): Promise<{ success: boolean }> {

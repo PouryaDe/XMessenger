@@ -35,8 +35,8 @@ server {
     add_header X-XSS-Protection "1; mode=block" always;
     add_header Referrer-Policy "no-referrer" always;
 
-    # Client body limit (Supports Database Restore & Media Uploads)
-    client_max_body_size 100M;
+    # Client body limit (Supports Database Restore & 200MB File/Media Uploads)
+    client_max_body_size 250M;
 
     # Socket.io WebSocket Support
     location /socket.io/ {

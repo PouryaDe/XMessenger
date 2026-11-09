@@ -16,53 +16,98 @@ const index_js_2 = require("../config/index.js");
 const pushService_js_1 = require("../services/pushService.js");
 function createMessagesRouter(io) {
     const router = (0, express_1.Router)();
-    // Chat Image Upload Storage
+    // Chat Attachment Storage (Images & Generic Files up to 200MB)
     const chatUploadDir = path_1.default.join(index_js_2.config.dataDir, 'uploads', 'chat');
     if (!fs_1.default.existsSync(chatUploadDir)) {
         fs_1.default.mkdirSync(chatUploadDir, { recursive: true });
     }
+    // Security: Strict blacklist of executable and script files
+    const FORBIDDEN_FILE_EXTENSIONS = new Set([
+        '.php', '.php3', '.php4', '.php5', '.phtml', '.phar',
+        '.exe', '.dll', '.com', '.bat', '.cmd', '.vbs', '.vbe',
+        '.js', '.jse', '.wsf', '.wsh', '.msc', '.scr',
+        '.sh', '.bash', '.csh', '.ksh', '.zsh',
+        '.cgi', '.pl', '.py', '.rb',
+        '.asp', '.aspx', '.cer', '.asa', '.jsp', '.jspx',
+        '.hta', '.jar', '.war', '.ear',
+        '.msi', '.msp', '.reg'
+    ]);
     const chatStorage = multer_1.default.diskStorage({
         destination: (_req, _file, cb) => {
             cb(null, chatUploadDir);
         },
         filename: (_req, file, cb) => {
-            const ext = path_1.default.extname(file.originalname).toLowerCase() || '.jpg';
-            const cleanExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.jpg';
-            const uniqueName = `img-${Date.now()}-${(0, uuid_1.v4)().substring(0, 8)}${cleanExt}`;
+            const ext = path_1.default.extname(file.originalname).toLowerCase().slice(0, 10);
+            const isImg = file.mimetype.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
+            const prefix = isImg ? 'img' : 'file';
+            const safeExt = /^\.[a-z0-9]+$/i.test(ext) ? ext : (isImg ? '.jpg' : '.bin');
+            const uniqueName = `${prefix}-${Date.now()}-${(0, uuid_1.v4)().substring(0, 8)}${safeExt}`;
             cb(null, uniqueName);
         }
     });
-    const uploadChatImage = (0, multer_1.default)({
+    const uploadChatAttachment = (0, multer_1.default)({
         storage: chatStorage,
-        limits: { fileSize: 25 * 1024 * 1024 }, // 25MB max
+        limits: { fileSize: 200 * 1024 * 1024 }, // 200MB max file size
         fileFilter: (_req, file, cb) => {
-            if (file.mimetype.startsWith('image/')) {
-                cb(null, true);
+            const ext = path_1.default.extname(file.originalname).toLowerCase();
+            if (FORBIDDEN_FILE_EXTENSIONS.has(ext)) {
+                return cb(new Error('FORBIDDEN_FILE_TYPE'));
             }
-            else {
-                cb(new Error('ONLY_IMAGES_ALLOWED'));
-            }
+            cb(null, true);
         }
     });
     // Require active authentication
     router.use(auth_js_1.authenticate, auth_js_1.requireActive);
-    // 0. Upload Chat Image Endpoint
-    router.post('/upload', uploadChatImage.single('image'), (req, res) => {
-        try {
-            if (!req.file) {
-                return res.status(400).json({ error: 'NO_FILE', message: 'No image file uploaded' });
+    // 0. Upload Chat Attachment Endpoint (supports both 'file' and 'image' fields up to 200MB)
+    router.post('/upload', (req, res, next) => {
+        uploadChatAttachment.fields([
+            { name: 'file', maxCount: 1 },
+            { name: 'image', maxCount: 1 }
+        ])(req, res, (err) => {
+            if (err) {
+                if (err.code === 'LIMIT_FILE_SIZE') {
+                    return res.status(400).json({ error: 'FILE_TOO_LARGE', message: 'File size cannot exceed 200MB' });
+                }
+                if (err.message === 'FORBIDDEN_FILE_TYPE') {
+                    return res.status(400).json({ error: 'FORBIDDEN_FILE_TYPE', message: 'Executable or script files are not allowed for security reasons' });
+                }
+                return res.status(400).json({ error: 'UPLOAD_FAILED', message: err.message || 'Upload failed' });
             }
-            const imageUrl = `/uploads/chat/${req.file.filename}`;
+            const files = req.files;
+            const uploadedFile = (files?.file && files.file[0]) || (files?.image && files.image[0]) || req.file;
+            if (!uploadedFile) {
+                return res.status(400).json({ error: 'NO_FILE', message: 'No file uploaded' });
+            }
+            const ext = path_1.default.extname(uploadedFile.originalname).toLowerCase();
+            const isImage = uploadedFile.mimetype.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
             res.status(201).json({
                 success: true,
-                url: imageUrl,
-                filename: req.file.filename,
-                size: req.file.size
+                url: `/uploads/chat/${uploadedFile.filename}`,
+                filename: path_1.default.basename(uploadedFile.originalname) || uploadedFile.filename,
+                storedName: uploadedFile.filename,
+                size: uploadedFile.size,
+                mimetype: uploadedFile.mimetype,
+                isImage
             });
+        });
+    });
+    // 0.1 Safe File Download Route (sets Content-Disposition: attachment)
+    router.get('/download/:filename', (req, res) => {
+        try {
+            const rawParam = Array.isArray(req.params.filename) ? req.params.filename[0] : req.params.filename;
+            const safeFilename = path_1.default.basename(String(rawParam || ''));
+            const filePath = path_1.default.join(chatUploadDir, safeFilename);
+            if (!fs_1.default.existsSync(filePath)) {
+                return res.status(404).json({ error: 'FILE_NOT_FOUND', message: 'File not found or expired' });
+            }
+            const originalName = typeof req.query.name === 'string' && req.query.name.trim().length > 0
+                ? path_1.default.basename(req.query.name.trim())
+                : safeFilename;
+            res.download(filePath, originalName);
         }
         catch (err) {
-            console.error('Error uploading chat image:', err);
-            res.status(500).json({ error: 'UPLOAD_FAILED', message: err.message || 'Image upload failed' });
+            console.error('Download error:', err);
+            res.status(500).json({ error: 'DOWNLOAD_FAILED', message: 'Failed to download file' });
         }
     });
     // 1. Get messages for a conversation

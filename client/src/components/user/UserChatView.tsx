@@ -8,6 +8,7 @@ import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { getErrorMessage } from '../../utils/errors.js';
+import { formatFileSize } from '../../utils/formatters.js';
 import { api, Message } from '../../services/api.js';
 import { 
   isPushSupported, 
@@ -25,8 +26,23 @@ import {
   Loader2,
   ChevronDown,
   Reply,
-  Bell
+  Bell,
+  FileText
 } from 'lucide-react';
+
+const FORBIDDEN_EXTENSIONS = new Set([
+  '.exe', '.bat', '.cmd', '.sh', '.bash', '.vbs', '.js', '.jse', '.wsf',
+  '.msi', '.msp', '.com', '.scr', '.pif', '.hta', '.jar', '.php', '.phtml',
+  '.php3', '.php4', '.php5', '.phps', '.cgi', '.pl', '.py', '.rb', '.asp',
+  '.aspx', '.jsp', '.jspx', '.war', '.dll', '.so', '.dylib', '.ps1', '.psm1'
+]);
+const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 MB
+
+interface SelectedAttachment {
+  file: File;
+  isImage: boolean;
+  previewUrl?: string;
+}
 
 export const UserChatView: React.FC = () => {
   const { t, i18n } = useTranslation();
@@ -50,8 +66,7 @@ export const UserChatView: React.FC = () => {
   const [isChangePasswordOpen, setIsChangePasswordOpen] = useState(false);
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
-  const [selectedImage, setSelectedImage] = useState<File | null>(null);
-  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [selectedAttachment, setSelectedAttachment] = useState<SelectedAttachment | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
   const [showPushPrompt, setShowPushPrompt] = useState(false);
@@ -90,21 +105,42 @@ export const UserChatView: React.FC = () => {
     }
   }, []);
 
-  const handleImageFile = (file: File) => {
-    if (!file.type.startsWith('image/')) {
+  const handleSelectedFile = (file: File) => {
+    if (file.size > MAX_FILE_SIZE) {
+      alert(t('errFileTooLarge'));
+      if (fileInputRef.current) fileInputRef.current.value = '';
       return;
     }
-    setSelectedImage(file);
-    const url = URL.createObjectURL(file);
-    setImagePreviewUrl(url);
+
+    const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
+    if (FORBIDDEN_EXTENSIONS.has(ext)) {
+      alert(t('errForbiddenFileType'));
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
+    const isImg = file.type.startsWith('image/');
+    let previewUrl: string | undefined;
+    if (isImg) {
+      previewUrl = URL.createObjectURL(file);
+    }
+
+    if (selectedAttachment?.previewUrl) {
+      URL.revokeObjectURL(selectedAttachment.previewUrl);
+    }
+
+    setSelectedAttachment({
+      file,
+      isImage: isImg,
+      previewUrl
+    });
   };
 
-  const handleRemoveImage = () => {
-    setSelectedImage(null);
-    if (imagePreviewUrl) {
-      URL.revokeObjectURL(imagePreviewUrl);
-      setImagePreviewUrl(null);
+  const handleRemoveAttachment = () => {
+    if (selectedAttachment?.previewUrl) {
+      URL.revokeObjectURL(selectedAttachment.previewUrl);
     }
+    setSelectedAttachment(null);
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
     }
@@ -117,7 +153,7 @@ export const UserChatView: React.FC = () => {
         if (items[i].type.indexOf('image') !== -1) {
           const file = items[i].getAsFile();
           if (file) {
-            handleImageFile(file);
+            handleSelectedFile(file);
             e.preventDefault();
             break;
           }
@@ -253,29 +289,36 @@ export const UserChatView: React.FC = () => {
 
   const handleSend = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
-    if (!inputText.trim() && !selectedImage) return;
+    if (!inputText.trim() && !selectedAttachment) return;
 
     const text = inputText.trim();
-    const currentImg = selectedImage;
+    const currentAttachment = selectedAttachment;
     const currentReplyId = replyingTo?.id || null;
 
     setInputText('');
     setReplyingTo(null);
-    handleRemoveImage();
+    handleRemoveAttachment();
     sendTyping(false);
 
     try {
-      if (currentImg) {
+      if (currentAttachment) {
         setIsUploading(true);
         let uploadRes;
         try {
-          uploadRes = await api.uploadChatImage(currentImg);
+          uploadRes = await api.uploadChatAttachment(currentAttachment.file);
         } catch (uploadErr) {
-          console.error('Failed to upload image:', uploadErr);
-          alert(getErrorMessage(uploadErr, 'imageUploadFailed'));
+          console.error('Failed to upload attachment:', uploadErr);
+          alert(getErrorMessage(uploadErr, currentAttachment.isImage ? 'imageUploadFailed' : 'fileUploadFailed'));
           return;
         }
-        const finalMessage = `[image:${uploadRes.url}]${text ? '\n' + text : ''}`;
+
+        let finalMessage: string;
+        if (uploadRes.isImage) {
+          finalMessage = `[image:${uploadRes.url}]${text ? '\n' + text : ''}`;
+        } else {
+          finalMessage = `[file:${uploadRes.url}|${uploadRes.filename}|${uploadRes.size}]${text ? '\n' + text : ''}`;
+        }
+
         await sendMessage(finalMessage, undefined, undefined, currentReplyId);
       } else {
         await sendMessage(text, undefined, undefined, currentReplyId);
@@ -486,8 +529,11 @@ export const UserChatView: React.FC = () => {
           {replyingTo && (() => {
             const replyImgMatch = replyingTo.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
             const replyImgUrl = replyImgMatch ? replyImgMatch[1] : null;
+            const replyFileMatch = replyingTo.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
             const replyPreviewText = replyImgMatch
               ? ((replyImgMatch[2] || '').trim() || `📷 ${t('photo')}`)
+              : replyFileMatch
+              ? (`📎 ${replyFileMatch[2]}` + ((replyFileMatch[4] || '').trim() ? ` — ${(replyFileMatch[4] || '').trim()}` : ''))
               : replyingTo.text;
             const isReplyingSelf = replyingTo.senderId === user?.id || replyingTo.isOwn === true;
 
@@ -524,27 +570,33 @@ export const UserChatView: React.FC = () => {
             );
           })()}
 
-          {/* Selected Image Preview Chip */}
-          {imagePreviewUrl && (
+          {/* Selected Attachment Preview Chip */}
+          {selectedAttachment && (
             <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/5 dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-sm animate-message">
-              <div className="flex items-center gap-3 overflow-hidden">
-                <img
-                  src={imagePreviewUrl}
-                  alt="preview"
-                  className="w-12 h-12 rounded-xl object-cover border border-black/5 dark:border-white/10 shrink-0"
-                />
-                <div className="text-xs text-slate-700 dark:text-slate-200 truncate">
-                  <p className="font-semibold truncate">{selectedImage?.name}</p>
-                  <p className="text-[10px] text-slate-400">
-                    {selectedImage ? `${(selectedImage.size / 1024).toFixed(0)} KB` : ''}
+              <div className="flex items-center gap-3 overflow-hidden min-w-0">
+                {selectedAttachment.isImage && selectedAttachment.previewUrl ? (
+                  <img
+                    src={selectedAttachment.previewUrl}
+                    alt="preview"
+                    className="w-12 h-12 rounded-xl object-cover border border-black/5 dark:border-white/10 shrink-0"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-xl bg-amber-500/10 dark:bg-amber-500/20 border border-amber-500/20 flex items-center justify-center shrink-0 text-amber-500">
+                    <FileText className="w-6 h-6" />
+                  </div>
+                )}
+                <div className="text-xs text-slate-700 dark:text-slate-200 truncate min-w-0">
+                  <p className="font-semibold truncate">{selectedAttachment.file.name}</p>
+                  <p className="text-[10px] text-slate-400 mt-0.5">
+                    {formatFileSize(selectedAttachment.file.size)}
                   </p>
                 </div>
               </div>
               <button
                 type="button"
-                onClick={handleRemoveImage}
-                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0"
-                title={t('removeImage')}
+                onClick={handleRemoveAttachment}
+                className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-colors shrink-0 cursor-pointer"
+                title={t('removeAttachment')}
               >
                 <X className="w-4 h-4" />
               </button>
@@ -585,7 +637,13 @@ export const UserChatView: React.FC = () => {
                   setReplyingTo(null);
                 }
               }}
-              placeholder={selectedImage ? t('imageCaptionPlaceholder') : t('typeMessage')}
+              placeholder={
+                selectedAttachment
+                  ? selectedAttachment.isImage
+                    ? t('imageCaptionPlaceholder')
+                    : t('attachmentCaptionPlaceholder')
+                  : t('typeMessage')
+              }
               className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-slate-100 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-sans px-3 ${
                 isInputRtl ? 'text-right' : 'text-left'
               }`}
@@ -594,7 +652,7 @@ export const UserChatView: React.FC = () => {
             {/* Direct Send Icon Button WITHOUT Background */}
             <button
               type="submit"
-              disabled={(!inputText.trim() && !selectedImage) || isUploading}
+              disabled={(!inputText.trim() && !selectedAttachment) || isUploading}
               className="w-9 h-9 flex items-center justify-center text-[#2AABEE] hover:text-[#1d98d6] transition-all hover:scale-110 active:scale-95 disabled:text-slate-300 dark:disabled:text-slate-600 disabled:scale-100 disabled:cursor-not-allowed shrink-0 mx-1 bg-transparent border-none outline-none"
               title={t('send')}
             >
@@ -620,11 +678,10 @@ export const UserChatView: React.FC = () => {
       <input
         type="file"
         ref={fileInputRef}
-        accept="image/*"
         tabIndex={-1}
         aria-hidden="true"
         style={{ display: 'none' }}
-        onChange={(e) => e.target.files?.[0] && handleImageFile(e.target.files[0])}
+        onChange={(e) => e.target.files?.[0] && handleSelectedFile(e.target.files[0])}
       />
 
       {/* Slide-out User Profile / Settings Drawer */}

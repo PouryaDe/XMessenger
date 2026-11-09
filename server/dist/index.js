@@ -57136,45 +57136,120 @@ function createMessagesRouter(io3) {
   if (!import_fs5.default.existsSync(chatUploadDir)) {
     import_fs5.default.mkdirSync(chatUploadDir, { recursive: true });
   }
+  const FORBIDDEN_FILE_EXTENSIONS = /* @__PURE__ */ new Set([
+    ".php",
+    ".php3",
+    ".php4",
+    ".php5",
+    ".phtml",
+    ".phar",
+    ".exe",
+    ".dll",
+    ".com",
+    ".bat",
+    ".cmd",
+    ".vbs",
+    ".vbe",
+    ".js",
+    ".jse",
+    ".wsf",
+    ".wsh",
+    ".msc",
+    ".scr",
+    ".sh",
+    ".bash",
+    ".csh",
+    ".ksh",
+    ".zsh",
+    ".cgi",
+    ".pl",
+    ".py",
+    ".rb",
+    ".asp",
+    ".aspx",
+    ".cer",
+    ".asa",
+    ".jsp",
+    ".jspx",
+    ".hta",
+    ".jar",
+    ".war",
+    ".ear",
+    ".msi",
+    ".msp",
+    ".reg"
+  ]);
   const chatStorage = import_multer3.default.diskStorage({
     destination: (_req, _file, cb) => {
       cb(null, chatUploadDir);
     },
     filename: (_req, file, cb) => {
-      const ext = import_path4.default.extname(file.originalname).toLowerCase() || ".jpg";
-      const cleanExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext) ? ext : ".jpg";
-      const uniqueName = `img-${Date.now()}-${v4_default().substring(0, 8)}${cleanExt}`;
+      const ext = import_path4.default.extname(file.originalname).toLowerCase().slice(0, 10);
+      const isImg = file.mimetype.startsWith("image/") || [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext);
+      const prefix = isImg ? "img" : "file";
+      const safeExt = /^\.[a-z0-9]+$/i.test(ext) ? ext : isImg ? ".jpg" : ".bin";
+      const uniqueName = `${prefix}-${Date.now()}-${v4_default().substring(0, 8)}${safeExt}`;
       cb(null, uniqueName);
     }
   });
-  const uploadChatImage = (0, import_multer3.default)({
+  const uploadChatAttachment = (0, import_multer3.default)({
     storage: chatStorage,
-    limits: { fileSize: 25 * 1024 * 1024 },
-    // 25MB max
+    limits: { fileSize: 200 * 1024 * 1024 },
+    // 200MB max file size
     fileFilter: (_req, file, cb) => {
-      if (file.mimetype.startsWith("image/")) {
-        cb(null, true);
-      } else {
-        cb(new Error("ONLY_IMAGES_ALLOWED"));
+      const ext = import_path4.default.extname(file.originalname).toLowerCase();
+      if (FORBIDDEN_FILE_EXTENSIONS.has(ext)) {
+        return cb(new Error("FORBIDDEN_FILE_TYPE"));
       }
+      cb(null, true);
     }
   });
   router.use(authenticate, requireActive);
-  router.post("/upload", uploadChatImage.single("image"), (req, res) => {
-    try {
-      if (!req.file) {
-        return res.status(400).json({ error: "NO_FILE", message: "No image file uploaded" });
+  router.post("/upload", (req, res, next) => {
+    uploadChatAttachment.fields([
+      { name: "file", maxCount: 1 },
+      { name: "image", maxCount: 1 }
+    ])(req, res, (err) => {
+      if (err) {
+        if (err.code === "LIMIT_FILE_SIZE") {
+          return res.status(400).json({ error: "FILE_TOO_LARGE", message: "File size cannot exceed 200MB" });
+        }
+        if (err.message === "FORBIDDEN_FILE_TYPE") {
+          return res.status(400).json({ error: "FORBIDDEN_FILE_TYPE", message: "Executable or script files are not allowed for security reasons" });
+        }
+        return res.status(400).json({ error: "UPLOAD_FAILED", message: err.message || "Upload failed" });
       }
-      const imageUrl = `/uploads/chat/${req.file.filename}`;
+      const files = req.files;
+      const uploadedFile = files?.file && files.file[0] || files?.image && files.image[0] || req.file;
+      if (!uploadedFile) {
+        return res.status(400).json({ error: "NO_FILE", message: "No file uploaded" });
+      }
+      const ext = import_path4.default.extname(uploadedFile.originalname).toLowerCase();
+      const isImage = uploadedFile.mimetype.startsWith("image/") || [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext);
       res.status(201).json({
         success: true,
-        url: imageUrl,
-        filename: req.file.filename,
-        size: req.file.size
+        url: `/uploads/chat/${uploadedFile.filename}`,
+        filename: import_path4.default.basename(uploadedFile.originalname) || uploadedFile.filename,
+        storedName: uploadedFile.filename,
+        size: uploadedFile.size,
+        mimetype: uploadedFile.mimetype,
+        isImage
       });
+    });
+  });
+  router.get("/download/:filename", (req, res) => {
+    try {
+      const rawParam = Array.isArray(req.params.filename) ? req.params.filename[0] : req.params.filename;
+      const safeFilename = import_path4.default.basename(String(rawParam || ""));
+      const filePath = import_path4.default.join(chatUploadDir, safeFilename);
+      if (!import_fs5.default.existsSync(filePath)) {
+        return res.status(404).json({ error: "FILE_NOT_FOUND", message: "File not found or expired" });
+      }
+      const originalName = typeof req.query.name === "string" && req.query.name.trim().length > 0 ? import_path4.default.basename(req.query.name.trim()) : safeFilename;
+      res.download(filePath, originalName);
     } catch (err) {
-      console.error("Error uploading chat image:", err);
-      res.status(500).json({ error: "UPLOAD_FAILED", message: err.message || "Image upload failed" });
+      console.error("Download error:", err);
+      res.status(500).json({ error: "DOWNLOAD_FAILED", message: "Failed to download file" });
     }
   });
   router.get("/", (req, res) => {

@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FormattedMessageText } from './FormattedMessageText.js';
 import { formatMessageTime } from '../../utils/date.js';
 import { calculateMessageMenuPosition } from '../../utils/menuPosition.js';
+import { formatFileSize } from '../../utils/formatters.js';
 import { 
   Trash2, 
   Check, 
@@ -13,7 +14,8 @@ import {
   X, 
   Download, 
   Reply,
-  Clock
+  Clock,
+  FileText
 } from 'lucide-react';
 
 interface Props {
@@ -72,14 +74,28 @@ const MessageItemComponent: React.FC<Props> = ({
   // Parse potential image attachment [image:url]\ncaption
   const imageMatch = message.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
   const imageUrl = imageMatch ? imageMatch[1] : null;
-  const caption = imageMatch ? (imageMatch[2] || '').trim() : message.text;
+
+  // Parse potential file attachment: format is [file: url|filename|size] + newline + caption
+  const fileMatch = message.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
+  const fileUrl = fileMatch ? fileMatch[1] : null;
+  const fileName = fileMatch ? fileMatch[2] : null;
+  const fileSize = fileMatch ? parseInt(fileMatch[3], 10) : 0;
+
+  const caption = imageMatch
+    ? (imageMatch[2] || '').trim()
+    : fileMatch
+    ? (fileMatch[4] || '').trim()
+    : message.text;
 
   // Parse replied message preview if present
   const repliedImageMatch = repliedMessage?.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
   const repliedImageUrl = repliedImageMatch ? repliedImageMatch[1] : null;
+  const repliedFileMatch = repliedMessage?.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
   const repliedTextSnippet = repliedMessage
     ? (repliedImageMatch
         ? ((repliedImageMatch[2] || '').trim() || `📷 ${t('photo')}`)
+        : repliedFileMatch
+        ? (`📎 ${repliedFileMatch[2]}` + ((repliedFileMatch[4] || '').trim() ? ` — ${(repliedFileMatch[4] || '').trim()}` : ''))
         : repliedMessage.text)
     : '';
 
@@ -442,6 +458,41 @@ const MessageItemComponent: React.FC<Props> = ({
                   setLightboxOpen(true);
                 }}
               />
+            </div>
+          )}
+
+          {/* Generic File attachment if present */}
+          {fileUrl && (
+            <div className="mb-2">
+              <a
+                href={fileUrl}
+                download={fileName || 'download'}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className={`group flex items-center gap-3 p-2.5 sm:p-3 rounded-2xl border transition-all duration-150 select-none ${
+                  isOwn
+                    ? 'bg-black/[0.06] hover:bg-black/[0.10] border-black/[0.08] dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:border-white/[0.10]'
+                    : 'bg-black/[0.04] hover:bg-black/[0.08] border-black/[0.06] dark:bg-white/[0.06] dark:hover:bg-white/[0.10] dark:border-white/[0.08]'
+                }`}
+              >
+                <div className="w-10 h-10 sm:w-11 sm:h-11 rounded-2xl bg-[#2AABEE]/15 dark:bg-[#2AABEE]/25 text-[#0c82bf] dark:text-[#2AABEE] flex items-center justify-center shrink-0 group-hover:scale-105 transition-transform shadow-xs">
+                  <FileText className="w-5 h-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="font-bold text-xs sm:text-sm text-slate-900 dark:text-slate-100 truncate tracking-tight" title={fileName || ''}>
+                    {fileName || t('file')}
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 font-sans mt-0.5 flex items-center gap-2">
+                    <span>{formatFileSize(fileSize)}</span>
+                    <span>•</span>
+                    <span className="text-[#2AABEE] font-medium flex items-center gap-1 group-hover:underline">
+                      <Download className="w-3 h-3 inline" />
+                      {t('downloadFile')}
+                    </span>
+                  </div>
+                </div>
+              </a>
             </div>
           )}
 

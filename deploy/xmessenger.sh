@@ -176,8 +176,8 @@ server {
         log_not_found off;
     }
 
-    # Client body limit (Supports Database Restore & Media Uploads)
-    client_max_body_size 100M;
+    # Client body limit (Supports Database Restore & 200MB File/Media Uploads)
+    client_max_body_size 250M;
 
     location /socket.io/ {
         proxy_pass http://xmessenger-${TARGET_SLUG}:3001/socket.io/;
