@@ -183,10 +183,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
         <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 select-none">
           {[
             { id: 'all', label: t('allCategories') },
-            { id: 'vip', label: '⭐ VIP' },
-            { id: 'friends', label: '👥 ' + t('categoryFriends') },
-            { id: 'temporary', label: '⏳ ' + t('categoryTemporary') },
-            { id: 'work', label: '💼 ' + t('categoryWork') }
+            { id: 'vip', label: t('categoryVip') },
+            { id: 'friends', label: t('categoryFriends') },
+            { id: 'temporary', label: t('categoryTemporary') }
           ].map((cat) => {
             const isSelected = categoryFilter === cat.id;
             return (
@@ -264,7 +263,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                         </span>
                         {u.category && (
                           <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold shrink-0 border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25">
-                            {u.category === 'vip' ? '⭐ VIP' : u.category === 'friends' ? '👥 ' + t('categoryFriends') : u.category === 'temporary' ? '⏳ ' + t('categoryTemporary') : u.category === 'work' ? '💼 ' + t('categoryWork') : u.category}
+                            {u.category === 'vip' ? t('categoryVip') : u.category === 'friends' ? t('categoryFriends') : u.category === 'temporary' ? t('categoryTemporary') : u.category}
                           </span>
                         )}
                         {u.status === 'pending' && (

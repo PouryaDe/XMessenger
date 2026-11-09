@@ -376,7 +376,7 @@ export const AdminDashboard: React.FC = () => {
                       </h3>
                       {activeUser.category && (
                         <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">
-                          {activeUser.category === 'vip' ? '⭐ VIP' : activeUser.category === 'friends' ? '👥 ' + t('categoryFriends') : activeUser.category === 'temporary' ? '⏳ ' + t('categoryTemporary') : activeUser.category === 'work' ? '💼 ' + t('categoryWork') : activeUser.category}
+                          {activeUser.category === 'vip' ? t('categoryVip') : activeUser.category === 'friends' ? t('categoryFriends') : activeUser.category === 'temporary' ? t('categoryTemporary') : activeUser.category}
                         </span>
                       )}
                       {activeUser.status === 'pending' && (

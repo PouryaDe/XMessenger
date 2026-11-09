@@ -42,7 +42,7 @@ This file serves as the high-level roadmap and engineering guide for AI agents w
   - Accessible only to admin via dedicated `UserProfileModal.tsx`; completely invisible to regular users.
 - **User Categorization & Folders**:
   - Flexible user categorization (`category` column on `users` table).
-  - Presets for VIP (⭐), Friends (👥), Temporary (⏳), Work (💼), and custom tags.
+  - Presets for VIP (ویژه), Friends (دوستان), Temporary (موقت), and custom tags (flat text without emojis).
   - Filter chips in `AdminSidebar.tsx` and badges on user cards.
 - **Admin Presence Privacy**:
   - Admin toggle (`show_admin_presence`) in General Settings.

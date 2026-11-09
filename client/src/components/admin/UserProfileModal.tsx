@@ -15,11 +15,7 @@ import {
   Loader2, 
   Trash2, 
   Check, 
-  UserCircle,
-  Star,
-  Users,
-  Briefcase,
-  Hourglass
+  UserCircle
 } from 'lucide-react';
 
 interface Props {
@@ -31,10 +27,9 @@ interface Props {
 }
 
 const CATEGORY_PRESETS = [
-  { id: 'vip', labelKey: 'categoryVip', icon: Star, color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
-  { id: 'friends', labelKey: 'categoryFriends', icon: Users, color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/30' },
-  { id: 'temporary', labelKey: 'categoryTemporary', icon: Hourglass, color: 'text-rose-500 bg-rose-500/10 border-rose-500/30' },
-  { id: 'work', labelKey: 'categoryWork', icon: Briefcase, color: 'text-sky-500 bg-sky-500/10 border-sky-500/30' }
+  { id: 'vip', labelKey: 'categoryVip', color: 'text-amber-500 bg-amber-500/10 border-amber-500/30' },
+  { id: 'friends', labelKey: 'categoryFriends', color: 'text-indigo-500 bg-indigo-500/10 border-indigo-500/30' },
+  { id: 'temporary', labelKey: 'categoryTemporary', color: 'text-rose-500 bg-rose-500/10 border-rose-500/30' }
 ] as const;
 
 export const UserProfileModal: React.FC<Props> = ({ user, isOpen, onClose, isOnline, lastSeen }) => {
@@ -250,20 +245,18 @@ export const UserProfileModal: React.FC<Props> = ({ user, isOpen, onClose, isOnl
               </button>
 
               {CATEGORY_PRESETS.map((preset) => {
-                const IconComponent = preset.icon;
                 const isSelected = currentCategory === preset.id;
                 return (
                   <button
                     key={preset.id}
                     type="button"
                     onClick={() => handleSelectCategory(preset.id)}
-                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center gap-1.5 cursor-pointer ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all border flex items-center justify-center cursor-pointer ${
                       isSelected
                         ? `${preset.color} ring-2 ring-amber-500/30 shadow-xs scale-102`
                         : 'bg-stone-100 dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 border-black/5 dark:border-white/5 hover:bg-stone-200 dark:hover:bg-white/[0.10]'
                     }`}
                   >
-                    <IconComponent className="w-3.5 h-3.5 shrink-0" />
                     <span>{t(preset.labelKey)}</span>
                   </button>
                 );
