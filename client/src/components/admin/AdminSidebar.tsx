@@ -121,44 +121,43 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
         {/* Modern iOS / Telegram Segmented Control */}
         <div className="grid grid-cols-4 p-1 rounded-2xl bg-black/[0.035] dark:bg-black/40 border border-black/[0.04] dark:border-white/[0.06] select-none">
           <button
+            type="button"
             onClick={() => setFilterTab('all')}
-            className={`relative flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'all'
                 ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
             }`}
           >
-            <span className="relative inline-flex items-center">
-              <span>{t('allUsers')}</span>
-              {unreadChatsCount > 0 && (
-                <span className="absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-emerald-500 text-white text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218] pointer-events-none">
-                  {unreadChatsCount}
-                </span>
-              )}
-            </span>
+            <span>{t('allUsers')}</span>
+            {unreadChatsCount > 0 && (
+              <span className="min-w-[16px] h-4 px-1 rounded-full bg-emerald-500 text-white text-[9.5px] font-bold inline-flex items-center justify-center leading-none shadow-xs shrink-0">
+                {unreadChatsCount}
+              </span>
+            )}
           </button>
 
           <button
+            type="button"
             onClick={() => setFilterTab('pending')}
-            className={`relative flex items-center justify-center py-1.5 px-0.5 rounded-xl text-xs transition-all ${
+            className={`flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'pending'
                 ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
             }`}
           >
-            <span className="relative inline-flex items-center">
-              <span>{t('pendingUsers')}</span>
-              {pendingCount > 0 && (
-                <span className="absolute -top-1.5 rtl:-left-2.5 ltr:-right-2.5 min-w-[15px] h-[15px] px-1 rounded-full bg-amber-500 text-white text-[8.5px] font-bold flex items-center justify-center leading-none shadow-xs ring-1.5 ring-white/70 dark:ring-[#0E1218] pointer-events-none">
-                  {pendingCount}
-                </span>
-              )}
-            </span>
+            <span className="truncate">{t('pendingUsers')}</span>
+            {pendingCount > 0 && (
+              <span className="min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9.5px] font-bold inline-flex items-center justify-center leading-none shadow-xs shrink-0">
+                {pendingCount}
+              </span>
+            )}
           </button>
 
           <button
+            type="button"
             onClick={() => setFilterTab('active')}
-            className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all ${
+            className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'active'
                 ? 'bg-white dark:bg-white/[0.14] text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
@@ -168,8 +167,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           </button>
 
           <button
+            type="button"
             onClick={() => setFilterTab('banned')}
-            className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all ${
+            className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'banned'
                 ? 'bg-white dark:bg-white/[0.14] text-red-600 dark:text-red-400 shadow-xs font-bold'
                 : 'text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'

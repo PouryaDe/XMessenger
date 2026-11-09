@@ -75,7 +75,7 @@ const resources = {
       noUsersFound: 'کاربری یافت نشد',
       searchUsers: 'جستجوی کاربر...',
       allUsers: 'همه',
-      pendingUsers: 'در انتظار تایید',
+      pendingUsers: 'در انتظار',
       activeUsers: 'فعال',
       bannedUsers: 'مسدود',
       // Pending screen
