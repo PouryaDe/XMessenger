@@ -56209,6 +56209,165 @@ function setupSocketServer(io3) {
   });
 }
 
+// src/middleware/security.ts
+var DUMMY_BCRYPT_HASH = bcryptjs_default.hashSync("xmessenger-timing-attack-protection-constant-time-2026", 12);
+var ipFailedAttempts = /* @__PURE__ */ new Map();
+var userFailedAttempts = /* @__PURE__ */ new Map();
+var ipRegisterAttempts = /* @__PURE__ */ new Map();
+var MAX_FAILED_PER_TARGET = 5;
+var MAX_FAILED_PER_IP = 15;
+var LOCKOUT_WINDOW_MS = 15 * 60 * 1e3;
+var ATTEMPT_WINDOW_MS = 15 * 60 * 1e3;
+var MAX_REGISTRATIONS_PER_IP = 5;
+var cleanupTimer = setInterval(() => {
+  const now = Date.now();
+  for (const [key, record] of ipFailedAttempts.entries()) {
+    if (now - record.firstAttempt > ATTEMPT_WINDOW_MS && (!record.lockedUntil || now > record.lockedUntil)) {
+      ipFailedAttempts.delete(key);
+    }
+  }
+  for (const [key, record] of userFailedAttempts.entries()) {
+    if (now - record.firstAttempt > ATTEMPT_WINDOW_MS && (!record.lockedUntil || now > record.lockedUntil)) {
+      userFailedAttempts.delete(key);
+    }
+  }
+  for (const [key, record] of ipRegisterAttempts.entries()) {
+    if (now - record.firstAttempt > ATTEMPT_WINDOW_MS && (!record.lockedUntil || now > record.lockedUntil)) {
+      ipRegisterAttempts.delete(key);
+    }
+  }
+}, 5 * 60 * 1e3);
+if (cleanupTimer.unref) {
+  cleanupTimer.unref();
+}
+function getClientIp(req) {
+  const xForwarded = req.headers["x-forwarded-for"];
+  if (typeof xForwarded === "string") {
+    return xForwarded.split(",")[0].trim();
+  }
+  if (Array.isArray(xForwarded) && xForwarded.length > 0) {
+    return xForwarded[0].trim();
+  }
+  const xRealIp = req.headers["x-real-ip"];
+  if (typeof xRealIp === "string") {
+    return xRealIp.trim();
+  }
+  return req.ip || req.socket.remoteAddress || "127.0.0.1";
+}
+function checkLoginLockout(ip, username) {
+  const now = Date.now();
+  const cleanUser = username.trim().toLowerCase();
+  const targetKey = `${ip}:${cleanUser}`;
+  const ipRecord = ipFailedAttempts.get(ip);
+  if (ipRecord?.lockedUntil && now < ipRecord.lockedUntil) {
+    return {
+      locked: true,
+      remainingSeconds: Math.ceil((ipRecord.lockedUntil - now) / 1e3),
+      reason: "IP"
+    };
+  }
+  const targetRecord = userFailedAttempts.get(targetKey);
+  if (targetRecord?.lockedUntil && now < targetRecord.lockedUntil) {
+    return {
+      locked: true,
+      remainingSeconds: Math.ceil((targetRecord.lockedUntil - now) / 1e3),
+      reason: "ACCOUNT"
+    };
+  }
+  return null;
+}
+async function recordFailedLogin(ip, username) {
+  const now = Date.now();
+  const cleanUser = username.trim().toLowerCase();
+  const targetKey = `${ip}:${cleanUser}`;
+  let targetRecord = userFailedAttempts.get(targetKey);
+  if (!targetRecord || now - targetRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!targetRecord.lockedUntil || now > targetRecord.lockedUntil)) {
+    targetRecord = { count: 1, firstAttempt: now };
+  } else {
+    targetRecord.count += 1;
+  }
+  if (targetRecord.count >= MAX_FAILED_PER_TARGET) {
+    targetRecord.lockedUntil = now + LOCKOUT_WINDOW_MS;
+  }
+  userFailedAttempts.set(targetKey, targetRecord);
+  let ipRecord = ipFailedAttempts.get(ip);
+  if (!ipRecord || now - ipRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!ipRecord.lockedUntil || now > ipRecord.lockedUntil)) {
+    ipRecord = { count: 1, firstAttempt: now };
+  } else {
+    ipRecord.count += 1;
+  }
+  if (ipRecord.count >= MAX_FAILED_PER_IP) {
+    ipRecord.lockedUntil = now + LOCKOUT_WINDOW_MS;
+  }
+  ipFailedAttempts.set(ip, ipRecord);
+  if (targetRecord.count > 1) {
+    const delayMs = Math.min((targetRecord.count - 1) * 400, 1500);
+    await new Promise((res) => setTimeout(res, delayMs));
+  }
+}
+function recordSuccessfulLogin(ip, username) {
+  const cleanUser = username.trim().toLowerCase();
+  userFailedAttempts.delete(`${ip}:${cleanUser}`);
+  const ipRecord = ipFailedAttempts.get(ip);
+  if (ipRecord) {
+    ipRecord.count = Math.max(0, ipRecord.count - 1);
+  }
+}
+function registerRateLimiter(req, res, next) {
+  const ip = getClientIp(req);
+  const now = Date.now();
+  let record = ipRegisterAttempts.get(ip);
+  if (!record || now - record.firstAttempt > ATTEMPT_WINDOW_MS) {
+    record = { count: 1, firstAttempt: now };
+    ipRegisterAttempts.set(ip, record);
+    return next();
+  }
+  record.count += 1;
+  if (record.count > MAX_REGISTRATIONS_PER_IP) {
+    const retryAfter = Math.ceil((record.firstAttempt + ATTEMPT_WINDOW_MS - now) / 1e3);
+    res.setHeader("Retry-After", retryAfter.toString());
+    res.status(429).json({
+      error: "TOO_MANY_ATTEMPTS",
+      message: "Too many registration attempts from this IP. Please wait before creating more accounts.",
+      retryAfter
+    });
+    return;
+  }
+  next();
+}
+function validateUsernameSecurity(username) {
+  if (typeof username !== "string") {
+    return { valid: false, error: "INVALID_INPUT", message: "Username is required" };
+  }
+  const trimmed = username.trim().toLowerCase();
+  if (trimmed.length < 3 || trimmed.length > 32) {
+    return { valid: false, error: "INVALID_USERNAME", message: "Username must be between 3 and 32 characters" };
+  }
+  if (trimmed.includes("@") || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmed)) {
+    return { valid: false, error: "USERNAME_EMAIL_NOT_ALLOWED", message: "Username cannot be an email format" };
+  }
+  if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(trimmed)) {
+    return { valid: false, error: "USERNAME_ALL_NUMERIC", message: "Username cannot be all numbers" };
+  }
+  const allowedPattern = /^[a-zA-Z0-9_\-\.\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]+$/;
+  if (!allowedPattern.test(trimmed)) {
+    return {
+      valid: false,
+      error: "INVALID_CHARACTERS",
+      message: "Username contains invalid characters. Only letters, numbers, dot, underscore and hyphen are allowed."
+    };
+  }
+  return { valid: true };
+}
+function securityHeadersMiddleware(_req, res, next) {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "SAMEORIGIN");
+  res.setHeader("X-XSS-Protection", "1; mode=block");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "geolocation=(), camera=(), microphone=(), payment=()");
+  next();
+}
+
 // src/routes/auth.ts
 function createAuthRouter(io3) {
   const authRouter2 = (0, import_express.Router)();
@@ -56221,8 +56380,9 @@ function createAuthRouter(io3) {
       cb(null, avatarsDir);
     },
     filename: (req, file, cb) => {
-      const ext = import_path2.default.extname(file.originalname).toLowerCase() || ".png";
-      cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`);
+      const ext = import_path2.default.extname(file.originalname).toLowerCase();
+      const cleanExt = [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext) ? ext : ".png";
+      cb(null, `avatar-${req.user.id}-${Date.now()}${cleanExt}`);
     }
   });
   const uploadAvatar = (0, import_multer.default)({
@@ -56230,10 +56390,11 @@ function createAuthRouter(io3) {
     limits: { fileSize: 5 * 1024 * 1024 },
     // 5MB limit
     fileFilter: (_req, file, cb) => {
-      if (file.mimetype.startsWith("image/")) {
+      const ext = import_path2.default.extname(file.originalname).toLowerCase();
+      if ([".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext) && file.mimetype.startsWith("image/")) {
         cb(null, true);
       } else {
-        cb(new Error("Only image files are allowed"));
+        cb(new Error("Only safe image files (.png, .jpg, .jpeg, .webp, .gif) are allowed"));
       }
     }
   });
@@ -56268,25 +56429,23 @@ function createAuthRouter(io3) {
       buildVersion
     });
   });
-  authRouter2.post("/register", async (req, res) => {
+  authRouter2.post("/register", registerRateLimiter, async (req, res) => {
     try {
       const { username, password } = req.body;
       if (!username || !password || typeof username !== "string" || typeof password !== "string") {
         return res.status(400).json({ error: "INVALID_INPUT", message: "Username and password are required" });
       }
-      const trimmedUsername = username.trim().toLowerCase();
-      if (trimmedUsername.length < 3 || trimmedUsername.length > 32) {
-        return res.status(400).json({ error: "INVALID_USERNAME", message: "Username must be between 3 and 32 characters" });
-      }
-      if (trimmedUsername.includes("@") || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedUsername)) {
-        return res.status(400).json({ error: "USERNAME_EMAIL_NOT_ALLOWED", message: "Username cannot be an email format" });
-      }
-      if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(trimmedUsername)) {
-        return res.status(400).json({ error: "USERNAME_ALL_NUMERIC", message: "Username cannot be all numbers" });
+      const usernameValidation = validateUsernameSecurity(username);
+      if (!usernameValidation.valid) {
+        return res.status(400).json({ error: usernameValidation.error, message: usernameValidation.message });
       }
       if (password.length < 6) {
         return res.status(400).json({ error: "WEAK_PASSWORD", message: "Password must be at least 6 characters" });
       }
+      if (password.length > 128) {
+        return res.status(400).json({ error: "INVALID_INPUT", message: "Password exceeds maximum allowed length" });
+      }
+      const trimmedUsername = username.trim().toLowerCase();
       const regEnabled = getSettingValue("registration_enabled", "true") === "true";
       if (!regEnabled) {
         return res.status(403).json({ error: "REGISTRATION_DISABLED", message: "Registration is currently disabled by administrator" });
@@ -56341,19 +56500,36 @@ function createAuthRouter(io3) {
   });
   authRouter2.post("/login", async (req, res) => {
     try {
+      const ip = getClientIp(req);
       const { username, password } = req.body;
-      if (!username || !password) {
+      if (!username || !password || typeof username !== "string" || typeof password !== "string") {
         return res.status(400).json({ error: "INVALID_INPUT", message: "Username and password are required" });
       }
+      if (password.length > 128) {
+        return res.status(400).json({ error: "INVALID_INPUT", message: "Password exceeds maximum allowed length" });
+      }
       const trimmedUsername = username.trim().toLowerCase();
+      const lockout = checkLoginLockout(ip, trimmedUsername);
+      if (lockout) {
+        res.setHeader("Retry-After", lockout.remainingSeconds.toString());
+        return res.status(429).json({
+          error: lockout.reason === "ACCOUNT" ? "ACCOUNT_LOCKED" : "TOO_MANY_ATTEMPTS",
+          message: lockout.reason === "ACCOUNT" ? "This account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes." : "Too many failed login attempts from this IP. Please try again later.",
+          retryAfter: lockout.remainingSeconds
+        });
+      }
       const user = db.prepare("SELECT id, username, password_hash, role, status FROM users WHERE username = ?").get(trimmedUsername);
       if (!user) {
+        await comparePassword(password, DUMMY_BCRYPT_HASH);
+        await recordFailedLogin(ip, trimmedUsername);
         return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "Invalid username or password" });
       }
       const passwordValid = await comparePassword(password, user.password_hash);
       if (!passwordValid) {
+        await recordFailedLogin(ip, trimmedUsername);
         return res.status(401).json({ error: "INVALID_CREDENTIALS", message: "Invalid username or password" });
       }
+      recordSuccessfulLogin(ip, trimmedUsername);
       const now = (/* @__PURE__ */ new Date()).toISOString();
       db.prepare("UPDATE users SET last_seen = ? WHERE id = ?").run(now, user.id);
       const authUser = {
@@ -56453,8 +56629,8 @@ function createAuthRouter(io3) {
   authRouter2.post("/change-password", authenticate, async (req, res) => {
     try {
       const { currentPassword, newPassword } = req.body;
-      if (!currentPassword || !newPassword || newPassword.length < 6) {
-        return res.status(400).json({ error: "INVALID_INPUT", message: "Valid new password is required (min 6 characters)" });
+      if (!currentPassword || !newPassword || typeof newPassword !== "string" || newPassword.length < 6 || newPassword.length > 128) {
+        return res.status(400).json({ error: "INVALID_INPUT", message: "Valid new password is required (6-128 characters)" });
       }
       const row = db.prepare("SELECT password_hash FROM users WHERE id = ?").get(req.user.id);
       const valid = await comparePassword(currentPassword, row.password_hash);
@@ -56487,8 +56663,9 @@ function createAdminRouter(io3) {
   const iconStorage = import_multer2.default.diskStorage({
     destination: (_req, _file, cb) => cb(null, iconsDir),
     filename: (_req, file, cb) => {
-      const ext = import_path3.default.extname(file.originalname).toLowerCase() || ".png";
-      cb(null, `pwa-icon-${Date.now()}${ext}`);
+      const ext = import_path3.default.extname(file.originalname).toLowerCase();
+      const cleanExt = [".png", ".jpg", ".jpeg", ".webp", ".svg"].includes(ext) ? ext : ".png";
+      cb(null, `pwa-icon-${Date.now()}${cleanExt}`);
     }
   });
   const uploadIcon = (0, import_multer2.default)({
@@ -57295,13 +57472,13 @@ pushRouter.post("/test", async (req, res) => {
 });
 
 // src/workers/ttlCleaner.ts
-var cleanupTimer = null;
+var cleanupTimer2 = null;
 function startTtlWorker(io3) {
-  if (cleanupTimer) {
-    clearInterval(cleanupTimer);
+  if (cleanupTimer2) {
+    clearInterval(cleanupTimer2);
   }
   console.log(`[TTL Worker] Started. Polling every ${config.ttlCleanupIntervalMs / 1e3}s for expired messages.`);
-  cleanupTimer = setInterval(() => {
+  cleanupTimer2 = setInterval(() => {
     try {
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const expiredRows = db.prepare("SELECT id, sender_id, recipient_id FROM messages WHERE expires_at <= ?").all(now);
@@ -57328,6 +57505,8 @@ initDatabase();
 initVapid();
 var app = (0, import_express5.default)();
 var server = import_http.default.createServer(app);
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 var io2 = new Server(server, {
   cors: {
     origin: "*",
@@ -57336,6 +57515,7 @@ var io2 = new Server(server, {
 });
 setupSocketServer(io2);
 startTtlWorker(io2);
+app.use(securityHeadersMiddleware);
 app.use((0, import_cors.default)());
 app.use(import_express5.default.json({ limit: "5mb" }));
 app.use("/api/auth", createAuthRouter(io2));

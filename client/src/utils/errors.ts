@@ -3,6 +3,10 @@ import i18n from '../i18n/index.js';
 const ERROR_CODE_MAP: Record<string, string> = {
   // Machine error codes from backend API
   INVALID_CREDENTIALS: 'invalidCredentials',
+  TOO_MANY_ATTEMPTS: 'errTooManyAttempts',
+  ACCOUNT_LOCKED: 'errAccountLocked',
+  RATE_LIMITED: 'errTooManyAttempts',
+  INVALID_CHARACTERS: 'errInvalidCharacters',
   INVALID_INPUT: 'errRequiredFields',
   INVALID_USERNAME: 'errUsernameLength',
   USERNAME_EMAIL_NOT_ALLOWED: 'errUsernameEmailNotAllowed',
@@ -33,6 +37,9 @@ const ERROR_CODE_MAP: Record<string, string> = {
 
 const MESSAGE_PATTERN_MAP: Array<{ pattern: RegExp; key: string }> = [
   { pattern: /invalid.*(username|password|credentials)/i, key: 'invalidCredentials' },
+  { pattern: /too many (failed )?attempts|rate limit/i, key: 'errTooManyAttempts' },
+  { pattern: /temporarily locked|account.*locked/i, key: 'errAccountLocked' },
+  { pattern: /invalid characters/i, key: 'errInvalidCharacters' },
   { pattern: /username.*password.*required/i, key: 'errRequiredFields' },
   { pattern: /username.*between.*3.*32/i, key: 'errUsernameLength' },
   { pattern: /email.*format|email.*not allowed/i, key: 'errUsernameEmailNotAllowed' },

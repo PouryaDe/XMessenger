@@ -27,8 +27,9 @@ function createAdminRouter(io) {
     const iconStorage = multer_1.default.diskStorage({
         destination: (_req, _file, cb) => cb(null, iconsDir),
         filename: (_req, file, cb) => {
-            const ext = path_1.default.extname(file.originalname).toLowerCase() || '.png';
-            cb(null, `pwa-icon-${Date.now()}${ext}`);
+            const ext = path_1.default.extname(file.originalname).toLowerCase();
+            const cleanExt = ['.png', '.jpg', '.jpeg', '.webp', '.svg'].includes(ext) ? ext : '.png';
+            cb(null, `pwa-icon-${Date.now()}${cleanExt}`);
         }
     });
     const uploadIcon = (0, multer_1.default)({

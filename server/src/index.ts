@@ -13,6 +13,7 @@ import { pushRouter } from './routes/push.js';
 import { setupSocketServer } from './socket/index.js';
 import { startTtlWorker } from './workers/ttlCleaner.js';
 import { initVapid } from './services/pushService.js';
+import { securityHeadersMiddleware } from './middleware/security.js';
 
 // 1. Initialize SQLite Database & VAPID keys
 initDatabase();
@@ -21,6 +22,10 @@ initVapid();
 // 2. Setup Express & HTTP Server
 const app = express();
 const server = http.createServer(app);
+
+// Security: Disable Express fingerprinting & trust upstream Nginx reverse proxy
+app.disable('x-powered-by');
+app.set('trust proxy', 1);
 
 // 3. Setup Socket.io
 const io = new Server(server, {
@@ -37,6 +42,7 @@ setupSocketServer(io);
 startTtlWorker(io);
 
 // 5. Middlewares
+app.use(securityHeadersMiddleware);
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 

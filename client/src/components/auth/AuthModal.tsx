@@ -51,6 +51,12 @@ export const AuthModal: React.FC = () => {
         return;
       }
 
+      const allowedCharRegex = /^[a-zA-Z0-9_\-\.\u0600-\u06FF\uFB50-\uFDFF\uFE70-\uFEFF]+$/;
+      if (!allowedCharRegex.test(cleanUsername)) {
+        setError(t('errInvalidCharacters'));
+        return;
+      }
+
       if (password !== confirmPassword) {
         setError(t('passwordsDoNotMatch'));
         return;

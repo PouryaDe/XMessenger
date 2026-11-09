@@ -15,6 +15,7 @@ const index_js_2 = require("../database/index.js");
 const crypto_js_1 = require("../utils/crypto.js");
 const auth_js_1 = require("../middleware/auth.js");
 const index_js_3 = require("../socket/index.js");
+const security_js_1 = require("../middleware/security.js");
 function createAuthRouter(io) {
     const authRouter = (0, express_1.Router)();
     // Setup Multer for User/Admin Avatar uploads
@@ -27,19 +28,21 @@ function createAuthRouter(io) {
             cb(null, avatarsDir);
         },
         filename: (req, file, cb) => {
-            const ext = path_1.default.extname(file.originalname).toLowerCase() || '.png';
-            cb(null, `avatar-${req.user.id}-${Date.now()}${ext}`);
+            const ext = path_1.default.extname(file.originalname).toLowerCase();
+            const cleanExt = ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) ? ext : '.png';
+            cb(null, `avatar-${req.user.id}-${Date.now()}${cleanExt}`);
         }
     });
     const uploadAvatar = (0, multer_1.default)({
         storage: avatarStorage,
         limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
         fileFilter: (_req, file, cb) => {
-            if (file.mimetype.startsWith('image/')) {
+            const ext = path_1.default.extname(file.originalname).toLowerCase();
+            if (['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext) && file.mimetype.startsWith('image/')) {
                 cb(null, true);
             }
             else {
-                cb(new Error('Only image files are allowed'));
+                cb(new Error('Only safe image files (.png, .jpg, .jpeg, .webp, .gif) are allowed'));
             }
         }
     });
@@ -75,28 +78,25 @@ function createAuthRouter(io) {
             buildVersion
         });
     });
-    // Register new user
-    authRouter.post('/register', async (req, res) => {
+    // Register new user (protected by IP rate limiting & strict input validation)
+    authRouter.post('/register', security_js_1.registerRateLimiter, async (req, res) => {
         try {
             const { username, password } = req.body;
             if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
                 return res.status(400).json({ error: 'INVALID_INPUT', message: 'Username and password are required' });
             }
-            const trimmedUsername = username.trim().toLowerCase();
-            if (trimmedUsername.length < 3 || trimmedUsername.length > 32) {
-                return res.status(400).json({ error: 'INVALID_USERNAME', message: 'Username must be between 3 and 32 characters' });
-            }
-            // Username cannot be an email format or contain @
-            if (trimmedUsername.includes('@') || /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedUsername)) {
-                return res.status(400).json({ error: 'USERNAME_EMAIL_NOT_ALLOWED', message: 'Username cannot be an email format' });
-            }
-            // Username cannot be purely numeric (all digits, English or Persian/Arabic)
-            if (/^[\d\u0660-\u0669\u06F0-\u06F9]+$/.test(trimmedUsername)) {
-                return res.status(400).json({ error: 'USERNAME_ALL_NUMERIC', message: 'Username cannot be all numbers' });
+            // Strict security check against injection, control chars and illegal formats
+            const usernameValidation = (0, security_js_1.validateUsernameSecurity)(username);
+            if (!usernameValidation.valid) {
+                return res.status(400).json({ error: usernameValidation.error, message: usernameValidation.message });
             }
             if (password.length < 6) {
                 return res.status(400).json({ error: 'WEAK_PASSWORD', message: 'Password must be at least 6 characters' });
             }
+            if (password.length > 128) {
+                return res.status(400).json({ error: 'INVALID_INPUT', message: 'Password exceeds maximum allowed length' });
+            }
+            const trimmedUsername = username.trim().toLowerCase();
             // Check if registration is enabled by admin
             const regEnabled = (0, index_js_2.getSettingValue)('registration_enabled', 'true') === 'true';
             if (!regEnabled) {
@@ -157,22 +157,47 @@ function createAuthRouter(io) {
             res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to register account' });
         }
     });
-    // Login
+    // Login (anti-bot brute force protection, IP lockout, timing attack mitigation)
     authRouter.post('/login', async (req, res) => {
         try {
+            const ip = (0, security_js_1.getClientIp)(req);
             const { username, password } = req.body;
-            if (!username || !password) {
+            if (!username || !password || typeof username !== 'string' || typeof password !== 'string') {
                 return res.status(400).json({ error: 'INVALID_INPUT', message: 'Username and password are required' });
             }
+            if (password.length > 128) {
+                return res.status(400).json({ error: 'INVALID_INPUT', message: 'Password exceeds maximum allowed length' });
+            }
             const trimmedUsername = username.trim().toLowerCase();
+            // 1. Guard against brute force attacks and automated bots
+            const lockout = (0, security_js_1.checkLoginLockout)(ip, trimmedUsername);
+            if (lockout) {
+                res.setHeader('Retry-After', lockout.remainingSeconds.toString());
+                return res.status(429).json({
+                    error: lockout.reason === 'ACCOUNT' ? 'ACCOUNT_LOCKED' : 'TOO_MANY_ATTEMPTS',
+                    message: lockout.reason === 'ACCOUNT'
+                        ? 'This account is temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.'
+                        : 'Too many failed login attempts from this IP. Please try again later.',
+                    retryAfter: lockout.remainingSeconds
+                });
+            }
+            // 2. Query user from database
             const user = index_js_2.db.prepare('SELECT id, username, password_hash, role, status FROM users WHERE username = ?').get(trimmedUsername);
+            // 3. User does not exist: simulate bcrypt comparison using pre-computed DUMMY_BCRYPT_HASH
+            // This strictly prevents timing analysis that bots use to enumerate usernames
             if (!user) {
+                await (0, crypto_js_1.comparePassword)(password, security_js_1.DUMMY_BCRYPT_HASH);
+                await (0, security_js_1.recordFailedLogin)(ip, trimmedUsername);
                 return res.status(401).json({ error: 'INVALID_CREDENTIALS', message: 'Invalid username or password' });
             }
+            // 4. Verify password
             const passwordValid = await (0, crypto_js_1.comparePassword)(password, user.password_hash);
             if (!passwordValid) {
+                await (0, security_js_1.recordFailedLogin)(ip, trimmedUsername);
                 return res.status(401).json({ error: 'INVALID_CREDENTIALS', message: 'Invalid username or password' });
             }
+            // 5. Successful login: clear failed attempt tracker
+            (0, security_js_1.recordSuccessfulLogin)(ip, trimmedUsername);
             // Update last seen
             const now = new Date().toISOString();
             index_js_2.db.prepare('UPDATE users SET last_seen = ? WHERE id = ?').run(now, user.id);
@@ -283,8 +308,8 @@ function createAuthRouter(io) {
     authRouter.post('/change-password', auth_js_1.authenticate, async (req, res) => {
         try {
             const { currentPassword, newPassword } = req.body;
-            if (!currentPassword || !newPassword || newPassword.length < 6) {
-                return res.status(400).json({ error: 'INVALID_INPUT', message: 'Valid new password is required (min 6 characters)' });
+            if (!currentPassword || !newPassword || typeof newPassword !== 'string' || newPassword.length < 6 || newPassword.length > 128) {
+                return res.status(400).json({ error: 'INVALID_INPUT', message: 'Valid new password is required (6-128 characters)' });
             }
             const row = index_js_2.db.prepare('SELECT password_hash FROM users WHERE id = ?').get(req.user.id);
             const valid = await (0, crypto_js_1.comparePassword)(currentPassword, row.password_hash);

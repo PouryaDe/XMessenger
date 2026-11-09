@@ -84,6 +84,9 @@ const resources = {
       refreshStatus: 'بررسی مجدد وضعیت',
       // Errors
       invalidCredentials: 'نام کاربری یا رمز عبور اشتباه است.',
+      errTooManyAttempts: 'تعداد تلاش‌های ناموفق بیش از حد مجاز است. لطفاً چند دقیقه دیگر امتحان کنید.',
+      errAccountLocked: 'این حساب به دلیل تلاش‌های مکرر ناموفق برای ورود، موقتاً قفل شده است. لطفاً ۱۵ دقیقه دیگر تلاش کنید.',
+      errInvalidCharacters: 'نام کاربری تنها می‌تواند شامل حروف، اعداد، نقطه، خط تیره و زیرخط باشد.',
       errRequiredFields: 'لطفاً نام کاربری و رمز عبور را وارد کنید.',
       errUsernameLength: 'نام کاربری باید بین ۳ تا ۳۲ کاراکتر باشد.',
       errUsernameEmailNotAllowed: 'نام کاربری نمی‌تواند به فرمت ایمیل باشد.',
@@ -377,6 +380,9 @@ const resources = {
       refreshStatus: 'Check Status',
       // Errors
       invalidCredentials: 'Invalid username or password.',
+      errTooManyAttempts: 'Too many failed attempts. Please wait a few minutes before trying again.',
+      errAccountLocked: 'This account has been temporarily locked due to repeated failed login attempts. Please try again in 15 minutes.',
+      errInvalidCharacters: 'Username may only contain letters, numbers, dots, hyphens, and underscores.',
       errRequiredFields: 'Username and password are required.',
       errUsernameLength: 'Username must be between 3 and 32 characters.',
       errUsernameEmailNotAllowed: 'Username cannot be an email format.',
