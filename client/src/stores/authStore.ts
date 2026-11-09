@@ -5,7 +5,7 @@ import { initSocket, disconnectSocket } from '../services/socket.js';
 interface AuthState {
   token: string | null;
   user: User | null;
-  adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null;
+  adminInfo: { id: string; username: string; lastSeen?: string | null; isOnline?: boolean; showPresence?: boolean; avatarUrl?: string } | null;
   isLoading: boolean;
   systemEnabled: boolean;
   theme: 'dark' | 'light';

@@ -25,6 +25,7 @@ export interface User {
 export interface AdminUserItem extends User {
   unreadCount?: number;
   isOnline?: boolean;
+  category?: string | null;
   lastMessage?: {
     id: string;
     text: string;
@@ -60,6 +61,7 @@ export interface AdminSettings {
   registrationEnabled: boolean;
   requireApproval: boolean;
   systemEnabled?: boolean;
+  showAdminPresence?: boolean;
   defaultTtlSeconds: number;
   appName?: string;
   pwaShortName?: string;
@@ -284,6 +286,33 @@ export const api = {
       headers: { ...getAuthHeader() }
     });
     return safeJson<{ success: boolean }>(res, 'Failed to clear conversation');
+  },
+
+  // Admin Private Notes (Encrypted with AES-256-GCM)
+  async getUserNotes(userId: string): Promise<{ notes: string; updatedAt: string | null }> {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/notes`, {
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ notes: string; updatedAt: string | null }>(res, 'Failed to get user notes');
+  },
+
+  async updateUserNotes(userId: string, notes: string): Promise<{ success: boolean; notes: string; updatedAt: string | null }> {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/notes`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ notes })
+    });
+    return safeJson<{ success: boolean; notes: string; updatedAt: string | null }>(res, 'Failed to update user notes');
+  },
+
+  // Admin User Categorization
+  async updateUserCategory(userId: string, category: string | null): Promise<{ success: boolean; category: string | null }> {
+    const res = await fetch(`${API_BASE}/admin/users/${userId}/category`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ category })
+    });
+    return safeJson<{ success: boolean; category: string | null }>(res, 'Failed to update user category');
   },
 
   // PWA Custom Icon

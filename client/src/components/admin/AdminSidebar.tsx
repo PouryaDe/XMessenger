@@ -28,6 +28,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'active' | 'banned'>('all');
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [appName, setAppName] = useState<string>('XMessenger');
 
   useEffect(() => {
@@ -41,11 +42,18 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
     const matched = adminUsers.filter((u) => {
       const matchesSearch = u.username.toLowerCase().includes(searchTerm.toLowerCase().trim());
       if (!matchesSearch) return false;
-      if (filterTab === 'all') return true;
-      return u.status === filterTab;
+      if (filterTab !== 'all' && u.status !== filterTab) return false;
+      if (categoryFilter !== 'all') {
+        if (categoryFilter === 'none') {
+          if (u.category) return false;
+        } else {
+          if (u.category !== categoryFilter) return false;
+        }
+      }
+      return true;
     });
     return sortAdminUsersByLastMessage(matched);
-  }, [adminUsers, searchTerm, filterTab]);
+  }, [adminUsers, searchTerm, filterTab, categoryFilter]);
 
   const pendingCount = useMemo(() => {
     return adminUsers.filter((u) => u.status === 'pending').length;
@@ -170,6 +178,33 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
             <span>{t('bannedUsers')}</span>
           </button>
         </div>
+
+        {/* Category Filter Chips Bar */}
+        <div className="flex items-center gap-1.5 overflow-x-auto no-scrollbar pt-0.5 pb-0.5 select-none">
+          {[
+            { id: 'all', label: t('allCategories') },
+            { id: 'vip', label: '⭐ VIP' },
+            { id: 'friends', label: '👥 ' + t('categoryFriends') },
+            { id: 'temporary', label: '⏳ ' + t('categoryTemporary') },
+            { id: 'work', label: '💼 ' + t('categoryWork') }
+          ].map((cat) => {
+            const isSelected = categoryFilter === cat.id;
+            return (
+              <button
+                key={cat.id}
+                type="button"
+                onClick={() => setCategoryFilter(cat.id)}
+                className={`px-2.5 py-1 rounded-full text-[10.5px] font-bold whitespace-nowrap transition-all border shrink-0 cursor-pointer ${
+                  isSelected
+                    ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-900 border-slate-900 dark:border-white shadow-xs'
+                    : 'bg-black/[0.03] dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 border-black/5 dark:border-white/5 hover:bg-black/[0.06] dark:hover:bg-white/[0.08]'
+                }`}
+              >
+                {cat.label}
+              </button>
+            );
+          })}
+        </div>
       </div>
 
       {/* Users List - Scrollbar on Right in Persian, on Left in English */}
@@ -223,10 +258,15 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
 
                     {/* Username & Last message snippet */}
                     <div className="overflow-hidden min-w-0">
-                      <div className="flex items-center gap-1.5">
+                      <div className="flex items-center gap-1.5 flex-wrap">
                         <span className="font-semibold text-xs text-slate-900 dark:text-white truncate">
                           {u.username}
                         </span>
+                        {u.category && (
+                          <span className="text-[9px] px-1.5 py-0.2 rounded-full font-bold shrink-0 border bg-amber-500/10 text-amber-600 dark:text-amber-400 border-amber-500/25">
+                            {u.category === 'vip' ? '⭐ VIP' : u.category === 'friends' ? '👥 ' + t('categoryFriends') : u.category === 'temporary' ? '⏳ ' + t('categoryTemporary') : u.category === 'work' ? '💼 ' + t('categoryWork') : u.category}
+                          </span>
+                        )}
                         {u.status === 'pending' && (
                           <span className="text-[9px] px-1.5 py-0.2 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">
                             {t('statusPending')}

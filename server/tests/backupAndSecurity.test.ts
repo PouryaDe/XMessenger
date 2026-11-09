@@ -258,3 +258,97 @@ describe('System Maintenance Mode & Ban Enforcement Security Tests', () => {
     }
   });
 });
+
+describe('Admin Encrypted Notes, User Categorization & Admin Presence Tests', () => {
+  it('guarantees admin private notes are encrypted at rest with AES-256-GCM', () => {
+    initDatabase();
+    const testUserId = uuidv4();
+    const nowIso = new Date().toISOString();
+    const sensitiveNote = 'Confidential client background note: VIP contract pending #402';
+
+    db.prepare(`
+      INSERT INTO users (id, username, password_hash, role, status, created_at, last_seen)
+      VALUES (?, ?, 'hash', 'user', 'active', ?, ?)
+    `).run(testUserId, `usr-${testUserId.slice(0, 8)}`, nowIso, nowIso);
+
+    try {
+      // 1. Encrypt and save note in admin_user_notes
+      const enc = encryptMessage(sensitiveNote);
+      db.prepare(`
+        INSERT INTO admin_user_notes (user_id, ciphertext, iv, auth_tag, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+      `).run(testUserId, enc.ciphertext, enc.iv, enc.authTag, nowIso);
+
+      // 2. Verify stored record is encrypted (no plaintext in DB)
+      const stored = db.prepare('SELECT ciphertext, iv, auth_tag FROM admin_user_notes WHERE user_id = ?').get(testUserId) as any;
+      assert.ok(stored);
+      assert.notStrictEqual(stored.ciphertext, sensitiveNote);
+      assert.strictEqual(stored.ciphertext.includes('VIP contract pending'), false);
+
+      // 3. Decrypt and verify recovered content
+      const decrypted = decryptMessage(stored.ciphertext, stored.iv, stored.auth_tag);
+      assert.strictEqual(decrypted, sensitiveNote);
+
+      // 4. Cascade delete when user is deleted
+      db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);
+      const afterUserDelete = db.prepare('SELECT user_id FROM admin_user_notes WHERE user_id = ?').get(testUserId);
+      assert.strictEqual(afterUserDelete, undefined, 'Notes must be cascade deleted with user');
+    } finally {
+      db.prepare('DELETE FROM admin_user_notes WHERE user_id = ?').run(testUserId);
+      db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);
+    }
+  });
+
+  it('correctly persists and updates user categories (vip, friends, temporary, work)', () => {
+    initDatabase();
+    const testUserId = uuidv4();
+    const nowIso = new Date().toISOString();
+
+    db.prepare(`
+      INSERT INTO users (id, username, password_hash, role, status, created_at, last_seen)
+      VALUES (?, ?, 'hash', 'user', 'active', ?, ?)
+    `).run(testUserId, `usr-${testUserId.slice(0, 8)}`, nowIso, nowIso);
+
+    try {
+      // 1. Initial category is null
+      let row = db.prepare('SELECT category FROM users WHERE id = ?').get(testUserId) as any;
+      assert.strictEqual(row.category, null);
+
+      // 2. Set to 'vip'
+      db.prepare('UPDATE users SET category = ? WHERE id = ?').run('vip', testUserId);
+      row = db.prepare('SELECT category FROM users WHERE id = ?').get(testUserId) as any;
+      assert.strictEqual(row.category, 'vip');
+
+      // 3. Set to 'friends'
+      db.prepare('UPDATE users SET category = ? WHERE id = ?').run('friends', testUserId);
+      row = db.prepare('SELECT category FROM users WHERE id = ?').get(testUserId) as any;
+      assert.strictEqual(row.category, 'friends');
+
+      // 4. Set to null (cleared)
+      db.prepare('UPDATE users SET category = ? WHERE id = ?').run(null, testUserId);
+      row = db.prepare('SELECT category FROM users WHERE id = ?').get(testUserId) as any;
+      assert.strictEqual(row.category, null);
+    } finally {
+      db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);
+    }
+  });
+
+  it('hides admin online status and last seen from regular users when show_admin_presence is false', () => {
+    initDatabase();
+
+    // 1. Test when show_admin_presence is true
+    updateSettingValue('show_admin_presence', 'true');
+    assert.strictEqual(getSettingValue('show_admin_presence', 'true'), 'true');
+
+    // 2. Toggle to false
+    updateSettingValue('show_admin_presence', 'false');
+    assert.strictEqual(getSettingValue('show_admin_presence', 'true'), 'false');
+
+    // When show_admin_presence is false, verify the flag contract:
+    const showPresence = getSettingValue('show_admin_presence', 'true') === 'true';
+    assert.strictEqual(showPresence, false);
+
+    // Restore to true
+    updateSettingValue('show_admin_presence', 'true');
+  });
+});

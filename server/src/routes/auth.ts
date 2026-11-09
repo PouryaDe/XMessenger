@@ -240,6 +240,7 @@ authRouter.get('/me', authenticate, (req: AuthenticatedRequest, res) => {
 
   const adminAvatarSetting = getSettingValue('admin_avatar_url', '');
   const systemEnabled = getSettingValue('system_enabled', 'true') === 'true';
+  const showAdminPresence = getSettingValue('show_admin_presence', 'true') === 'true';
 
   res.json({
     user: userRow ? {
@@ -253,8 +254,9 @@ authRouter.get('/me', authenticate, (req: AuthenticatedRequest, res) => {
     adminInfo: req.user!.role === 'user' && adminRow ? {
       id: adminRow.id,
       username: adminRow.username,
-      lastSeen: adminRow.last_seen,
-      isOnline: isAnyAdminOnline(),
+      lastSeen: showAdminPresence ? adminRow.last_seen : null,
+      isOnline: showAdminPresence ? isAnyAdminOnline() : false,
+      showPresence: showAdminPresence,
       avatarUrl: adminRow.avatar_url || adminAvatarSetting || undefined
     } : null
   });

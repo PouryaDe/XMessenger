@@ -37,6 +37,16 @@ This file serves as the high-level roadmap and engineering guide for AI agents w
   - SQLite non-blocking online backup via `db.backup()`.
   - Strict validation (`quick_check`, table schemas, admin existence) on restore.
   - Verified AES-256-GCM encryption at rest.
+- **Admin Encrypted Private Notes**:
+  - End-to-end AES-256-GCM encrypted notes stored in `admin_user_notes`.
+  - Accessible only to admin via dedicated `UserProfileModal.tsx`; completely invisible to regular users.
+- **User Categorization & Folders**:
+  - Flexible user categorization (`category` column on `users` table).
+  - Presets for VIP (⭐), Friends (👥), Temporary (⏳), Work (💼), and custom tags.
+  - Filter chips in `AdminSidebar.tsx` and badges on user cards.
+- **Admin Presence Privacy**:
+  - Admin toggle (`show_admin_presence`) in General Settings.
+  - When disabled, admin's online status and exact last seen timestamp are masked from users with Telegram-style "last seen recently" text.
 
 ---
 

@@ -6,6 +6,7 @@ import { api, AdminUserItem, Message } from '../../services/api.js';
 import { APP_VERSION } from '../../config/version.js';
 import { AdminSidebar } from './AdminSidebar.js';
 import { AdminSettingsModal } from './AdminSettingsModal.js';
+import { UserProfileModal } from './UserProfileModal.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
@@ -24,7 +25,8 @@ import {
   ChevronDown,
   Reply,
   Flame,
-  ShieldAlert
+  ShieldAlert,
+  FileText
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -50,6 +52,7 @@ export const AdminDashboard: React.FC = () => {
   } = useChatStore();
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
+  const [profileModalOpen, setProfileModalOpen] = useState(false);
   const [inputText, setInputText] = useState('');
   const [replyingTo, setReplyingTo] = useState<Message | null>(null);
   const [highlightedMsgId, setHighlightedMsgId] = useState<string | null>(null);
@@ -342,60 +345,79 @@ export const AdminDashboard: React.FC = () => {
                   <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
                 </button>
 
-                <div className="relative">
-                  <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-xs overflow-hidden shrink-0 ${
-                    activeUser.avatarUrl
-                      ? 'bg-stone-200/60 dark:bg-white/[0.08] border border-black/5 dark:border-white/10'
-                      : getAvatarPalette(activeUser.username)
-                  }`}>
-                    {activeUser.avatarUrl ? (
-                      <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
-                    ) : (
-                      <span className="select-none tracking-wider">{activeUser.username.substring(0, 2)}</span>
-                    )}
+                <div 
+                  onClick={() => setProfileModalOpen(true)}
+                  className="flex items-center gap-3 min-w-0 cursor-pointer group hover:opacity-90 transition-opacity"
+                  title={t('userProfileAndNotes')}
+                >
+                  <div className="relative">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-xs overflow-hidden shrink-0 ${
+                      activeUser.avatarUrl
+                        ? 'bg-stone-200/60 dark:bg-white/[0.08] border border-black/5 dark:border-white/10'
+                        : getAvatarPalette(activeUser.username)
+                    }`}>
+                      {activeUser.avatarUrl ? (
+                        <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
+                      ) : (
+                        <span className="select-none tracking-wider">{activeUser.username.substring(0, 2)}</span>
+                      )}
+                    </div>
+                    <div
+                      className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] ${
+                        onlineUsers[activeUser.id] ? 'bg-emerald-500' : 'bg-slate-400'
+                      }`}
+                    />
                   </div>
-                  <div
-                    className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] ${
-                      onlineUsers[activeUser.id] ? 'bg-emerald-500' : 'bg-slate-400'
-                    }`}
-                  />
-                </div>
 
-                <div>
-                  <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-sm text-slate-900 dark:text-white">
-                      {activeUser.username}
-                    </h3>
-                    {activeUser.status === 'pending' && (
-                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
-                        {t('statusPending')}
-                      </span>
-                    )}
-                    {activeUser.status === 'banned' && (
-                      <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">
-                        {t('statusBanned')}
-                      </span>
-                    )}
+                  <div>
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">
+                        {activeUser.username}
+                      </h3>
+                      {activeUser.category && (
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
+                          {activeUser.category === 'vip' ? '⭐ VIP' : activeUser.category === 'friends' ? '👥 ' + t('categoryFriends') : activeUser.category === 'temporary' ? '⏳ ' + t('categoryTemporary') : activeUser.category === 'work' ? '💼 ' + t('categoryWork') : activeUser.category}
+                        </span>
+                      )}
+                      {activeUser.status === 'pending' && (
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
+                          {t('statusPending')}
+                        </span>
+                      )}
+                      {activeUser.status === 'banned' && (
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">
+                          {t('statusBanned')}
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-400">
+                      {isUserTyping ? (
+                        <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
+                      ) : onlineUsers[activeUser.id] ? (
+                        <span className="text-emerald-500 font-medium">{t('online')}</span>
+                      ) : (
+                        <span>
+                          {formatLastSeen(
+                            lastSeenUsers[activeUser.id] || activeUser.last_seen,
+                            Boolean(onlineUsers[activeUser.id])
+                          )}
+                        </span>
+                      )}
+                    </p>
                   </div>
-                  <p className="text-xs text-slate-400">
-                    {isUserTyping ? (
-                      <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
-                    ) : onlineUsers[activeUser.id] ? (
-                      <span className="text-emerald-500 font-medium">{t('online')}</span>
-                    ) : (
-                      <span>
-                        {formatLastSeen(
-                          lastSeenUsers[activeUser.id] || activeUser.last_seen,
-                          Boolean(onlineUsers[activeUser.id])
-                        )}
-                      </span>
-                    )}
-                  </p>
                 </div>
               </div>
 
               {/* Action Buttons for this user */}
               <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setProfileModalOpen(true)}
+                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  title={t('userProfileAndNotes')}
+                >
+                  <FileText className="w-4 h-4" />
+                </button>
                 {activeUser.status === 'pending' && (
                   <button
                     onClick={handleApproveUser}
@@ -739,6 +761,15 @@ export const AdminDashboard: React.FC = () => {
       <AdminSettingsModal
         isOpen={settingsModalOpen}
         onClose={() => setSettingsModalOpen(false)}
+      />
+
+      {/* User Profile & Private Notes Modal */}
+      <UserProfileModal
+        isOpen={profileModalOpen}
+        onClose={() => setProfileModalOpen(false)}
+        user={activeUser || null}
+        isOnline={Boolean(onlineUsers[activeUser?.id || ''])}
+        lastSeen={lastSeenUsers[activeUser?.id || ''] || activeUser?.last_seen}
       />
     </div>
   );

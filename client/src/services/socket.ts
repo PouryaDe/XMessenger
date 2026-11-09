@@ -113,9 +113,24 @@ export function initSocket(token: string): Socket {
     useChatStore.getState().setOnlineStatus(userId, isOnline, lastSeen);
   });
 
-  socket.on('admin:online_status', ({ isOnline, lastSeen }) => {
+  socket.on('admin:online_status', ({ isOnline, lastSeen, showPresence }: { isOnline: boolean; lastSeen?: string | null; showPresence?: boolean }) => {
     useChatStore.getState().setAdminOnline(isOnline);
     if (lastSeen) useChatStore.getState().setAdminLastSeen(lastSeen);
+    const currentAdminInfo = useAuthStore.getState().adminInfo;
+    if (currentAdminInfo) {
+      useAuthStore.setState({ 
+        adminInfo: { 
+          ...currentAdminInfo, 
+          isOnline, 
+          lastSeen: lastSeen ?? null, 
+          showPresence: showPresence ?? currentAdminInfo.showPresence 
+        } 
+      });
+    }
+  });
+
+  socket.on('user:category_updated', ({ userId, category }: { userId: string; category: string | null }) => {
+    useChatStore.getState().updateAdminUserCategory(userId, category);
   });
 
   socket.on('typing', ({ userId, isTyping }) => {

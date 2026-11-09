@@ -21,7 +21,8 @@ import {
   BellRing,
   Send,
   KeyRound,
-  Loader2
+  Loader2,
+  Eye
 } from 'lucide-react';
 import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { 
@@ -461,6 +462,47 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   }`}
                 >
                   <Check className={`w-3.5 h-3.5 stroke-[3] transition-transform duration-150 ${settings.requireApproval ? 'scale-100' : 'scale-0'}`} />
+                </button>
+              </div>
+
+              {/* 3. Show Admin Presence (Online / Offline & Last Seen) */}
+              <div 
+                onClick={() => setSettings({ ...settings, showAdminPresence: settings.showAdminPresence === false ? true : false })}
+                className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] cursor-pointer group"
+              >
+                <div className="flex items-start gap-3">
+                  <div className={`w-9 h-9 rounded-2xl flex items-center justify-center shrink-0 border mt-0.5 ${
+                    settings.showAdminPresence !== false
+                      ? 'bg-emerald-50 dark:bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border-emerald-500/20'
+                      : 'bg-stone-100 dark:bg-white/[0.06] text-slate-400 border-black/5 dark:border-white/5'
+                  }`}>
+                    <Eye className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <span className="text-xs font-bold text-slate-900 dark:text-white block select-none">
+                      {t('showAdminPresenceLabel')}
+                    </span>
+                    <p className="text-[11px] text-slate-400 mt-0.5 select-none leading-relaxed">
+                      {t('showAdminPresenceDesc')}
+                    </p>
+                  </div>
+                </div>
+
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={settings.showAdminPresence !== false}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSettings({ ...settings, showAdminPresence: settings.showAdminPresence === false ? true : false });
+                  }}
+                  className={`w-6 h-6 rounded-[8px] flex items-center justify-center transition-all duration-200 mt-0.5 shrink-0 border ${
+                    settings.showAdminPresence !== false
+                      ? 'bg-slate-900 dark:bg-amber-400 border-slate-900 dark:border-amber-400 text-white dark:text-slate-950 shadow-xs'
+                      : 'bg-stone-100 dark:bg-white/[0.06] border-black/15 dark:border-white/15 text-transparent hover:border-black/30 dark:hover:border-white/30'
+                  }`}
+                >
+                  <Check className={`w-3.5 h-3.5 stroke-[3] transition-transform duration-150 ${settings.showAdminPresence !== false ? 'scale-100' : 'scale-0'}`} />
                 </button>
               </div>
 

@@ -14,6 +14,8 @@ This directory holds the agentic knowledge base, architectural contracts, design
    - Standardized user list cards (`rounded-xl`, subtle hairline borders, no heavy shadows).
    - Responsive Admin Settings tab navigation (2x2 grid on mobile screens).
    - Dedicated System Maintenance Screen (`SystemDisabledScreen.tsx`) for user guidance during updates.
+   - User Profile & Encrypted Notes Modal (`UserProfileModal.tsx`) with category assignment and private notes.
+   - User categorization filters & badges in sidebar (`VIP`, `Friends`, `Temporary`, `Work`).
    - Unpinned stream TTL notice (floating centered glass pill scrolling naturally with chat).
    - Standard 3-line hamburger menu icon (`Menu` from `lucide-react`).
    - Dynamic smart context menu positioning preventing viewport and header clipping.
@@ -37,6 +39,9 @@ This directory holds the agentic knowledge base, architectural contracts, design
      - 1-Way Hub-and-Spoke messaging.
      - Telegram message grouping, responsive bubble widths, and curved corner tails.
      - Telegram message reactions (👍 and ❤️) inside message bubbles, quick context bar, double-tap, animated burst, and real-time sync.
+     - Encrypted Admin private notes (`admin_user_notes` with AES-256-GCM, strictly invisible to regular users).
+     - Admin user categorization & tagging (VIP, Friends, Temporary, Work, etc. with sidebar filtering).
+     - Admin presence privacy toggle (hiding online status and last seen timestamp from users).
      - Disappearing TTL messages with background hard-purge.
      - Image messaging with full-screen Lightbox and clipboard paste.
      - Telegram-style date separators and smart scroll preserving reading position.
@@ -49,8 +54,8 @@ This directory holds the agentic knowledge base, architectural contracts, design
      - Multi-domain Docker deployment with shared Nginx SSL gateway.
 
 5. [`rules/security.md`](file:///c:/Users/Lion/Desktop/Projects/XMessenger/.agents/rules/security.md)
-   - AES-256-GCM database encryption at rest.
-   - User peer isolation.
+   - AES-256-GCM database encryption at rest (both messages and admin private notes).
+   - User peer isolation and complete isolation of admin notes.
    - Hard TTL purge and instant two-way deletion.
    - Live DB checks on socket events & real-time socket ejection on user ban.
    - Maintenance mode authorization barrier (HTTP 503 + socket block for non-admins).

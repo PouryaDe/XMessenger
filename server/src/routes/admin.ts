@@ -6,8 +6,8 @@ import multer from 'multer';
 import { config } from '../config/index.js';
 import { db, getSettingValue, updateSettingValue } from '../database/index.js';
 import { authenticate, requireAdmin, AuthenticatedRequest } from '../middleware/auth.js';
-import { decryptMessage } from '../utils/crypto.js';
-import { isUserOnline } from '../socket/index.js';
+import { encryptMessage, decryptMessage } from '../utils/crypto.js';
+import { isUserOnline, isAnyAdminOnline } from '../socket/index.js';
 import { Server } from 'socket.io';
 
 export function createAdminRouter(io?: Server) {
@@ -55,7 +55,7 @@ export function createAdminRouter(io?: Server) {
   router.get('/users', (req: AuthenticatedRequest, res) => {
     try {
       const users = db.prepare(`
-        SELECT id, username, role, status, created_at, last_seen, avatar_url
+        SELECT id, username, role, status, created_at, last_seen, avatar_url, category
         FROM users
         WHERE role = 'user'
         ORDER BY last_seen DESC
@@ -67,6 +67,7 @@ export function createAdminRouter(io?: Server) {
         created_at: string;
         last_seen: string;
         avatar_url?: string;
+        category?: string | null;
       }>;
 
       const now = new Date().toISOString();
@@ -119,6 +120,7 @@ export function createAdminRouter(io?: Server) {
           created_at: user.created_at,
           last_seen: user.last_seen,
           avatarUrl: user.avatar_url || undefined,
+          category: user.category || null,
           isOnline: isUserOnline(user.id),
           unreadCount: unreadCount ? unreadCount.count : 0,
           lastMessage
@@ -217,11 +219,97 @@ export function createAdminRouter(io?: Server) {
     }
   });
 
+  // 3.5. Get encrypted admin notes for user (Admin Only)
+  router.get('/users/:id/notes', (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const row = db.prepare('SELECT ciphertext, iv, auth_tag, updated_at FROM admin_user_notes WHERE user_id = ?').get(id) as {
+        ciphertext: string;
+        iv: string;
+        auth_tag: string;
+        updated_at: string;
+      } | undefined;
+
+      if (!row) {
+        return res.json({ notes: '', updatedAt: null });
+      }
+
+      const notes = decryptMessage(row.ciphertext, row.iv, row.auth_tag);
+      res.json({ notes, updatedAt: row.updated_at });
+    } catch (err: any) {
+      console.error('Failed to get user notes:', err);
+      res.status(500).json({ error: 'FAILED_TO_GET_NOTES', message: 'Could not fetch user notes' });
+    }
+  });
+
+  // 3.6. Update encrypted admin notes for user (Admin Only)
+  router.put('/users/:id/notes', (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { notes } = req.body;
+
+      const targetUser = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+      if (!targetUser) {
+        return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
+      }
+
+      const text = typeof notes === 'string' ? notes.trim() : '';
+      const now = new Date().toISOString();
+
+      if (!text) {
+        db.prepare('DELETE FROM admin_user_notes WHERE user_id = ?').run(id);
+        return res.json({ success: true, notes: '', updatedAt: null });
+      }
+
+      const encrypted = encryptMessage(text);
+      db.prepare(`
+        INSERT INTO admin_user_notes (user_id, ciphertext, iv, auth_tag, updated_at)
+        VALUES (?, ?, ?, ?, ?)
+        ON CONFLICT(user_id) DO UPDATE SET
+          ciphertext = excluded.ciphertext,
+          iv = excluded.iv,
+          auth_tag = excluded.auth_tag,
+          updated_at = excluded.updated_at
+      `).run(id, encrypted.ciphertext, encrypted.iv, encrypted.authTag, now);
+
+      res.json({ success: true, notes: text, updatedAt: now });
+    } catch (err: any) {
+      console.error('Failed to update user notes:', err);
+      res.status(500).json({ error: 'FAILED_TO_SAVE_NOTES', message: 'Could not save user notes' });
+    }
+  });
+
+  // 3.7. Update user category (Admin Only)
+  router.put('/users/:id/category', (req: AuthenticatedRequest, res) => {
+    try {
+      const { id } = req.params;
+      const { category } = req.body;
+
+      const targetUser = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+      if (!targetUser) {
+        return res.status(404).json({ error: 'USER_NOT_FOUND', message: 'User not found' });
+      }
+
+      const sanitizedCategory = (typeof category === 'string' && category.trim()) ? category.trim() : null;
+      db.prepare('UPDATE users SET category = ? WHERE id = ?').run(sanitizedCategory, id);
+
+      if (io) {
+        io.to('room:admin').emit('user:category_updated', { userId: id, category: sanitizedCategory });
+      }
+
+      res.json({ success: true, category: sanitizedCategory });
+    } catch (err: any) {
+      console.error('Failed to update user category:', err);
+      res.status(500).json({ error: 'FAILED_TO_UPDATE_CATEGORY', message: 'Could not update user category' });
+    }
+  });
+
   // 4. Get System Settings & Branding
   router.get('/settings', (req, res) => {
     const regEnabled = getSettingValue('registration_enabled', 'true') === 'true';
     const requireApproval = getSettingValue('require_approval', 'true') === 'true';
     const systemEnabled = getSettingValue('system_enabled', 'true') === 'true';
+    const showAdminPresence = getSettingValue('show_admin_presence', 'true') === 'true';
     const defaultTtlSeconds = parseInt(getSettingValue('default_ttl_seconds', '86400'), 10);
     const appName = getSettingValue('app_name', 'XMessenger');
     const pwaShortName = getSettingValue('pwa_short_name', 'XMessenger');
@@ -232,6 +320,7 @@ export function createAdminRouter(io?: Server) {
       registrationEnabled: regEnabled,
       requireApproval,
       systemEnabled,
+      showAdminPresence,
       defaultTtlSeconds,
       appName,
       pwaShortName,
@@ -247,6 +336,7 @@ export function createAdminRouter(io?: Server) {
         registrationEnabled, 
         requireApproval, 
         systemEnabled,
+        showAdminPresence,
         defaultTtlSeconds,
         appName,
         pwaShortName,
@@ -266,6 +356,18 @@ export function createAdminRouter(io?: Server) {
         updateSettingValue('system_enabled', systemEnabled ? 'true' : 'false');
         if (io) {
           io.emit('system:status_changed', { systemEnabled });
+        }
+      }
+
+      if (typeof showAdminPresence === 'boolean') {
+        updateSettingValue('show_admin_presence', showAdminPresence ? 'true' : 'false');
+        if (io) {
+          if (!showAdminPresence) {
+            io.emit('admin:online_status', { isOnline: false, lastSeen: null, showPresence: false });
+          } else {
+            const adminUser = db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get() as { last_seen: string } | undefined;
+            io.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen, showPresence: true });
+          }
         }
       }
 

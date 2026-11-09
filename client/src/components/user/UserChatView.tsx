@@ -308,11 +308,13 @@ export const UserChatView: React.FC = () => {
                 <ShieldCheck className="w-5 h-5 text-amber-500" />
               )}
             </div>
-            <div
-              className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] transition-colors ${
-                isAdminOnline ? 'bg-emerald-500' : 'bg-slate-400'
-              }`}
-            />
+            {adminInfo?.showPresence !== false && (
+              <div
+                className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] transition-colors ${
+                  isAdminOnline ? 'bg-emerald-500' : 'bg-slate-400'
+                }`}
+              />
+            )}
           </div>
 
           <div>
@@ -322,6 +324,8 @@ export const UserChatView: React.FC = () => {
             <p className="text-[11px] text-slate-400">
               {isOpponentTyping ? (
                 <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
+              ) : adminInfo?.showPresence === false ? (
+                <span>{t('lastSeenRecently')}</span>
               ) : isAdminOnline ? (
                 <span className="text-emerald-500 font-medium">{t('online')}</span>
               ) : (

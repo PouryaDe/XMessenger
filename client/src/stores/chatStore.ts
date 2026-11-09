@@ -21,6 +21,7 @@ interface ChatState {
   setAdminUsers: (users: AdminUserItem[]) => void;
   addAdminUser: (user: AdminUserItem) => void;
   updateAdminUserStatus: (userId: string, status: 'active' | 'pending' | 'banned') => void;
+  updateAdminUserCategory: (userId: string, category: string | null) => void;
   removeAdminUser: (userId: string) => void;
   loadMessages: (targetUserId?: string) => Promise<void>;
   syncMessages: () => Promise<void>;
@@ -161,6 +162,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
     set((state) => ({
       adminUsers: state.adminUsers.map((u) => 
         u.id === userId ? { ...u, status } : u
+      )
+    }));
+  },
+
+  updateAdminUserCategory: (userId, category) => {
+    set((state) => ({
+      adminUsers: state.adminUsers.map((u) =>
+        u.id === userId ? { ...u, category } : u
       )
     }));
   },

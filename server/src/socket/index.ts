@@ -103,7 +103,10 @@ export function setupSocketServer(io: Server) {
       if (user.role === 'user') {
         io.to('room:admin').emit('user:online_status', { userId: user.id, isOnline: true });
       } else {
-        io.emit('admin:online_status', { isOnline: true });
+        const showPresence = getSettingValue('show_admin_presence', 'true') === 'true';
+        if (showPresence) {
+          io.emit('admin:online_status', { isOnline: true, showPresence: true });
+        }
       }
     }
 
@@ -111,8 +114,13 @@ export function setupSocketServer(io: Server) {
     if (user.role === 'admin') {
       socket.emit('presence:init', { onlineUserIds: getOnlineUserIds() });
     } else {
-      const adminUser = db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get() as { last_seen: string } | undefined;
-      socket.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen });
+      const showPresence = getSettingValue('show_admin_presence', 'true') === 'true';
+      if (!showPresence) {
+        socket.emit('admin:online_status', { isOnline: false, lastSeen: null, showPresence: false });
+      } else {
+        const adminUser = db.prepare("SELECT last_seen FROM users WHERE role = 'admin'").get() as { last_seen: string } | undefined;
+        socket.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: adminUser?.last_seen, showPresence: true });
+      }
     }
 
     // Typing indicators
@@ -408,7 +416,10 @@ export function setupSocketServer(io: Server) {
           if (user.role === 'user') {
             io.to('room:admin').emit('user:online_status', { userId: user.id, isOnline: false, lastSeen: offlineTime });
           } else {
-            io.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: offlineTime });
+            const showPresence = getSettingValue('show_admin_presence', 'true') === 'true';
+            if (showPresence) {
+              io.emit('admin:online_status', { isOnline: isAnyAdminOnline(), lastSeen: offlineTime, showPresence: true });
+            }
           }
         }
       }
