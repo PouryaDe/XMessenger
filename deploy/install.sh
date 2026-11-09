@@ -503,6 +503,19 @@ server {
     # Security Headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()" always;
+
+    # Hide Nginx version from fingerprinting
+    server_tokens off;
+
+    # Block access to hidden files (.env, .git, .sqlite, etc.)
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
 
     # Client body limit (Supports Database Restore & Media Uploads)
     client_max_body_size 100M;

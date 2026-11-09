@@ -14,6 +14,7 @@ const index_js_2 = require("../database/index.js");
 const auth_js_1 = require("../middleware/auth.js");
 const crypto_js_1 = require("../utils/crypto.js");
 const index_js_3 = require("../socket/index.js");
+const security_js_1 = require("../middleware/security.js");
 function createAdminRouter(io) {
     const router = (0, express_1.Router)();
     // Ensure directories exist
@@ -493,6 +494,30 @@ function createAdminRouter(io) {
         }
         catch (err) {
             res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to clear conversation' });
+        }
+    });
+    // 11. Unlock account locked by anti-bot brute force system
+    router.post('/unlock-account/:username', (req, res) => {
+        try {
+            const username = String(req.params.username || '');
+            if (!username) {
+                return res.status(400).json({ error: 'INVALID_INPUT', message: 'Username is required' });
+            }
+            (0, security_js_1.unlockAccount)(username);
+            res.json({ success: true, message: `Account '${username}' unlocked successfully` });
+        }
+        catch (err) {
+            res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message || 'Failed to unlock account' });
+        }
+    });
+    // 12. Clear all system-wide lockout records
+    router.post('/clear-lockouts', (_req, res) => {
+        try {
+            (0, security_js_1.clearAllLockouts)();
+            res.json({ success: true, message: 'All brute force lockouts have been reset' });
+        }
+        catch (err) {
+            res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message || 'Failed to clear lockouts' });
         }
     });
     return router;

@@ -8,6 +8,7 @@ import { db, getSettingValue, updateSettingValue } from '../database/index.js';
 import { authenticate, requireAdmin, AuthenticatedRequest } from '../middleware/auth.js';
 import { encryptMessage, decryptMessage } from '../utils/crypto.js';
 import { isUserOnline, isAnyAdminOnline } from '../socket/index.js';
+import { unlockAccount, clearAllLockouts } from '../middleware/security.js';
 import { Server } from 'socket.io';
 
 export function createAdminRouter(io?: Server) {
@@ -565,6 +566,30 @@ export function createAdminRouter(io?: Server) {
       res.json({ success: true, message: 'Conversation wiped for both sides' });
     } catch (err) {
       res.status(500).json({ error: 'INTERNAL_ERROR', message: 'Failed to clear conversation' });
+    }
+  });
+
+  // 11. Unlock account locked by anti-bot brute force system
+  router.post('/unlock-account/:username', (req: AuthenticatedRequest, res) => {
+    try {
+      const username = String(req.params.username || '');
+      if (!username) {
+        return res.status(400).json({ error: 'INVALID_INPUT', message: 'Username is required' });
+      }
+      unlockAccount(username);
+      res.json({ success: true, message: `Account '${username}' unlocked successfully` });
+    } catch (err: any) {
+      res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message || 'Failed to unlock account' });
+    }
+  });
+
+  // 12. Clear all system-wide lockout records
+  router.post('/clear-lockouts', (_req: AuthenticatedRequest, res) => {
+    try {
+      clearAllLockouts();
+      res.json({ success: true, message: 'All brute force lockouts have been reset' });
+    } catch (err: any) {
+      res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message || 'Failed to clear lockouts' });
     }
   });
 

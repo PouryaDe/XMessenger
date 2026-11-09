@@ -162,6 +162,19 @@ server {
     # Security Headers
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
+    add_header Strict-Transport-Security "max-age=31536000; includeSubDomains" always;
+    add_header Referrer-Policy "strict-origin-when-cross-origin" always;
+    add_header Permissions-Policy "geolocation=(), camera=(), microphone=(), payment=()" always;
+
+    # Hide Nginx version from fingerprinting
+    server_tokens off;
+
+    # Block access to hidden files (.env, .git, .sqlite, etc.)
+    location ~ /\. {
+        deny all;
+        access_log off;
+        log_not_found off;
+    }
 
     # Client body limit (Supports Database Restore & Media Uploads)
     client_max_body_size 100M;
@@ -299,6 +312,34 @@ if [ "$1" == "logs" ] || [ "$1" == "log" ]; then
   fi
   TARGET_SLUG=$(echo "$TARGET_DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
   docker logs -f --tail=100 "xmessenger-${TARGET_SLUG}"
+  exit 0
+fi
+
+if [ "$1" == "unlock" ]; then
+  TARGET_DOMAIN="$2"
+  DOMAINS=($(get_domains))
+
+  if [ ${#DOMAINS[@]} -eq 0 ]; then
+    echo "No messenger instances found in ${INSTANCES_DIR}."
+    exit 1
+  fi
+
+  if [ -z "$TARGET_DOMAIN" ]; then
+    if [ ${#DOMAINS[@]} -eq 1 ]; then
+      TARGET_DOMAIN="${DOMAINS[0]}"
+    else
+      echo -e "${YELLOW}Please specify target domain (e.g. xmessenger unlock ${DOMAINS[0]}):${NC}"
+      for d in "${DOMAINS[@]}"; do echo "  - $d"; done
+      exit 1
+    fi
+  fi
+
+  TARGET_SLUG=$(echo "$TARGET_DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+  CONTAINER="xmessenger-${TARGET_SLUG}"
+
+  # Restart container to instantly flush all in-memory failed attempt records and lockouts
+  docker restart "${CONTAINER}" 2>/dev/null || docker start "${CONTAINER}" 2>/dev/null || true
+  echo -e "\n${GREEN}${BOLD}✓ All account and IP lockouts cleared for https://${TARGET_DOMAIN}!${NC}\n"
   exit 0
 fi
 
@@ -474,11 +515,12 @@ manage_instance() {
     echo -e "  ${GREEN}4)${NC} Stop container (Stop)"
     echo -e "  ${GREEN}5)${NC} Change admin password"
     echo -e "  ${GREEN}6)${NC} Force renew SSL certificate"
-    echo -e "  ${RED}7)${NC} Panic wipe database (Hard Reset)"
-    echo -e "  ${RED}8)${NC} Uninstall domain & messenger completely"
+    echo -e "  ${CYAN}7)${NC} Unlock accounts (Clear brute force locks)"
+    echo -e "  ${RED}8)${NC} Panic wipe database (Hard Reset)"
+    echo -e "  ${RED}9)${NC} Uninstall domain & messenger completely"
     echo -e "  ${YELLOW}0)${NC} Back to domain list"
     echo ""
-    read -p "Select an option [0-8]: " subchoice
+    read -p "Select an option [0-9]: " subchoice
 
     case "$subchoice" in
       1)
@@ -548,6 +590,7 @@ manage_instance() {
 
           if [[ "$UPDATE_RESULT" == *"SUCCESS"* ]]; then
             sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env" 2>/dev/null || true
+            docker restart "${CONTAINER}" 2>/dev/null || true
             echo -e "\n${GREEN}${BOLD}✓ Admin password successfully updated in database!${NC}"
             echo -e "  ${CYAN}URL:${NC}      https://${DOMAIN}"
             echo -e "  ${CYAN}Username:${NC} ${BOLD}${ADMIN_USERNAME:-admin}${NC}"
@@ -570,6 +613,14 @@ manage_instance() {
         ;;
       7)
         show_banner
+        echo -e "${YELLOW}Flushing all failed login records and brute-force lockouts for ${DOMAIN}...${NC}\n"
+        docker restart "${CONTAINER}" 2>/dev/null || docker start "${CONTAINER}" 2>/dev/null || true
+        echo -e "${GREEN}${BOLD}✓ All account and IP lockouts cleared successfully!${NC}"
+        echo -e "  Users and admin can now log in immediately.\n"
+        read -p "Press Enter to continue..." dummy
+        ;;
+      8)
+        show_banner
         echo -e "${RED}${BOLD}WARNING: All messages and database data for ${DOMAIN} will be PERMANENTLY DESTROYED!${NC}"
         read -p "Type DELETE to confirm: " CONFIRM
         if [ "$CONFIRM" == "DELETE" ]; then
@@ -586,7 +637,7 @@ manage_instance() {
           sleep 2
         fi
         ;;
-      8)
+      9)
         show_banner
         echo -e "${RED}${BOLD}WARNING: Are you sure you want to completely remove ${DOMAIN} from this server?${NC}"
         read -p "Type UNINSTALL to confirm: " CONFIRM

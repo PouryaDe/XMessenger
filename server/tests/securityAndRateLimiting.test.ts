@@ -93,47 +93,50 @@ describe('Security, Anti-Bot & Injection Prevention Tests', () => {
   });
 
   describe('2. Anti-Bot Brute Force & Account Lockout Defense', () => {
-    it('locks out target account after 5 consecutive failed attempts from an IP', async () => {
-      const attackerIp = '198.51.100.42';
+    it('locks out target account after 5 failed attempts across rotating proxy IPs (distributed botnet defense)', async () => {
       const targetUser = 'admin';
+      const proxyIps = [
+        '185.220.101.1',
+        '185.220.101.2',
+        '185.220.101.3',
+        '185.220.101.4'
+      ];
 
-      // Attempts 1 to 4 should NOT lock out
-      for (let i = 1; i <= 4; i++) {
-        assert.strictEqual(checkLoginLockout(attackerIp, targetUser), null);
-        await recordFailedLogin(attackerIp, targetUser);
+      // Attempts 1 to 4 from 4 different proxy IPs should NOT lock out yet
+      for (const proxy of proxyIps) {
+        assert.strictEqual(checkLoginLockout(proxy, targetUser), null);
+        await recordFailedLogin(proxy, targetUser);
       }
 
-      // 4 failed attempts recorded, still not locked
-      assert.strictEqual(checkLoginLockout(attackerIp, targetUser), null);
+      // 4 failed attempts recorded across 4 proxies, still not locked
+      assert.strictEqual(checkLoginLockout('185.220.101.5', targetUser), null);
 
-      // 5th failed attempt
-      await recordFailedLogin(attackerIp, targetUser);
+      // 5th failed attempt from 5th proxy IP
+      await recordFailedLogin('185.220.101.5', targetUser);
 
-      // Now it must be locked!
-      const lockout = checkLoginLockout(attackerIp, targetUser);
+      // 6th proxy IP trying to access admin must now be locked out!
+      const lockout = checkLoginLockout('185.220.101.6', targetUser);
       assert.notStrictEqual(lockout, null);
       assert.strictEqual(lockout?.locked, true);
       assert.strictEqual(lockout?.reason, 'ACCOUNT');
       assert.ok(lockout.remainingSeconds > 800 && lockout.remainingSeconds <= 900);
     });
 
-    it('prevents Denial-of-Service against the admin: attacker IP lockout does not lock legitimate admin IP', async () => {
-      const attackerIp = '203.0.113.88';
-      const legitimateAdminIp = '79.175.133.95';
+    it('unlockAccount explicitly unlocks a locked user', async () => {
       const targetUser = 'admin';
-
-      // Attacker tries 5 wrong passwords for admin
-      for (let i = 0; i < 5; i++) {
-        await recordFailedLogin(attackerIp, targetUser);
+      for (let i = 1; i <= 5; i++) {
+        await recordFailedLogin(`10.0.0.${i}`, targetUser);
       }
 
-      // Attacker IP is locked out
-      const attackerCheck = checkLoginLockout(attackerIp, targetUser);
-      assert.strictEqual(attackerCheck?.locked, true);
+      assert.strictEqual(checkLoginLockout('10.0.0.99', targetUser)?.locked, true);
 
-      // Legitimate Admin from their own IP is NOT locked out!
-      const adminCheck = checkLoginLockout(legitimateAdminIp, targetUser);
-      assert.strictEqual(adminCheck, null, 'Real admin IP must not be locked out by attacker IP attempts');
+      // Unlock explicitly
+      const { unlockAccount } = await import('../src/middleware/security.js');
+      const unlocked = unlockAccount(targetUser);
+      assert.strictEqual(unlocked, true);
+
+      // User can now attempt login immediately
+      assert.strictEqual(checkLoginLockout('10.0.0.99', targetUser), null);
     });
 
     it('clears failed attempts counter upon successful login', async () => {

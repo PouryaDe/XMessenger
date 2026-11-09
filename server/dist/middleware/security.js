@@ -8,6 +8,8 @@ exports.getClientIp = getClientIp;
 exports.checkLoginLockout = checkLoginLockout;
 exports.recordFailedLogin = recordFailedLogin;
 exports.recordSuccessfulLogin = recordSuccessfulLogin;
+exports.unlockAccount = unlockAccount;
+exports.clearAllLockouts = clearAllLockouts;
 exports.registerRateLimiter = registerRateLimiter;
 exports.validateUsernameSecurity = validateUsernameSecurity;
 exports.securityHeadersMiddleware = securityHeadersMiddleware;
@@ -15,16 +17,16 @@ exports.resetSecurityStateForTests = resetSecurityStateForTests;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 // Pre-computed dummy hash to prevent timing attacks when checking non-existent accounts
 exports.DUMMY_BCRYPT_HASH = bcryptjs_1.default.hashSync('xmessenger-timing-attack-protection-constant-time-2026', 12);
-// 1. IP failed login attempts: tracks total failed login attempts from an IP
+// 1. IP failed login attempts: tracks total failed login attempts from an IP (anti-dictionary spraying)
 const ipFailedAttempts = new Map();
-// 2. Target failed attempts: tracks failed attempts per (IP + ':' + username) pair
-// Isolates attackers so a malicious IP cannot lock out legitimate users or the real admin
+// 2. Account-level failed attempts: strictly indexed by target username
+// Blocks distributed botnets and rotating proxies targeting an account across thousands of IPs
 const userFailedAttempts = new Map();
 // 3. Register attempts: tracks account creation attempts per IP
 const ipRegisterAttempts = new Map();
 // Security Configuration Parameters
-const MAX_FAILED_PER_TARGET = 5; // 5 consecutive failed attempts on an account from an IP triggers 15m lockout
-const MAX_FAILED_PER_IP = 15; // 15 total failed attempts from an IP across any accounts triggers IP lockout
+const MAX_FAILED_PER_TARGET = 5; // 5 consecutive failed attempts on an account triggers 15m lockout (across ALL IPs/proxies)
+const MAX_FAILED_PER_IP = 15; // 15 total failed attempts from a single IP across any accounts triggers IP lockout
 const LOCKOUT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes lockout duration
 const ATTEMPT_WINDOW_MS = 15 * 60 * 1000; // 15 minutes observation window
 const MAX_REGISTRATIONS_PER_IP = 5; // Max 5 account registrations per 15 mins per IP
@@ -69,28 +71,27 @@ function getClientIp(req) {
     return req.ip || req.socket.remoteAddress || '127.0.0.1';
 }
 /**
- * Checks if a login attempt is locked out (due to IP limit or target account limit)
+ * Checks if a login attempt is locked out (due to username-level limit or IP limit)
  */
 function checkLoginLockout(ip, username) {
     const now = Date.now();
     const cleanUser = username.trim().toLowerCase();
-    const targetKey = `${ip}:${cleanUser}`;
-    // 1. Check IP-level lockout
+    // 1. Check Username-level lockout across ALL IPs (counter-proxy/botnet defense)
+    const userRecord = userFailedAttempts.get(cleanUser);
+    if (userRecord?.lockedUntil && now < userRecord.lockedUntil) {
+        return {
+            locked: true,
+            remainingSeconds: Math.ceil((userRecord.lockedUntil - now) / 1000),
+            reason: 'ACCOUNT'
+        };
+    }
+    // 2. Check IP-level lockout (single IP trying multiple accounts)
     const ipRecord = ipFailedAttempts.get(ip);
     if (ipRecord?.lockedUntil && now < ipRecord.lockedUntil) {
         return {
             locked: true,
             remainingSeconds: Math.ceil((ipRecord.lockedUntil - now) / 1000),
             reason: 'IP'
-        };
-    }
-    // 2. Check Target account lockout from this IP
-    const targetRecord = userFailedAttempts.get(targetKey);
-    if (targetRecord?.lockedUntil && now < targetRecord.lockedUntil) {
-        return {
-            locked: true,
-            remainingSeconds: Math.ceil((targetRecord.lockedUntil - now) / 1000),
-            reason: 'ACCOUNT'
         };
     }
     return null;
@@ -101,19 +102,18 @@ function checkLoginLockout(ip, username) {
 async function recordFailedLogin(ip, username) {
     const now = Date.now();
     const cleanUser = username.trim().toLowerCase();
-    const targetKey = `${ip}:${cleanUser}`;
-    // Update target account record
-    let targetRecord = userFailedAttempts.get(targetKey);
-    if (!targetRecord || (now - targetRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!targetRecord.lockedUntil || now > targetRecord.lockedUntil))) {
-        targetRecord = { count: 1, firstAttempt: now };
+    // Update Username record (accumulates across ALL proxy IPs)
+    let userRecord = userFailedAttempts.get(cleanUser);
+    if (!userRecord || (now - userRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!userRecord.lockedUntil || now > userRecord.lockedUntil))) {
+        userRecord = { count: 1, firstAttempt: now };
     }
     else {
-        targetRecord.count += 1;
+        userRecord.count += 1;
     }
-    if (targetRecord.count >= MAX_FAILED_PER_TARGET) {
-        targetRecord.lockedUntil = now + LOCKOUT_WINDOW_MS;
+    if (userRecord.count >= MAX_FAILED_PER_TARGET) {
+        userRecord.lockedUntil = now + LOCKOUT_WINDOW_MS;
     }
-    userFailedAttempts.set(targetKey, targetRecord);
+    userFailedAttempts.set(cleanUser, userRecord);
     // Update IP record
     let ipRecord = ipFailedAttempts.get(ip);
     if (!ipRecord || (now - ipRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!ipRecord.lockedUntil || now > ipRecord.lockedUntil))) {
@@ -128,8 +128,8 @@ async function recordFailedLogin(ip, username) {
     ipFailedAttempts.set(ip, ipRecord);
     // Artificial progressive delay to handicap automated bot brute-forcers
     // 1st attempt: 0ms, 2nd attempt: 400ms, 3rd: 800ms, 4th+: 1200ms
-    if (targetRecord.count > 1) {
-        const delayMs = Math.min((targetRecord.count - 1) * 400, 1500);
+    if (userRecord.count > 1) {
+        const delayMs = Math.min((userRecord.count - 1) * 400, 1500);
         await new Promise((res) => setTimeout(res, delayMs));
     }
 }
@@ -138,12 +138,29 @@ async function recordFailedLogin(ip, username) {
  */
 function recordSuccessfulLogin(ip, username) {
     const cleanUser = username.trim().toLowerCase();
-    userFailedAttempts.delete(`${ip}:${cleanUser}`);
+    userFailedAttempts.delete(cleanUser);
     // Decrement IP count on success
     const ipRecord = ipFailedAttempts.get(ip);
     if (ipRecord) {
         ipRecord.count = Math.max(0, ipRecord.count - 1);
     }
+}
+/**
+ * Explicitly unlock a locked account
+ */
+function unlockAccount(username) {
+    const cleanUser = username.trim().toLowerCase();
+    const existed = userFailedAttempts.has(cleanUser);
+    userFailedAttempts.delete(cleanUser);
+    return existed;
+}
+/**
+ * Explicitly clear all lockout records (system-wide reset)
+ */
+function clearAllLockouts() {
+    userFailedAttempts.clear();
+    ipFailedAttempts.clear();
+    ipRegisterAttempts.clear();
 }
 /**
  * Registration rate-limiting middleware (prevents bot account generation)

@@ -54723,7 +54723,7 @@ function generateToken(user) {
       status: user.status
     },
     config.jwtSecret,
-    { expiresIn: "7d" }
+    { expiresIn: "7d", algorithm: "HS256" }
   );
 }
 function authenticate(req, res, next) {
@@ -54733,7 +54733,7 @@ function authenticate(req, res, next) {
   }
   const token = authHeader.split(" ")[1];
   try {
-    const decoded = import_jsonwebtoken.default.verify(token, config.jwtSecret);
+    const decoded = import_jsonwebtoken.default.verify(token, config.jwtSecret, { algorithms: ["HS256"] });
     const user = db.prepare("SELECT id, username, role, status, avatar_url FROM users WHERE id = ?").get(decoded.id);
     if (!user) {
       return res.status(401).json({ error: "USER_NOT_FOUND", message: "User no longer exists" });
@@ -55922,7 +55922,7 @@ function setupSocketServer(io3) {
       return next(new Error("AUTHENTICATION_ERROR: Token required"));
     }
     try {
-      const decoded = import_jsonwebtoken2.default.verify(token, config.jwtSecret);
+      const decoded = import_jsonwebtoken2.default.verify(token, config.jwtSecret, { algorithms: ["HS256"] });
       const user = db.prepare("SELECT id, username, role, status, avatar_url FROM users WHERE id = ?").get(decoded.id);
       if (!user) {
         return next(new Error("USER_NOT_FOUND"));
@@ -56257,7 +56257,14 @@ function getClientIp(req) {
 function checkLoginLockout(ip, username) {
   const now = Date.now();
   const cleanUser = username.trim().toLowerCase();
-  const targetKey = `${ip}:${cleanUser}`;
+  const userRecord = userFailedAttempts.get(cleanUser);
+  if (userRecord?.lockedUntil && now < userRecord.lockedUntil) {
+    return {
+      locked: true,
+      remainingSeconds: Math.ceil((userRecord.lockedUntil - now) / 1e3),
+      reason: "ACCOUNT"
+    };
+  }
   const ipRecord = ipFailedAttempts.get(ip);
   if (ipRecord?.lockedUntil && now < ipRecord.lockedUntil) {
     return {
@@ -56266,30 +56273,21 @@ function checkLoginLockout(ip, username) {
       reason: "IP"
     };
   }
-  const targetRecord = userFailedAttempts.get(targetKey);
-  if (targetRecord?.lockedUntil && now < targetRecord.lockedUntil) {
-    return {
-      locked: true,
-      remainingSeconds: Math.ceil((targetRecord.lockedUntil - now) / 1e3),
-      reason: "ACCOUNT"
-    };
-  }
   return null;
 }
 async function recordFailedLogin(ip, username) {
   const now = Date.now();
   const cleanUser = username.trim().toLowerCase();
-  const targetKey = `${ip}:${cleanUser}`;
-  let targetRecord = userFailedAttempts.get(targetKey);
-  if (!targetRecord || now - targetRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!targetRecord.lockedUntil || now > targetRecord.lockedUntil)) {
-    targetRecord = { count: 1, firstAttempt: now };
+  let userRecord = userFailedAttempts.get(cleanUser);
+  if (!userRecord || now - userRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!userRecord.lockedUntil || now > userRecord.lockedUntil)) {
+    userRecord = { count: 1, firstAttempt: now };
   } else {
-    targetRecord.count += 1;
+    userRecord.count += 1;
   }
-  if (targetRecord.count >= MAX_FAILED_PER_TARGET) {
-    targetRecord.lockedUntil = now + LOCKOUT_WINDOW_MS;
+  if (userRecord.count >= MAX_FAILED_PER_TARGET) {
+    userRecord.lockedUntil = now + LOCKOUT_WINDOW_MS;
   }
-  userFailedAttempts.set(targetKey, targetRecord);
+  userFailedAttempts.set(cleanUser, userRecord);
   let ipRecord = ipFailedAttempts.get(ip);
   if (!ipRecord || now - ipRecord.firstAttempt > ATTEMPT_WINDOW_MS && (!ipRecord.lockedUntil || now > ipRecord.lockedUntil)) {
     ipRecord = { count: 1, firstAttempt: now };
@@ -56300,18 +56298,29 @@ async function recordFailedLogin(ip, username) {
     ipRecord.lockedUntil = now + LOCKOUT_WINDOW_MS;
   }
   ipFailedAttempts.set(ip, ipRecord);
-  if (targetRecord.count > 1) {
-    const delayMs = Math.min((targetRecord.count - 1) * 400, 1500);
+  if (userRecord.count > 1) {
+    const delayMs = Math.min((userRecord.count - 1) * 400, 1500);
     await new Promise((res) => setTimeout(res, delayMs));
   }
 }
 function recordSuccessfulLogin(ip, username) {
   const cleanUser = username.trim().toLowerCase();
-  userFailedAttempts.delete(`${ip}:${cleanUser}`);
+  userFailedAttempts.delete(cleanUser);
   const ipRecord = ipFailedAttempts.get(ip);
   if (ipRecord) {
     ipRecord.count = Math.max(0, ipRecord.count - 1);
   }
+}
+function unlockAccount(username) {
+  const cleanUser = username.trim().toLowerCase();
+  const existed = userFailedAttempts.has(cleanUser);
+  userFailedAttempts.delete(cleanUser);
+  return existed;
+}
+function clearAllLockouts() {
+  userFailedAttempts.clear();
+  ipFailedAttempts.clear();
+  ipRegisterAttempts.clear();
 }
 function registerRateLimiter(req, res, next) {
   const ip = getClientIp(req);
@@ -57093,6 +57102,26 @@ function createAdminRouter(io3) {
       res.status(500).json({ error: "INTERNAL_ERROR", message: "Failed to clear conversation" });
     }
   });
+  router.post("/unlock-account/:username", (req, res) => {
+    try {
+      const username = String(req.params.username || "");
+      if (!username) {
+        return res.status(400).json({ error: "INVALID_INPUT", message: "Username is required" });
+      }
+      unlockAccount(username);
+      res.json({ success: true, message: `Account '${username}' unlocked successfully` });
+    } catch (err) {
+      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || "Failed to unlock account" });
+    }
+  });
+  router.post("/clear-lockouts", (_req, res) => {
+    try {
+      clearAllLockouts();
+      res.json({ success: true, message: "All brute force lockouts have been reset" });
+    } catch (err) {
+      res.status(500).json({ error: "INTERNAL_ERROR", message: err.message || "Failed to clear lockouts" });
+    }
+  });
   return router;
 }
 
@@ -57534,7 +57563,13 @@ if (!import_fs6.default.existsSync(uploadsDir)) {
   import_fs6.default.mkdirSync(uploadsDir, { recursive: true });
 }
 app.use("/uploads", import_express5.default.static(uploadsDir, {
-  maxAge: "7d"
+  maxAge: "7d",
+  dotfiles: "ignore",
+  setHeaders: (res) => {
+    res.setHeader("X-Content-Type-Options", "nosniff");
+    res.setHeader("Content-Security-Policy", "default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'; sandbox");
+    res.setHeader("X-Frame-Options", "DENY");
+  }
 }));
 app.get("/manifest.json", (req, res) => {
   const appName = getSettingValue("app_name", "XMessenger - \u067E\u06CC\u0627\u0645\u200C\u0631\u0633\u0627\u0646 \u0627\u0645\u0646 \u0648 \u062E\u0635\u0648\u0635\u06CC");

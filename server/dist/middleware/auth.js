@@ -16,7 +16,7 @@ function generateToken(user) {
         username: user.username,
         role: user.role,
         status: user.status
-    }, index_js_1.config.jwtSecret, { expiresIn: '7d' });
+    }, index_js_1.config.jwtSecret, { expiresIn: '7d', algorithm: 'HS256' });
 }
 function authenticate(req, res, next) {
     const authHeader = req.headers.authorization;
@@ -25,7 +25,7 @@ function authenticate(req, res, next) {
     }
     const token = authHeader.split(' ')[1];
     try {
-        const decoded = jsonwebtoken_1.default.verify(token, index_js_1.config.jwtSecret);
+        const decoded = jsonwebtoken_1.default.verify(token, index_js_1.config.jwtSecret, { algorithms: ['HS256'] });
         // Fetch live user status from database to prevent stale tokens after ban/approval changes
         const user = index_js_2.db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(decoded.id);
         if (!user) {

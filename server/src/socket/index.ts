@@ -47,7 +47,7 @@ export function setupSocketServer(io: Server) {
     }
 
     try {
-      const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
+      const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as AuthUser;
       const user = db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(decoded.id) as {
         id: string;
         username: string;

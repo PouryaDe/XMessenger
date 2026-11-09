@@ -24,7 +24,7 @@ export function generateToken(user: AuthUser): string {
       status: user.status
     },
     config.jwtSecret,
-    { expiresIn: '7d' }
+    { expiresIn: '7d', algorithm: 'HS256' }
   );
 }
 
@@ -37,7 +37,7 @@ export function authenticate(req: AuthenticatedRequest, res: Response, next: Nex
   const token = authHeader.split(' ')[1];
 
   try {
-    const decoded = jwt.verify(token, config.jwtSecret) as AuthUser;
+    const decoded = jwt.verify(token, config.jwtSecret, { algorithms: ['HS256'] }) as AuthUser;
 
     // Fetch live user status from database to prevent stale tokens after ban/approval changes
     const user = db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(decoded.id) as {

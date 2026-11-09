@@ -45,7 +45,7 @@ function setupSocketServer(io) {
             return next(new Error('AUTHENTICATION_ERROR: Token required'));
         }
         try {
-            const decoded = jsonwebtoken_1.default.verify(token, index_js_1.config.jwtSecret);
+            const decoded = jsonwebtoken_1.default.verify(token, index_js_1.config.jwtSecret, { algorithms: ['HS256'] });
             const user = index_js_2.db.prepare('SELECT id, username, role, status, avatar_url FROM users WHERE id = ?').get(decoded.id);
             if (!user) {
                 return next(new Error('USER_NOT_FOUND'));

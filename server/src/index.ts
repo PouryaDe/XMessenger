@@ -67,7 +67,13 @@ if (!fs.existsSync(uploadsDir)) {
   fs.mkdirSync(uploadsDir, { recursive: true });
 }
 app.use('/uploads', express.static(uploadsDir, {
-  maxAge: '7d'
+  maxAge: '7d',
+  dotfiles: 'ignore',
+  setHeaders: (res) => {
+    res.setHeader('X-Content-Type-Options', 'nosniff');
+    res.setHeader('Content-Security-Policy', "default-src 'none'; img-src 'self' data: blob:; style-src 'unsafe-inline'; sandbox");
+    res.setHeader('X-Frame-Options', 'DENY');
+  }
 }));
 
 // 8. Serve Dynamic PWA Manifest (incorporates admin custom app name & icon)
