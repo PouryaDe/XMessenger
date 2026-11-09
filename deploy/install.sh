@@ -240,8 +240,16 @@ docker rm -f xmessenger-acme 2>/dev/null || true
 echo -e "\n${BLUE}[4/6] Building / updating XMessenger core Docker image...${NC}"
 echo -e "${YELLOW}Building optimized container image. Please wait a moment...${NC}"
 cd "${PROJECT_ROOT}"
-export DOCKER_BUILDKIT=1
-docker build -t xmessenger-core:latest -f Dockerfile .
+
+# Attempt to install docker-buildx if available in repositories
+apt-get install -y docker-buildx 2>/dev/null || true
+
+# If buildx is missing, disable BuildKit to use the rock-solid standard Docker engine builder
+if docker buildx version &>/dev/null; then
+  docker build -t xmessenger-core:latest -f Dockerfile .
+else
+  DOCKER_BUILDKIT=0 docker build -t xmessenger-core:latest -f Dockerfile .
+fi
 
 # 6. Ensure Shared Nginx Gateway is Running on Ports 80 & 443
 if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
