@@ -302,6 +302,86 @@ if [ "$1" == "logs" ] || [ "$1" == "log" ]; then
   exit 0
 fi
 
+if [ "$1" == "password" ] || [ "$1" == "passwd" ] || [ "$1" == "pass" ]; then
+  TARGET_DOMAIN="$2"
+  NEW_PASS="$3"
+  DOMAINS=($(get_domains))
+
+  if [ ${#DOMAINS[@]} -eq 0 ]; then
+    echo "No messenger instances found in ${INSTANCES_DIR}."
+    exit 1
+  fi
+
+  if [ -z "$TARGET_DOMAIN" ]; then
+    if [ ${#DOMAINS[@]} -eq 1 ]; then
+      TARGET_DOMAIN="${DOMAINS[0]}"
+    else
+      echo -e "${YELLOW}Please specify target domain (e.g. xmessenger password ${DOMAINS[0]}):${NC}"
+      for d in "${DOMAINS[@]}"; do echo "  - $d"; done
+      exit 1
+    fi
+  fi
+
+  TARGET_SLUG=$(echo "$TARGET_DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+  CONTAINER="xmessenger-${TARGET_SLUG}"
+  INSTANCE_DIR="${INSTANCES_DIR}/${TARGET_DOMAIN}"
+
+  if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+    docker start "${CONTAINER}" 2>/dev/null || true
+    sleep 1
+  fi
+
+  ADMIN_USER=$(docker exec -i "${CONTAINER}" node -e "
+  try {
+    const Database = require('better-sqlite3');
+    const db = new Database('/app/data/messenger.db');
+    const row = db.prepare(\"SELECT username FROM users WHERE role = 'admin' LIMIT 1\").get();
+    if (row) console.log(row.username);
+  } catch(e) {}
+  " 2>/dev/null || echo "admin")
+  [ -z "$ADMIN_USER" ] && ADMIN_USER="admin"
+
+  if [ -z "$NEW_PASS" ]; then
+    read -p "Enter new admin password for '${ADMIN_USER}' on ${TARGET_DOMAIN}: " NEW_PASS
+  fi
+
+  if [ -n "$NEW_PASS" ] && [ ${#NEW_PASS} -ge 6 ]; then
+    UPDATE_RESULT=$(docker exec -i "${CONTAINER}" node -e "
+    try {
+      const Database = require('better-sqlite3');
+      const bcrypt = require('bcryptjs');
+      const db = new Database('/app/data/messenger.db');
+      const newPass = process.argv[1];
+      const hash = bcrypt.hashSync(newPass, 12);
+      const res = db.prepare(\"UPDATE users SET password_hash = ? WHERE role = 'admin'\").run(hash);
+      if (res.changes > 0) {
+        console.log('SUCCESS');
+      } else {
+        console.log('NOT_FOUND');
+      }
+    } catch(e) {
+      console.error(e.message);
+      process.exit(1);
+    }
+    " "${NEW_PASS}" 2>/dev/null || echo "FAILED")
+
+    if [[ "$UPDATE_RESULT" == *"SUCCESS"* ]]; then
+      sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env" 2>/dev/null || true
+      echo -e "\n${GREEN}${BOLD}✓ Admin password successfully updated in database!${NC}"
+      echo -e "  ${CYAN}URL:${NC}      https://${TARGET_DOMAIN}"
+      echo -e "  ${CYAN}Username:${NC} ${BOLD}${ADMIN_USER}${NC}"
+      echo -e "  ${CYAN}Password:${NC} ${BOLD}${NEW_PASS}${NC}\n"
+      exit 0
+    else
+      echo -e "\n${RED}[ERROR] Failed to update password in database.${NC}"
+      exit 1
+    fi
+  else
+    echo -e "${RED}[ERROR] Password must be at least 6 characters long.${NC}"
+    exit 1
+  fi
+fi
+
 get_version() {
   if [ -f "${BASE_DIR}/VERSION" ]; then
     cat "${BASE_DIR}/VERSION" | tr -d '\r\n'
@@ -352,6 +432,17 @@ manage_instance() {
       STATUS="${RED}STOPPED${NC}"
     fi
 
+    # Read live admin username directly from database
+    local DB_ADMIN=$(docker exec -i "${CONTAINER}" node -e "
+    try {
+      const Database = require('better-sqlite3');
+      const db = new Database('/app/data/messenger.db');
+      const row = db.prepare(\"SELECT username FROM users WHERE role = 'admin' LIMIT 1\").get();
+      if (row) console.log(row.username);
+    } catch(e) {}
+    " 2>/dev/null || echo "")
+    [ -n "$DB_ADMIN" ] && ADMIN_USERNAME="$DB_ADMIN"
+
     echo -e "  ${CYAN}Domain:${NC}              https://${DOMAIN}"
     echo -e "  ${CYAN}Container Status:${NC}    ${STATUS}"
     echo -e "  ${CYAN}Admin Username:${NC}      ${ADMIN_USERNAME:-admin}"
@@ -400,14 +491,46 @@ manage_instance() {
         ;;
       5)
         show_banner
-        read -p "Enter new admin password for ${DOMAIN}: " NEW_PASS
+        if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER}$"; then
+          docker start "${CONTAINER}" 2>/dev/null || true
+          sleep 1
+        fi
+
+        echo -e "${BOLD}Current Admin Username:${NC} ${CYAN}${BOLD}${ADMIN_USERNAME:-admin}${NC}\n"
+        read -p "Enter new admin password for '${ADMIN_USERNAME:-admin}' (min 6 characters): " NEW_PASS
+
         if [ -n "$NEW_PASS" ] && [ ${#NEW_PASS} -ge 6 ]; then
-          sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env"
-          docker restart "${CONTAINER}"
-          echo -e "\n${GREEN}Admin password updated successfully.${NC}"
-          sleep 2
+          UPDATE_RESULT=$(docker exec -i "${CONTAINER}" node -e "
+          try {
+            const Database = require('better-sqlite3');
+            const bcrypt = require('bcryptjs');
+            const db = new Database('/app/data/messenger.db');
+            const newPass = process.argv[1];
+            const hash = bcrypt.hashSync(newPass, 12);
+            const res = db.prepare(\"UPDATE users SET password_hash = ? WHERE role = 'admin'\").run(hash);
+            if (res.changes > 0) {
+              console.log('SUCCESS');
+            } else {
+              console.log('NOT_FOUND');
+            }
+          } catch(e) {
+            console.error(e.message);
+            process.exit(1);
+          }
+          " "${NEW_PASS}" 2>/dev/null || echo "FAILED")
+
+          if [[ "$UPDATE_RESULT" == *"SUCCESS"* ]]; then
+            sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env" 2>/dev/null || true
+            echo -e "\n${GREEN}${BOLD}✓ Admin password successfully updated in database!${NC}"
+            echo -e "  ${CYAN}URL:${NC}      https://${DOMAIN}"
+            echo -e "  ${CYAN}Username:${NC} ${BOLD}${ADMIN_USERNAME:-admin}${NC}"
+            echo -e "  ${CYAN}Password:${NC} ${BOLD}${NEW_PASS}${NC}\n"
+          else
+            echo -e "\n${RED}[ERROR] Failed to update password in database.${NC}"
+          fi
+          read -p "Press Enter to continue..." dummy
         else
-          echo -e "${RED}Password must be at least 6 characters long.${NC}"
+          echo -e "\n${RED}Password must be at least 6 characters long.${NC}"
           sleep 2
         fi
         ;;
