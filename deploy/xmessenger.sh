@@ -43,7 +43,18 @@ renew_or_obtain_ssl() {
 
   echo -e "\n${BLUE}Requesting / Renewing official SSL certificate for ${TARGET_DOMAIN}...${NC}"
 
-  # If certificate is self-signed fallback, remove it so Certbot has a clean slate
+  # Ensure UFW allows 80 and 443 if active
+  if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+    ufw allow 80/tcp 2>/dev/null || true
+    ufw allow 443/tcp 2>/dev/null || true
+  fi
+
+  # Ensure Shared Nginx gateway is online
+  if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
+    docker start xmessenger-nginx 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
+  fi
+
+  # If certificate is self-signed fallback, temporarily back it up so Certbot has a clean slate
   local cert_file="${SHARED_DIR}/certbot/conf/live/${TARGET_DOMAIN}/fullchain.pem"
   local temp_backup=""
   if [ -f "$cert_file" ] && ! openssl x509 -in "$cert_file" -issuer -noout 2>/dev/null | grep -qiE "(Let's Encrypt|ISRG Root)"; then
@@ -62,28 +73,49 @@ renew_or_obtain_ssl() {
 
   chmod -R 755 "${SHARED_DIR}/certbot/www" 2>/dev/null || true
 
+  local obtain_ok=0
   if docker run --rm \
     --network xmessenger-net \
     -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
     -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
     certbot/certbot certonly --webroot -w /var/www/certbot \
     ${email_args} \
+    --cert-name "${TARGET_DOMAIN}" \
     -d "${TARGET_DOMAIN}" \
     --agree-tos \
     --non-interactive \
     --force-renewal ; then
+    obtain_ok=1
+  elif [ "$email_args" != "--register-unsafely-without-email" ]; then
+    echo -e "${YELLOW}Initial request returned an error. Retrying without email validation...${NC}"
+    if docker run --rm \
+      --network xmessenger-net \
+      -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+      -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+      certbot/certbot certonly --webroot -w /var/www/certbot \
+      --register-unsafely-without-email \
+      --cert-name "${TARGET_DOMAIN}" \
+      -d "${TARGET_DOMAIN}" \
+      --agree-tos \
+      --non-interactive \
+      --force-renewal ; then
+      obtain_ok=1
+    fi
+  fi
 
+  if [ "$obtain_ok" -eq 1 ]; then
     echo -e "${GREEN}✓ Official Let's Encrypt SSL certificate obtained and activated!${NC}"
-    docker restart xmessenger-nginx 2>/dev/null || true
+    docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
     [ -n "$temp_backup" ] && rm -rf "$temp_backup"
     return 0
   else
     echo -e "${RED}[ERROR] Let's Encrypt issuance failed.${NC}"
+    echo -e "${YELLOW}Common causes: DNS A-record not pointing to this server IP, or incoming port 80 blocked.${NC}"
     if [ -n "$temp_backup" ] && [ -d "${temp_backup}/${TARGET_DOMAIN}" ]; then
       mkdir -p "${SHARED_DIR}/certbot/conf/live"
       cp -r "${temp_backup}/${TARGET_DOMAIN}" "${SHARED_DIR}/certbot/conf/live/"
       rm -rf "$temp_backup"
-      docker restart xmessenger-nginx 2>/dev/null || true
+      docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
     fi
     return 1
   fi

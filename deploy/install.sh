@@ -225,16 +225,13 @@ SLUG=$(echo "$DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
 
 if [ -z "$EMAIL" ]; then
   if [ -t 0 ]; then
-    read -p "Enter email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL
+    read -p "Enter email for Let's Encrypt SSL certificate (press Enter to skip): " EMAIL
   elif [ -e /dev/tty ]; then
-    read -p "Enter email for Let's Encrypt SSL certificate (e.g., admin@${DOMAIN}): " EMAIL < /dev/tty
+    read -p "Enter email for Let's Encrypt SSL certificate (press Enter to skip): " EMAIL < /dev/tty
   fi
 fi
 
 EMAIL=$(echo "$EMAIL" | tr -d ' ')
-if [ -z "$EMAIL" ]; then
-  EMAIL="admin@${DOMAIN}"
-fi
 
 # Preserve existing keys and passwords on re-install / upgrade to guarantee zero data loss
 ENV_FILE="${INSTANCES_DIR}/${DOMAIN}/.env"
@@ -320,7 +317,61 @@ if [ "$BUILD_OK" -ne 1 ]; then
 fi
 echo -e "${GREEN}✓ Core Docker image built successfully.${NC}"
 
-# 7. Ensure Shared Nginx Gateway is Running on Ports 80 & 443
+# 7. Launch Isolated Backend Container for this Domain
+echo -e "\n${BLUE}[5/6] Launching isolated backend for ${DOMAIN}...${NC}"
+
+cat <<EOF > "${INSTANCES_DIR}/${DOMAIN}/.env"
+DOMAIN=${DOMAIN}
+EMAIL=${EMAIL}
+JWT_SECRET=${JWT_SECRET}
+ENCRYPTION_KEY=${ENCRYPTION_KEY}
+ADMIN_USERNAME=${ADMIN_USERNAME}
+ADMIN_PASSWORD=${ADMIN_PASSWORD}
+DEFAULT_TTL_SECONDS=${DEFAULT_TTL_SECONDS}
+SLUG=${SLUG}
+EOF
+
+# Stop old instance container if exists
+docker rm -f "xmessenger-${SLUG}" 2>/dev/null || true
+
+# Run dedicated app container for this domain
+docker run -d \
+  --name "xmessenger-${SLUG}" \
+  --restart always \
+  --network xmessenger-net \
+  --env-file "${INSTANCES_DIR}/${DOMAIN}/.env" \
+  -v "xmessenger-data-${SLUG}:/app/data" \
+  xmessenger-core:latest
+
+# Wait for backend container to be healthy and running in Docker network
+for i in {1..15}; do
+  if docker ps --format '{{.Names}}' | grep -q "^xmessenger-${SLUG}$"; then
+    break
+  fi
+  sleep 1
+done
+echo -e "${GREEN}✓ Backend container xmessenger-${SLUG} is running.${NC}"
+
+# 8. Setup SSL Certificate & Shared Nginx Gateway for this Domain
+echo -e "\n${BLUE}[6/6] Setting up SSL Certificate & Nginx Gateway for ${DOMAIN}...${NC}"
+
+# Open firewall ports if UFW is active on Ubuntu/Debian host
+if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
+  echo -e "${YELLOW}Configuring UFW firewall to allow HTTP (80) and HTTPS (443)...${NC}"
+  ufw allow 80/tcp 2>/dev/null || true
+  ufw allow 443/tcp 2>/dev/null || true
+fi
+
+# Ensure /var/www/certbot permissions for ACME webroot challenge
+mkdir -p "${SHARED_DIR}/certbot/www"
+chmod -R 755 "${SHARED_DIR}/certbot/www" 2>/dev/null || true
+
+# Temporarily stash existing domain Nginx config if present so gateway boots on clean port 80 (00-default.conf)
+if [ -f "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf" ]; then
+  mv "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf" "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf.bak" 2>/dev/null || true
+fi
+
+# Ensure Shared Nginx Gateway is Running on Ports 80 & 443
 if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
   echo -e "${YELLOW}Starting shared Nginx Gateway on ports 80/443...${NC}"
   docker rm -f xmessenger-nginx 2>/dev/null || true
@@ -334,22 +385,94 @@ if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
     -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
     -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
     nginx:alpine
+else
+  docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
 fi
 
-# 8. Obtain or Verify SSL Certificate for this Domain
-echo -e "\n${BLUE}[5/6] Setting up SSL Certificate for ${DOMAIN}...${NC}"
+# Wait for Nginx to be healthy and responsive on port 80
+for i in {1..10}; do
+  if docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$' && docker exec xmessenger-nginx nginx -t &>/dev/null; then
+    break
+  fi
+  sleep 1
+done
 
-# Ensure SSL certificate directory and files exist (baseline fallback guarantees Nginx never fails on port 443)
-mkdir -p "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
-if [ ! -f "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" ] || [ ! -f "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" ]; then
-  echo -e "${YELLOW}Generating initial SSL certificate for ${DOMAIN}...${NC}"
-  openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
-    -keyout "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" \
-    -out "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" \
-    -subj "/CN=${DOMAIN}"
+# Obtain or Verify SSL Certificate for this Domain
+CERT_FILE="${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem"
+if [ -f "$CERT_FILE" ] && openssl x509 -in "$CERT_FILE" -issuer -noout 2>/dev/null | grep -qiE "(Let's Encrypt|ISRG Root)"; then
+  echo -e "${GREEN}✓ Authentic Let's Encrypt SSL certificate is already active for ${DOMAIN}.${NC}"
+else
+  echo -e "${YELLOW}Requesting official Let's Encrypt SSL certificate for ${DOMAIN}...${NC}"
+
+  # Clean up temporary fallback files if present so Certbot creates genuine lineage symlinks
+  TEMP_SSL_BACKUP=""
+  if [ -d "${SHARED_DIR}/certbot/conf/live/${DOMAIN}" ]; then
+    TEMP_SSL_BACKUP=$(mktemp -d)
+    cp -r "${SHARED_DIR}/certbot/conf/live/${DOMAIN}" "${TEMP_SSL_BACKUP}/"
+    rm -rf "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
+    rm -rf "${SHARED_DIR}/certbot/conf/archive/${DOMAIN}"
+    rm -f "${SHARED_DIR}/certbot/conf/renewal/${DOMAIN}.conf"
+  fi
+
+  EMAIL_ARGS="--register-unsafely-without-email"
+  if [ -n "$EMAIL" ] && [[ "$EMAIL" == *"@"* ]]; then
+    EMAIL_ARGS="--email ${EMAIL} --no-eff-email"
+  fi
+
+  OBTAIN_OK=0
+  if docker run --rm \
+    --network xmessenger-net \
+    -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+    -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+    certbot/certbot certonly --webroot -w /var/www/certbot \
+    ${EMAIL_ARGS} \
+    --cert-name "${DOMAIN}" \
+    -d "${DOMAIN}" \
+    --agree-tos \
+    --non-interactive \
+    --force-renewal ; then
+    OBTAIN_OK=1
+  elif [ "$EMAIL_ARGS" != "--register-unsafely-without-email" ]; then
+    echo -e "${YELLOW}Initial request returned an error. Retrying without email validation...${NC}"
+    if docker run --rm \
+      --network xmessenger-net \
+      -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+      -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+      certbot/certbot certonly --webroot -w /var/www/certbot \
+      --register-unsafely-without-email \
+      --cert-name "${DOMAIN}" \
+      -d "${DOMAIN}" \
+      --agree-tos \
+      --non-interactive \
+      --force-renewal ; then
+      OBTAIN_OK=1
+    fi
+  fi
+
+  if [ "$OBTAIN_OK" -eq 1 ]; then
+    echo -e "${GREEN}✓ Official Let's Encrypt SSL certificate successfully obtained and activated!${NC}"
+    [ -n "$TEMP_SSL_BACKUP" ] && rm -rf "${TEMP_SSL_BACKUP}"
+  else
+    echo -e "${YELLOW}[Warning] Let's Encrypt verification could not complete.${NC}"
+    echo -e "${YELLOW}Common causes: Domain DNS A-record not pointing to this server IP yet, or port 80 blocked.${NC}"
+    if [ -n "$TEMP_SSL_BACKUP" ] && [ -d "${TEMP_SSL_BACKUP}/${DOMAIN}" ]; then
+      mkdir -p "${SHARED_DIR}/certbot/conf/live"
+      cp -r "${TEMP_SSL_BACKUP}/${DOMAIN}" "${SHARED_DIR}/certbot/conf/live/"
+      rm -rf "${TEMP_SSL_BACKUP}"
+      echo -e "${YELLOW}Restored existing fallback certificate.${NC}"
+    else
+      echo -e "${YELLOW}Generating self-signed fallback certificate so your messenger is functional immediately...${NC}"
+      mkdir -p "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/privkey.pem" \
+        -out "${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem" \
+        -subj "/CN=${DOMAIN}"
+    fi
+    echo -e "${YELLOW}Once your DNS propagates, run: ${CYAN}xmessenger ssl ${DOMAIN}${NC}"
+  fi
 fi
 
-# 9. Deploy Production Nginx Reverse Proxy Route for this Domain
+# Deploy Production Nginx Reverse Proxy Route for this Domain
 echo -e "${BLUE}Configuring Nginx routing for ${DOMAIN}...${NC}"
 cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
 server {
@@ -405,80 +528,13 @@ server {
 }
 EOF
 
-# Restart Nginx gateway so port 443 and new domain are instantly live
-docker restart xmessenger-nginx 2>/dev/null || true
+# Remove temporary backup of old configuration
+rm -f "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf.bak" 2>/dev/null || true
 
-# Obtain official Let's Encrypt SSL certificate if not already issued by Let's Encrypt
-CERT_FILE="${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem"
-if [ -f "$CERT_FILE" ] && openssl x509 -in "$CERT_FILE" -issuer -noout 2>/dev/null | grep -qiE "(Let's Encrypt|ISRG Root)"; then
-  echo -e "${GREEN}✓ Authentic Let's Encrypt SSL certificate is already active for ${DOMAIN}.${NC}"
-else
-  echo -e "${YELLOW}Requesting official Let's Encrypt SSL certificate for ${DOMAIN}...${NC}"
+# Reload or restart Nginx gateway so new route and SSL are live
+docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
 
-  # Clean up temporary fallback files so Certbot creates genuine lineage symlinks
-  TEMP_SSL_BACKUP=$(mktemp -d)
-  cp -r "${SHARED_DIR}/certbot/conf/live/${DOMAIN}" "${TEMP_SSL_BACKUP}/"
-  rm -rf "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
-  rm -rf "${SHARED_DIR}/certbot/conf/archive/${DOMAIN}"
-  rm -f "${SHARED_DIR}/certbot/conf/renewal/${DOMAIN}.conf"
-
-  EMAIL_ARGS="--register-unsafely-without-email"
-  if [ -n "$EMAIL" ] && [[ "$EMAIL" == *"@"* ]]; then
-    EMAIL_ARGS="--email ${EMAIL} --no-eff-email"
-  fi
-
-  chmod -R 755 "${SHARED_DIR}/certbot/www" 2>/dev/null || true
-
-  if docker run --rm \
-    --network xmessenger-net \
-    -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
-    -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
-    certbot/certbot certonly --webroot -w /var/www/certbot \
-    ${EMAIL_ARGS} \
-    -d "${DOMAIN}" \
-    --agree-tos \
-    --non-interactive \
-    --force-renewal ; then
-
-    echo -e "${GREEN}✓ Official Let's Encrypt SSL certificate successfully obtained and activated!${NC}"
-    docker restart xmessenger-nginx 2>/dev/null || true
-    rm -rf "${TEMP_SSL_BACKUP}"
-  else
-    echo -e "${YELLOW}[Warning] Let's Encrypt issuance did not complete. Restoring fallback certificate...${NC}"
-    mkdir -p "${SHARED_DIR}/certbot/conf/live"
-    cp -r "${TEMP_SSL_BACKUP}/${DOMAIN}" "${SHARED_DIR}/certbot/conf/live/"
-    rm -rf "${TEMP_SSL_BACKUP}"
-    docker restart xmessenger-nginx 2>/dev/null || true
-  fi
-fi
-
-# 10. Launch Isolated Backend Container for this Domain
-echo -e "\n${BLUE}[6/6] Launching isolated backend for ${DOMAIN}...${NC}"
-
-cat <<EOF > "${INSTANCES_DIR}/${DOMAIN}/.env"
-DOMAIN=${DOMAIN}
-EMAIL=${EMAIL}
-JWT_SECRET=${JWT_SECRET}
-ENCRYPTION_KEY=${ENCRYPTION_KEY}
-ADMIN_USERNAME=${ADMIN_USERNAME}
-ADMIN_PASSWORD=${ADMIN_PASSWORD}
-DEFAULT_TTL_SECONDS=${DEFAULT_TTL_SECONDS}
-SLUG=${SLUG}
-EOF
-
-# Stop old instance container if exists
-docker rm -f "xmessenger-${SLUG}" 2>/dev/null || true
-
-# Run dedicated app container for this domain
-docker run -d \
-  --name "xmessenger-${SLUG}" \
-  --restart always \
-  --network xmessenger-net \
-  --env-file "${INSTANCES_DIR}/${DOMAIN}/.env" \
-  -v "xmessenger-data-${SLUG}:/app/data" \
-  xmessenger-core:latest
-
-# Ensure Certbot renewer container is running
+# 9. Ensure Certbot renewer container is running
 if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-certbot$'; then
   docker run -d \
     --name xmessenger-certbot \
@@ -490,12 +546,12 @@ if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-certbot$'; then
     sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot; sleep 12h & wait $${!}; done;'
 fi
 
-# 11. Install Global Multi-Domain CLI Management Tool (xmessenger & xupdate)
+# 10. Install Global Multi-Domain CLI Management Tool (xmessenger & xupdate)
 ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || cp -f "${PROJECT_ROOT}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
 chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" /usr/local/bin/xmessenger /usr/local/bin/xupdate 2>/dev/null || true
 
-# 12. Configure Continuous GitHub Auto-Update Service
+# 11. Configure Continuous GitHub Auto-Update Service
 if [ -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" ] && [ -d /etc/systemd/system ]; then
   cp -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" /etc/systemd/system/xmessenger-autoupdate.service
   systemctl daemon-reload 2>/dev/null || true
