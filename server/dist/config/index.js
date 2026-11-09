@@ -25,7 +25,7 @@ const APP_VERSION = (() => {
         }
     }
     catch { }
-    return '2.1.0';
+    return '2.2.0';
 })();
 // Ensure a fallback 32-byte key if none provided in development
 const DEFAULT_KEY = process.env.ENCRYPTION_KEY || crypto_1.default.createHash('sha256').update(process.env.JWT_SECRET || 'xmessenger-default-secret-key-2026').digest('hex');

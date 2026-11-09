@@ -52729,7 +52729,7 @@ var APP_VERSION = (() => {
     }
   } catch {
   }
-  return "2.1.0";
+  return "2.2.0";
 })();
 var DEFAULT_KEY = process.env.ENCRYPTION_KEY || import_crypto.default.createHash("sha256").update(process.env.JWT_SECRET || "xmessenger-default-secret-key-2026").digest("hex");
 var config = {

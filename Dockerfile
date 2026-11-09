@@ -14,9 +14,10 @@ RUN apk add --no-cache --virtual .build-deps python3 make g++ && \
     npm ci --omit=dev --no-audit --no-fund && \
     apk del .build-deps
 
-# 2. Copy pre-compiled server dist and client web assets
+# 2. Copy pre-compiled server dist, client web assets, and VERSION
 COPY server/dist ./dist
 COPY client/dist ./client-dist
+COPY VERSION ./VERSION
 
 RUN mkdir -p /app/data
 

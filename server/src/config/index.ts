@@ -20,7 +20,7 @@ const APP_VERSION = (() => {
       if (fs.existsSync(p)) return fs.readFileSync(p, 'utf-8').trim();
     }
   } catch {}
-  return '2.1.0';
+  return '2.2.0';
 })();
 
 // Ensure a fallback 32-byte key if none provided in development

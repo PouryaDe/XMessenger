@@ -221,8 +221,8 @@ export const AuthModal: React.FC = () => {
         </div>
 
         {/* Footer Version */}
-        <div className="text-center text-xs text-slate-400 dark:text-slate-500 mt-4 select-none">
-          XMessenger v{appMeta?.version || APP_VERSION}
+        <div className="text-center text-xs text-slate-400 dark:text-slate-500 mt-4 select-none font-mono" dir="ltr">
+          {appMeta?.appName || 'XMessenger'} v{APP_VERSION}
         </div>
       </div>
     </div>
