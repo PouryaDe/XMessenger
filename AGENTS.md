@@ -47,6 +47,13 @@ This file serves as the high-level roadmap and engineering guide for AI agents w
 - **Admin Presence Privacy**:
   - Admin toggle (`show_admin_presence`) in General Settings.
   - When disabled, admin's online status and exact last seen timestamp are masked from users with Telegram-style "last seen recently" text.
+- **200MB File & Media Attachments & Security**:
+  - Supports documents, archives, videos, audio, and photos up to 200MB (`client_max_body_size 250M`).
+  - Telegram-style file bubble with human-readable size, file icon, and secure download route (`/api/messages/download/:filename`).
+  - Strict blacklist of executables and scripts (`.exe`, `.sh`, `.php`, `.py`, `.ps1`, `.bat`, `.dll`, etc.) on both client and server.
+  - Neutralizes extension bypasses (trailing dots/spaces, delimiter injection).
+  - Stored with full cryptographic UUIDv4; served under strict CSP sandboxing (`default-src 'none'; sandbox`).
+  - Hard disk cleanup of attachments upon two-way message deletion, conversation wiping, and TTL expiry.
 
 ---
 

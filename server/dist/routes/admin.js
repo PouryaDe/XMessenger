@@ -13,6 +13,7 @@ const index_js_1 = require("../config/index.js");
 const index_js_2 = require("../database/index.js");
 const auth_js_1 = require("../middleware/auth.js");
 const crypto_js_1 = require("../utils/crypto.js");
+const fileCleaner_js_1 = require("../utils/fileCleaner.js");
 const index_js_3 = require("../socket/index.js");
 const security_js_1 = require("../middleware/security.js");
 function createAdminRouter(io) {
@@ -175,6 +176,15 @@ function createAdminRouter(io) {
             const user = index_js_2.db.prepare('SELECT id, role FROM users WHERE id = ?').get(id);
             if (!user || user.role === 'admin') {
                 return res.status(400).json({ error: 'CANNOT_DELETE', message: 'Cannot delete admin or non-existent user' });
+            }
+            // Clean up attachment files from disk before deleting messages
+            const msgRows = index_js_2.db.prepare('SELECT ciphertext, iv, auth_tag FROM messages WHERE sender_id = ? OR recipient_id = ?').all(id, id);
+            for (const m of msgRows) {
+                try {
+                    const decrypted = (0, crypto_js_1.decryptMessage)(m.ciphertext, m.iv, m.auth_tag);
+                    (0, fileCleaner_js_1.deleteAttachmentFromMessageText)(decrypted);
+                }
+                catch (_) { }
             }
             // Hard delete messages and user
             index_js_2.db.prepare('DELETE FROM messages WHERE sender_id = ? OR recipient_id = ?').run(id, id);
@@ -482,6 +492,18 @@ function createAdminRouter(io) {
         try {
             const { userId } = req.params;
             const adminId = req.user.id;
+            // Clean up attachment files from disk before deleting messages
+            const msgRows = index_js_2.db.prepare(`
+        SELECT ciphertext, iv, auth_tag FROM messages
+        WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+      `).all(adminId, userId, userId, adminId);
+            for (const m of msgRows) {
+                try {
+                    const decrypted = (0, crypto_js_1.decryptMessage)(m.ciphertext, m.iv, m.auth_tag);
+                    (0, fileCleaner_js_1.deleteAttachmentFromMessageText)(decrypted);
+                }
+                catch (_) { }
+            }
             index_js_2.db.prepare(`
         DELETE FROM messages
         WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)

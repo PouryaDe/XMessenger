@@ -1,19 +1,29 @@
-import { describe, it } from 'node:test';
+import { describe, it, beforeEach, afterEach } from 'node:test';
 import assert from 'node:assert';
 import path from 'path';
+import fs from 'fs';
+import { deleteAttachmentFromMessageText } from '../src/utils/fileCleaner.js';
+import { config } from '../src/config/index.js';
 
 // Blacklist of forbidden dangerous extensions that must never be uploaded
 const FORBIDDEN_FILE_EXTENSIONS = new Set([
-  '.exe', '.bat', '.cmd', '.sh', '.bash', '.vbs', '.js', '.jse', '.wsf',
-  '.msi', '.msp', '.com', '.scr', '.pif', '.hta', '.jar', '.php', '.phtml',
-  '.php3', '.php4', '.php5', '.phps', '.cgi', '.pl', '.py', '.rb', '.asp',
-  '.aspx', '.jsp', '.jspx', '.war', '.dll', '.so', '.dylib', '.ps1', '.psm1'
+  '.php', '.php3', '.php4', '.php5', '.phtml', '.phar',
+  '.exe', '.dll', '.com', '.bat', '.cmd', '.vbs', '.vbe',
+  '.js', '.jse', '.wsf', '.wsh', '.msc', '.scr',
+  '.sh', '.bash', '.csh', '.ksh', '.zsh',
+  '.cgi', '.pl', '.py', '.rb',
+  '.asp', '.aspx', '.cer', '.asa', '.jsp', '.jspx',
+  '.hta', '.jar', '.war', '.ear',
+  '.msi', '.msp', '.reg',
+  '.ps1', '.psm1', '.psd1',
+  '.so', '.dylib'
 ]);
 
 const MAX_CHAT_FILE_SIZE = 200 * 1024 * 1024; // 200 MB
 
 function validateUploadExtension(filename: string): boolean {
-  const ext = path.extname(filename).toLowerCase();
+  const cleanOriginal = filename.trim().replace(/[.\s\r\n\t]+$/, '');
+  const ext = path.extname(cleanOriginal).toLowerCase();
   return !FORBIDDEN_FILE_EXTENSIONS.has(ext);
 }
 
@@ -24,9 +34,18 @@ function validateUploadSize(sizeInBytes: number): boolean {
 function sanitizeDownloadPath(rawFilename: string, uploadDir: string): { isSafe: boolean; fullPath: string } {
   const safeFilename = path.basename(String(rawFilename || ''));
   const fullPath = path.join(uploadDir, safeFilename);
-  // Verify resolved path stays strictly within uploadDir
   const isSafe = fullPath.startsWith(uploadDir) && !safeFilename.includes('..') && safeFilename.length > 0;
   return { isSafe, fullPath };
+}
+
+function sanitizeClientFilename(rawName: string): string {
+  return (path.basename(rawName || '').replace(/[|\[\]\r\n\t]/g, '_').trim()) || 'file';
+}
+
+function sanitizeDownloadHeaderName(queryName: string, fallback: string): string {
+  return typeof queryName === 'string' && queryName.trim().length > 0
+    ? path.basename(queryName.trim()).replace(/[\r\n\t"']/g, '_')
+    : fallback;
 }
 
 describe('File Attachment Upload & Download Security Tests', () => {
@@ -40,6 +59,8 @@ describe('File Attachment Upload & Download Security Tests', () => {
       'trojan.jar',
       'virus.msi',
       'install.ps1',
+      'powershell.psm1',
+      'module.psd1',
       'library.dll',
       'attack.vbs',
       'app.cmd',
@@ -52,6 +73,27 @@ describe('File Attachment Upload & Download Security Tests', () => {
         validateUploadExtension(file),
         false,
         `Expected ${file} to be blocked by security filter`
+      );
+    }
+  });
+
+  it('detects and neutralizes extension bypass attempts with trailing dots, whitespace, and case mixing', () => {
+    const bypassAttempts = [
+      'malware.exe.',
+      'malware.exe...',
+      'payload.php ',
+      'trojan.EXE\t',
+      'exploit.BAT.\n',
+      'script.ps1...  ',
+      'backdoor.PHP4. ',
+      'shell.phtml... '
+    ];
+
+    for (const attempt of bypassAttempts) {
+      assert.strictEqual(
+        validateUploadExtension(attempt),
+        false,
+        `Bypass attempt should have been caught: ${JSON.stringify(attempt)}`
       );
     }
   });
@@ -108,10 +150,71 @@ describe('File Attachment Upload & Download Security Tests', () => {
 
     for (const attempt of maliciousAttempts) {
       const { isSafe, fullPath } = sanitizeDownloadPath(attempt, mockUploadDir);
-      // Ensure path.basename neutralized the traversal and file points strictly inside mockUploadDir
       assert.strictEqual(isSafe, true);
       assert.strictEqual(path.dirname(fullPath), mockUploadDir);
       assert.ok(!path.basename(fullPath).includes('..'));
     }
+  });
+
+  it('sanitizes pipe and delimiter characters from uploaded filenames', () => {
+    const dirtyNames = [
+      'my|report|2026.pdf',
+      'file[1].zip',
+      'invoice\r\n2026.docx',
+      'test\tfile.csv'
+    ];
+
+    for (const name of dirtyNames) {
+      const clean = sanitizeClientFilename(name);
+      assert.ok(!clean.includes('|'));
+      assert.ok(!clean.includes('['));
+      assert.ok(!clean.includes(']'));
+      assert.ok(!clean.includes('\r'));
+      assert.ok(!clean.includes('\n'));
+    }
+  });
+
+  it('sanitizes download header filenames against HTTP response splitting', () => {
+    const maliciousNames = [
+      'test.pdf\r\nSet-Cookie: admin=true',
+      'report.pdf" ; filename="evil.exe',
+      'invoice\nlocation: https://attacker.com'
+    ];
+
+    for (const name of maliciousNames) {
+      const clean = sanitizeDownloadHeaderName(name, 'fallback.bin');
+      assert.ok(!clean.includes('\r'));
+      assert.ok(!clean.includes('\n'));
+      assert.ok(!clean.includes('"'));
+    }
+  });
+
+  it('unlinks attached files from disk when message text is parsed for deletion', () => {
+    const chatUploadDir = path.join(config.dataDir, 'uploads', 'chat');
+    if (!fs.existsSync(chatUploadDir)) {
+      fs.mkdirSync(chatUploadDir, { recursive: true });
+    }
+
+    const testImageFilename = `img-test-${Date.now()}.jpg`;
+    const testFileFilename = `file-test-${Date.now()}.pdf`;
+
+    const imagePath = path.join(chatUploadDir, testImageFilename);
+    const filePath = path.join(chatUploadDir, testFileFilename);
+
+    fs.writeFileSync(imagePath, 'dummy-image-content');
+    fs.writeFileSync(filePath, 'dummy-pdf-content');
+
+    assert.ok(fs.existsSync(imagePath));
+    assert.ok(fs.existsSync(filePath));
+
+    // Test deleting image attachment
+    const imageMessage = `[image:/uploads/chat/${testImageFilename}]\nHere is the photo`;
+    deleteAttachmentFromMessageText(imageMessage);
+    assert.strictEqual(fs.existsSync(imagePath), false, 'Image file should have been deleted from disk');
+
+    // Test deleting generic file attachment
+    const fileMessage = `[file:/uploads/chat/${testFileFilename}|Report.pdf|1024]\nHere is the report`;
+    deleteAttachmentFromMessageText(fileMessage);
+    assert.strictEqual(fs.existsSync(filePath), false, 'Generic file should have been deleted from disk');
   });
 });

@@ -1,6 +1,8 @@
 import { db } from '../database/index.js';
 import { Server } from 'socket.io';
 import { config } from '../config/index.js';
+import { decryptMessage } from '../utils/crypto.js';
+import { deleteAttachmentFromMessageText } from '../utils/fileCleaner.js';
 
 let cleanupTimer: NodeJS.Timeout | null = null;
 
@@ -15,14 +17,27 @@ export function startTtlWorker(io?: Server) {
     try {
       const now = new Date().toISOString();
 
-      // 1. Fetch expired message IDs to notify clients
-      const expiredRows = db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE expires_at <= ?').all(now) as Array<{
+      // 1. Fetch expired messages to notify clients and unlink attached files
+      const expiredRows = db.prepare('SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag FROM messages WHERE expires_at <= ?').all(now) as Array<{
         id: string;
         sender_id: string;
         recipient_id: string;
+        ciphertext?: string;
+        iv?: string;
+        auth_tag?: string;
       }>;
 
       if (expiredRows.length > 0) {
+        // Clean up attached images/files from disk before deletion
+        for (const row of expiredRows) {
+          if (row.ciphertext && row.iv && row.auth_tag) {
+            try {
+              const decrypted = decryptMessage(row.ciphertext, row.iv, row.auth_tag);
+              deleteAttachmentFromMessageText(decrypted);
+            } catch (_) {}
+          }
+        }
+
         const ids = expiredRows.map(r => r.id);
         const placeholders = ids.map(() => '?').join(',');
 

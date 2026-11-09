@@ -7,6 +7,7 @@ import { config } from '../config/index.js';
 import { db, getSettingValue, updateSettingValue } from '../database/index.js';
 import { authenticate, requireAdmin, AuthenticatedRequest } from '../middleware/auth.js';
 import { encryptMessage, decryptMessage } from '../utils/crypto.js';
+import { deleteAttachmentFromMessageText } from '../utils/fileCleaner.js';
 import { isUserOnline, isAnyAdminOnline } from '../socket/index.js';
 import { unlockAccount, clearAllLockouts } from '../middleware/security.js';
 import { Server } from 'socket.io';
@@ -204,6 +205,19 @@ export function createAdminRouter(io?: Server) {
 
       if (!user || user.role === 'admin') {
         return res.status(400).json({ error: 'CANNOT_DELETE', message: 'Cannot delete admin or non-existent user' });
+      }
+
+      // Clean up attachment files from disk before deleting messages
+      const msgRows = db.prepare('SELECT ciphertext, iv, auth_tag FROM messages WHERE sender_id = ? OR recipient_id = ?').all(id, id) as Array<{
+        ciphertext: string;
+        iv: string;
+        auth_tag: string;
+      }>;
+      for (const m of msgRows) {
+        try {
+          const decrypted = decryptMessage(m.ciphertext, m.iv, m.auth_tag);
+          deleteAttachmentFromMessageText(decrypted);
+        } catch (_) {}
       }
 
       // Hard delete messages and user
@@ -552,6 +566,22 @@ export function createAdminRouter(io?: Server) {
     try {
       const { userId } = req.params;
       const adminId = req.user!.id;
+
+      // Clean up attachment files from disk before deleting messages
+      const msgRows = db.prepare(`
+        SELECT ciphertext, iv, auth_tag FROM messages
+        WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+      `).all(adminId, userId, userId, adminId) as Array<{
+        ciphertext: string;
+        iv: string;
+        auth_tag: string;
+      }>;
+      for (const m of msgRows) {
+        try {
+          const decrypted = decryptMessage(m.ciphertext, m.iv, m.auth_tag);
+          deleteAttachmentFromMessageText(decrypted);
+        } catch (_) {}
+      }
 
       db.prepare(`
         DELETE FROM messages

@@ -34,7 +34,7 @@ const FORBIDDEN_EXTENSIONS = new Set([
   '.exe', '.bat', '.cmd', '.sh', '.bash', '.vbs', '.js', '.jse', '.wsf',
   '.msi', '.msp', '.com', '.scr', '.pif', '.hta', '.jar', '.php', '.phtml',
   '.php3', '.php4', '.php5', '.phps', '.cgi', '.pl', '.py', '.rb', '.asp',
-  '.aspx', '.jsp', '.jspx', '.war', '.dll', '.so', '.dylib', '.ps1', '.psm1'
+  '.aspx', '.jsp', '.jspx', '.war', '.dll', '.so', '.dylib', '.ps1', '.psm1', '.psd1'
 ]);
 const MAX_FILE_SIZE = 200 * 1024 * 1024; // 200 MB
 
@@ -112,7 +112,8 @@ export const UserChatView: React.FC = () => {
       return;
     }
 
-    const ext = '.' + (file.name.split('.').pop() || '').toLowerCase();
+    const cleanName = file.name.trim().replace(/[.\s\r\n\t]+$/, '');
+    const ext = '.' + (cleanName.split('.').pop() || '').toLowerCase();
     if (FORBIDDEN_EXTENSIONS.has(ext)) {
       alert(t('errForbiddenFileType'));
       if (fileInputRef.current) fileInputRef.current.value = '';

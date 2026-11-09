@@ -5,6 +5,7 @@ import { config } from '../config/index.js';
 import { db, getSettingValue } from '../database/index.js';
 import { AuthUser } from '../middleware/auth.js';
 import { encryptMessage, decryptMessage } from '../utils/crypto.js';
+import { deleteAttachmentFromMessageText } from '../utils/fileCleaner.js';
 import { dispatchPushForMessage } from '../services/pushService.js';
 
 interface AuthenticatedSocket extends Socket {
@@ -292,10 +293,13 @@ export function setupSocketServer(io: Server) {
           return;
         }
 
-        const row = db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE id = ?').get(messageId) as {
+        const row = db.prepare('SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag FROM messages WHERE id = ?').get(messageId) as {
           id: string;
           sender_id: string;
           recipient_id: string;
+          ciphertext?: string;
+          iv?: string;
+          auth_tag?: string;
         } | undefined;
 
         if (!row) {
@@ -306,6 +310,14 @@ export function setupSocketServer(io: Server) {
         if (user.role !== 'admin' && row.sender_id !== user.id && row.recipient_id !== user.id) {
           if (callback) callback({ error: 'FORBIDDEN' });
           return;
+        }
+
+        // Clean up attached file/image from disk before deletion
+        if (row.ciphertext && row.iv && row.auth_tag) {
+          try {
+            const decrypted = decryptMessage(row.ciphertext, row.iv, row.auth_tag);
+            deleteAttachmentFromMessageText(decrypted);
+          } catch (_) {}
         }
 
         // Hard delete

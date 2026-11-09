@@ -4,6 +4,8 @@ exports.startTtlWorker = startTtlWorker;
 exports.stopTtlWorker = stopTtlWorker;
 const index_js_1 = require("../database/index.js");
 const index_js_2 = require("../config/index.js");
+const crypto_js_1 = require("../utils/crypto.js");
+const fileCleaner_js_1 = require("../utils/fileCleaner.js");
 let cleanupTimer = null;
 function startTtlWorker(io) {
     if (cleanupTimer) {
@@ -13,9 +15,19 @@ function startTtlWorker(io) {
     cleanupTimer = setInterval(() => {
         try {
             const now = new Date().toISOString();
-            // 1. Fetch expired message IDs to notify clients
-            const expiredRows = index_js_1.db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE expires_at <= ?').all(now);
+            // 1. Fetch expired messages to notify clients and unlink attached files
+            const expiredRows = index_js_1.db.prepare('SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag FROM messages WHERE expires_at <= ?').all(now);
             if (expiredRows.length > 0) {
+                // Clean up attached images/files from disk before deletion
+                for (const row of expiredRows) {
+                    if (row.ciphertext && row.iv && row.auth_tag) {
+                        try {
+                            const decrypted = (0, crypto_js_1.decryptMessage)(row.ciphertext, row.iv, row.auth_tag);
+                            (0, fileCleaner_js_1.deleteAttachmentFromMessageText)(decrypted);
+                        }
+                        catch (_) { }
+                    }
+                }
                 const ids = expiredRows.map(r => r.id);
                 const placeholders = ids.map(() => '?').join(',');
                 // 2. Permanently Hard Delete

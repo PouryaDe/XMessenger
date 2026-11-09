@@ -12,6 +12,7 @@ const uuid_1 = require("uuid");
 const index_js_1 = require("../config/index.js");
 const index_js_2 = require("../database/index.js");
 const crypto_js_1 = require("../utils/crypto.js");
+const fileCleaner_js_1 = require("../utils/fileCleaner.js");
 const pushService_js_1 = require("../services/pushService.js");
 // Track connected sockets per user for 100% accurate online presence
 const userSockets = new Map();
@@ -275,7 +276,7 @@ function setupSocketServer(io) {
                     socket.disconnect(true);
                     return;
                 }
-                const row = index_js_2.db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE id = ?').get(messageId);
+                const row = index_js_2.db.prepare('SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag FROM messages WHERE id = ?').get(messageId);
                 if (!row) {
                     if (callback)
                         callback({ error: 'NOT_FOUND' });
@@ -285,6 +286,14 @@ function setupSocketServer(io) {
                     if (callback)
                         callback({ error: 'FORBIDDEN' });
                     return;
+                }
+                // Clean up attached file/image from disk before deletion
+                if (row.ciphertext && row.iv && row.auth_tag) {
+                    try {
+                        const decrypted = (0, crypto_js_1.decryptMessage)(row.ciphertext, row.iv, row.auth_tag);
+                        (0, fileCleaner_js_1.deleteAttachmentFromMessageText)(decrypted);
+                    }
+                    catch (_) { }
                 }
                 // Hard delete
                 index_js_2.db.prepare('DELETE FROM messages WHERE id = ?').run(messageId);

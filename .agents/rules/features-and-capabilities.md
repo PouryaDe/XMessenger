@@ -169,3 +169,20 @@ This document provides a comprehensive inventory of all built-in features, archi
    - Each domain runs as an independent container (`xmessenger-<domain-slug>`) with isolated data volumes.
 3. **Centralized Management CLI**:
    - Manage all domains, SSL renewal, passwords, updates, and logs using `xmessenger` and `xupdate`.
+
+---
+
+## 12. 200MB File Attachments & Upload Security
+
+1. **200 MB File & Media Uploads**:
+   - Both user and admin can send documents, archives, videos, music, and images up to 200 MB (`client_max_body_size 250M;` in Nginx).
+   - Structured syntax: `[image:url]\ncaption` and `[file:url|filename|size]\ncaption`.
+   - Telegram-style file bubble with file icon, human-readable size (`formatFileSize`), and direct download button.
+2. **Multi-Layer Security Defenses**:
+   - **Blacklist Enforcement**: Rejects dangerous executables and scripts (`.exe`, `.bat`, `.cmd`, `.sh`, `.php`, `.py`, `.ps1`, `.dll`, `.so`, etc.) on both client and server.
+   - **Extension Bypass Immunity**: Neutralizes trailing dots, whitespace, and case mixing before validation.
+   - **Cryptographic Storage**: Stored with full UUIDv4 to eliminate guessability and collisions.
+   - **Path Traversal & Header Injection Protection**: Safe download route `/api/messages/download/:filename` sanitizes requested filenames and enforces `Content-Disposition: attachment`.
+   - **CSP Sandboxing**: Upload directory is served with `Content-Security-Policy: default-src 'none'; sandbox` and `X-Content-Type-Options: nosniff`.
+3. **Automated Disk Cleanup**:
+   - Attached files are unlinked from disk when messages are deleted by user/admin, wiped in chat clear, or expired by the background TTL worker.

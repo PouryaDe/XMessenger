@@ -12,6 +12,7 @@ const multer_1 = __importDefault(require("multer"));
 const index_js_1 = require("../database/index.js");
 const auth_js_1 = require("../middleware/auth.js");
 const crypto_js_1 = require("../utils/crypto.js");
+const fileCleaner_js_1 = require("../utils/fileCleaner.js");
 const index_js_2 = require("../config/index.js");
 const pushService_js_1 = require("../services/pushService.js");
 function createMessagesRouter(io) {
@@ -30,18 +31,23 @@ function createMessagesRouter(io) {
         '.cgi', '.pl', '.py', '.rb',
         '.asp', '.aspx', '.cer', '.asa', '.jsp', '.jspx',
         '.hta', '.jar', '.war', '.ear',
-        '.msi', '.msp', '.reg'
+        '.msi', '.msp', '.reg',
+        '.ps1', '.psm1', '.psd1',
+        '.so', '.dylib'
     ]);
     const chatStorage = multer_1.default.diskStorage({
         destination: (_req, _file, cb) => {
             cb(null, chatUploadDir);
         },
         filename: (_req, file, cb) => {
-            const ext = path_1.default.extname(file.originalname).toLowerCase().slice(0, 10);
+            // Strip trailing dots, spaces, or control characters to prevent Windows/NTFS extension bypass
+            const cleanOriginal = file.originalname.trim().replace(/[.\s\r\n\t]+$/, '');
+            const ext = path_1.default.extname(cleanOriginal).toLowerCase().slice(0, 10);
             const isImg = file.mimetype.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
             const prefix = isImg ? 'img' : 'file';
             const safeExt = /^\.[a-z0-9]+$/i.test(ext) ? ext : (isImg ? '.jpg' : '.bin');
-            const uniqueName = `${prefix}-${Date.now()}-${(0, uuid_1.v4)().substring(0, 8)}${safeExt}`;
+            // Full cryptographic UUIDv4 for collision resistance and unguessable URLs
+            const uniqueName = `${prefix}-${Date.now()}-${(0, uuid_1.v4)()}${safeExt}`;
             cb(null, uniqueName);
         }
     });
@@ -49,7 +55,9 @@ function createMessagesRouter(io) {
         storage: chatStorage,
         limits: { fileSize: 200 * 1024 * 1024 }, // 200MB max file size
         fileFilter: (_req, file, cb) => {
-            const ext = path_1.default.extname(file.originalname).toLowerCase();
+            // Strip trailing dots and spaces before inspecting extension
+            const cleanOriginal = file.originalname.trim().replace(/[.\s\r\n\t]+$/, '');
+            const ext = path_1.default.extname(cleanOriginal).toLowerCase();
             if (FORBIDDEN_FILE_EXTENSIONS.has(ext)) {
                 return cb(new Error('FORBIDDEN_FILE_TYPE'));
             }
@@ -80,10 +88,12 @@ function createMessagesRouter(io) {
             }
             const ext = path_1.default.extname(uploadedFile.originalname).toLowerCase();
             const isImage = uploadedFile.mimetype.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
+            // Sanitize original filename for client display and regex delimiters (| [ ])
+            const safeFilename = (path_1.default.basename(uploadedFile.originalname || '').replace(/[|\[\]\r\n\t]/g, '_').trim()) || uploadedFile.filename;
             res.status(201).json({
                 success: true,
                 url: `/uploads/chat/${uploadedFile.filename}`,
-                filename: path_1.default.basename(uploadedFile.originalname) || uploadedFile.filename,
+                filename: safeFilename,
                 storedName: uploadedFile.filename,
                 size: uploadedFile.size,
                 mimetype: uploadedFile.mimetype,
@@ -100,8 +110,9 @@ function createMessagesRouter(io) {
             if (!fs_1.default.existsSync(filePath)) {
                 return res.status(404).json({ error: 'FILE_NOT_FOUND', message: 'File not found or expired' });
             }
+            // Sanitize requested download name against header injection (CRLF, quotes)
             const originalName = typeof req.query.name === 'string' && req.query.name.trim().length > 0
-                ? path_1.default.basename(req.query.name.trim())
+                ? path_1.default.basename(req.query.name.trim()).replace(/[\r\n\t"']/g, '_')
                 : safeFilename;
             res.download(filePath, originalName);
         }
@@ -269,13 +280,21 @@ function createMessagesRouter(io) {
         try {
             const currentUser = req.user;
             const { id } = req.params;
-            const row = index_js_1.db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE id = ?').get(id);
+            const row = index_js_1.db.prepare('SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag FROM messages WHERE id = ?').get(id);
             if (!row) {
                 return res.status(404).json({ error: 'NOT_FOUND', message: 'Message not found or already deleted' });
             }
             // Only sender, recipient, or admin can delete
             if (currentUser.role !== 'admin' && row.sender_id !== currentUser.id && row.recipient_id !== currentUser.id) {
                 return res.status(403).json({ error: 'FORBIDDEN', message: 'Not authorized to delete this message' });
+            }
+            // Clean up attachment from server disk if present
+            if (row.ciphertext && row.iv && row.auth_tag) {
+                try {
+                    const decrypted = (0, crypto_js_1.decryptMessage)(row.ciphertext, row.iv, row.auth_tag);
+                    (0, fileCleaner_js_1.deleteAttachmentFromMessageText)(decrypted);
+                }
+                catch (_) { }
             }
             // Hard delete from database
             index_js_1.db.prepare('DELETE FROM messages WHERE id = ?').run(id);
@@ -348,6 +367,18 @@ function createMessagesRouter(io) {
             const admin = index_js_1.db.prepare("SELECT id FROM users WHERE role = 'admin'").get();
             if (!admin) {
                 return res.status(500).json({ error: 'ADMIN_NOT_FOUND', message: 'Admin not found' });
+            }
+            // Clean up attachments from disk before wiping
+            const msgRows = index_js_1.db.prepare(`
+        SELECT ciphertext, iv, auth_tag FROM messages
+        WHERE (sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?)
+      `).all(currentUser.id, admin.id, admin.id, currentUser.id);
+            for (const m of msgRows) {
+                try {
+                    const decrypted = (0, crypto_js_1.decryptMessage)(m.ciphertext, m.iv, m.auth_tag);
+                    (0, fileCleaner_js_1.deleteAttachmentFromMessageText)(decrypted);
+                }
+                catch (_) { }
             }
             index_js_1.db.prepare(`
         DELETE FROM messages
