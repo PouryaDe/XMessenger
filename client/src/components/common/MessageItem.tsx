@@ -475,15 +475,12 @@ const MessageItemComponent: React.FC<Props> = ({
                         e.stopPropagation();
                         triggerReaction(group.emoji);
                       }}
-                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full text-xs font-medium transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer border select-none ${
+                      className={`inline-flex items-center justify-center px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-xs font-medium transition-all duration-150 hover:scale-110 active:scale-95 cursor-pointer border select-none ${
                         group.hasReacted ? activeStyle : inactiveStyle
                       }`}
                       title={group.users.length > 0 ? group.users.join(i18n.language === 'fa' ? '، ' : ', ') : undefined}
                     >
                       <span className="text-[13px] sm:text-sm leading-none drop-shadow-xs">{group.emoji}</span>
-                      <span className="text-[11px] sm:text-xs font-bold leading-none tabular-nums">
-                        {group.count}
-                      </span>
                     </button>
                   );
                 })}
