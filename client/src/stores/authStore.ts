@@ -7,10 +7,12 @@ interface AuthState {
   user: User | null;
   adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null;
   isLoading: boolean;
+  systemEnabled: boolean;
   theme: 'dark' | 'light';
   login: (token: string, user: User) => void;
   logout: () => void;
   setUser: (user: User) => void;
+  setSystemEnabled: (enabled: boolean) => void;
   updateUserAvatar: (avatarUrl?: string) => void;
   updateAdminAvatar: (avatarUrl?: string) => void;
   checkAuth: () => Promise<void>;
@@ -53,6 +55,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   adminInfo: savedAdminInfo,
   // If we already have token and cached user, don't block the screen with full loader (0ms instant hydration)
   isLoading: Boolean(savedToken && !savedUser),
+  systemEnabled: true,
   theme: savedTheme,
 
   login: (token, user) => {
@@ -78,6 +81,10 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       localStorage.setItem('xmessenger_user', JSON.stringify(user));
     } catch {}
     set({ user });
+  },
+
+  setSystemEnabled: (systemEnabled: boolean) => {
+    set({ systemEnabled });
   },
 
   updateUserAvatar: (avatarUrl?: string) => {
@@ -114,6 +121,9 @@ export const useAuthStore = create<AuthState>((set, get) => ({
         set({ isLoading: true });
       }
       const data = await api.getMe();
+      if ((data as any).systemEnabled !== undefined) {
+        set({ systemEnabled: (data as any).systemEnabled });
+      }
       try {
         localStorage.setItem('xmessenger_user', JSON.stringify(data.user));
         if (data.adminInfo) {
@@ -123,6 +133,18 @@ export const useAuthStore = create<AuthState>((set, get) => ({
       initSocket(token);
       set({ user: data.user, adminInfo: data.adminInfo, token, isLoading: false });
     } catch (err: any) {
+      const isBannedError = err?.status === 403 && (err?.code === 'ACCOUNT_BANNED' || /suspended|banned/i.test(err?.message || ''));
+      if (isBannedError) {
+        const current = get().user;
+        if (current) {
+          const updated = { ...current, status: 'banned' as const };
+          try { localStorage.setItem('xmessenger_user', JSON.stringify(updated)); } catch {}
+          disconnectSocket();
+          set({ user: updated, isLoading: false });
+        }
+        return;
+      }
+
       const isAuthError = err?.status === 401 || err?.response?.status === 401 || err?.message?.includes('401');
       if (isAuthError) {
         console.error('Session expired or invalid:', err);
@@ -151,3 +173,21 @@ export const useAuthStore = create<AuthState>((set, get) => ({
     set({ theme: next });
   }
 }));
+
+if (typeof window !== 'undefined') {
+  window.addEventListener('auth:banned', () => {
+    const current = useAuthStore.getState().user;
+    if (current && current.status !== 'banned') {
+      const updated = { ...current, status: 'banned' as const };
+      try { localStorage.setItem('xmessenger_user', JSON.stringify(updated)); } catch {}
+      disconnectSocket();
+      useAuthStore.getState().setUser(updated);
+    }
+  });
+
+  window.addEventListener('system:status_changed', (e: any) => {
+    if (e.detail && typeof e.detail.systemEnabled === 'boolean') {
+      useAuthStore.getState().setSystemEnabled(e.detail.systemEnabled);
+    }
+  });
+}

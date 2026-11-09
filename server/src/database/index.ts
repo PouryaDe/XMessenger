@@ -103,6 +103,7 @@ export function initDatabase() {
 
   setSetting.run('registration_enabled', 'true');
   setSetting.run('require_approval', 'true'); // Default requirement from prompt: approval can be enabled
+  setSetting.run('system_enabled', 'true');
   setSetting.run('default_ttl_seconds', config.defaultTtlSeconds.toString());
   setSetting.run('app_name', 'XMessenger');
   setSetting.run('pwa_short_name', 'XMessenger');

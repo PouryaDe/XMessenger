@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { config } from '../config/index.js';
-import { db } from '../database/index.js';
+import { db, getSettingValue } from '../database/index.js';
 
 export interface AuthUser {
   id: string;
@@ -85,6 +85,13 @@ export function requireActive(req: AuthenticatedRequest, res: Response, next: Ne
     return res.status(403).json({
       error: 'ACCOUNT_PENDING_APPROVAL',
       message: 'Account is pending administrative approval'
+    });
+  }
+
+  if (req.user.role === 'user' && getSettingValue('system_enabled', 'true') === 'false') {
+    return res.status(503).json({
+      error: 'SYSTEM_DISABLED',
+      message: 'System is currently disabled for maintenance'
     });
   }
 

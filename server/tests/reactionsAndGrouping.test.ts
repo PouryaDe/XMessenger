@@ -162,6 +162,35 @@ describe('Message Reactions Core Logic & Security Tests', () => {
     assert.strictEqual(reactions[0].userId, 'user_b');
   });
 
+  it('correctly handles switching between 👍 and ❤️ reactions', () => {
+    const userA = { id: 'user_a', username: 'Alice' };
+    const userB = { id: 'user_b', username: 'Bob' };
+    let reactions: any[] = [];
+
+    // User A reacts with 👍
+    reactions = toggleReactionLogic(reactions, userA, '👍');
+    assert.strictEqual(reactions.length, 1);
+    assert.strictEqual(reactions[0].emoji, '👍');
+
+    // User A switches reaction to ❤️
+    reactions = toggleReactionLogic(reactions, userA, '❤️');
+    assert.strictEqual(reactions.length, 1);
+    assert.strictEqual(reactions[0].emoji, '❤️');
+    assert.strictEqual(reactions[0].userId, 'user_a');
+
+    // User B reacts with 👍 (now both ❤️ and 👍 co-exist)
+    reactions = toggleReactionLogic(reactions, userB, '👍');
+    assert.strictEqual(reactions.length, 2);
+    assert.strictEqual(reactions.some((r) => r.userId === 'user_a' && r.emoji === '❤️'), true);
+    assert.strictEqual(reactions.some((r) => r.userId === 'user_b' && r.emoji === '👍'), true);
+
+    // User A un-reacts ❤️
+    reactions = toggleReactionLogic(reactions, userA, '❤️');
+    assert.strictEqual(reactions.length, 1);
+    assert.strictEqual(reactions[0].userId, 'user_b');
+    assert.strictEqual(reactions[0].emoji, '👍');
+  });
+
   it('bounds emoji length to prevent oversized payloads', () => {
     const userA = { id: 'user_a', username: 'Alice' };
     const maliciousLongEmoji = 'A'.repeat(256);

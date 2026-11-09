@@ -55,10 +55,16 @@ This design system contract defines the visual identity, color harmony, typograp
   - Intermediate messages in a consecutive streak are uniformly rounded (`rounded-[18px]`).
   - The last message of an outgoing streak (`isLastInGroup && isOwn`) uses `rounded-[18px] rounded-br-[4px]` and displays the authentic Telegram bottom-right SVG curved tail (`fill-[#EDE8E0] dark:fill-[#232936]`, positioned at `-bottom-[0.5px] -right-[7px]`).
   - The last message of an incoming streak (`isLastInGroup && !isOwn`) uses `rounded-[18px] rounded-bl-[4px]` and displays the authentic Telegram bottom-left SVG curved tail (`fill-white dark:fill-[#161B24]`, positioned at `-bottom-[0.5px] -left-[7px] -scale-x-100`).
-- **Telegram Reactions & Double-Tap Heart/Like Burst**:
-  - Double-tapping (or double-clicking) any message triggers an instant `👍` like reaction with a lightweight pure-CSS GPU-accelerated reaction burst (`animate-like-burst`).
-  - Active reactions appear in a Telegram pill badge floating at the bubble bottom corner (`-bottom-2.5`), displaying the reaction emoji (`👍`), active user avatars stack, and reaction count.
-  - Tapping the reaction badge or selecting Like/Remove Like from the message context menu toggles the user's reaction. Touch events are debounced to prevent synthetic dblclick double triggers.
+- **Telegram Reactions Standard (Inside Message Bubble)**:
+  - **Inside Message Bubble**: Reactions reside strictly **inside** the message bubble card in the bottom footer row alongside time/read receipts. Negative bottom offset badges (`-bottom-2.5` / `-bottom-3`) that hang outside the bubble or collide with SVG tails are strictly forbidden.
+  - **Dual Reaction Support (👍 and ❤️)**: Messages support both `👍` and `❤️` reactions. Tapping an existing reaction pill inside the bubble toggles that reaction.
+  - **Context Menu Quick Reactions Bar**: A dedicated top bar in the message floating menu provides instant one-tap selection for both `👍` and `❤️`, displaying active highlight and removal states.
+  - **Pill Geometry & Spacing**: Perfectly rounded pill (`rounded-full`) with comfortable, balanced horizontal padding (`px-2.5 py-1 sm:px-3 sm:py-1`), displaying emoji and reaction count without crammed avatar letters.
+  - **Color Harmony (No Blurry Neon Blobs)**:
+    - Active 👍: Subtle sky tint (`bg-[#2AABEE]/15 dark:bg-[#2AABEE]/20 border-[#2AABEE]/35 dark:border-[#2AABEE]/40 text-[#0c82bf] dark:text-[#2AABEE] shadow-xs`).
+    - Active ❤️: Subtle rose tint (`bg-rose-500/15 dark:bg-rose-500/20 border-rose-500/35 dark:border-rose-500/40 text-rose-600 dark:text-rose-400 shadow-xs`).
+    - Inactive: Clean neutral pill (`bg-black/[0.04] dark:bg-white/[0.08] text-slate-700 dark:text-slate-300 border-black/[0.06] dark:border-white/[0.08]`).
+  - **Burst Animation**: Double-clicking, double-tapping, or selecting a reaction triggers a GPU-accelerated reaction burst (`animate-like-burst`) matching the selected emoji (`👍` or `❤️`). Touch events are debounced (450ms) to prevent synthetic double triggers.
 
 ---
 

@@ -3,6 +3,7 @@ const API_BASE = '/api';
 export interface AppMeta {
   registrationEnabled: boolean;
   requireApproval: boolean;
+  systemEnabled?: boolean;
   defaultTtl: number;
   appName?: string;
   pwaShortName?: string;
@@ -58,6 +59,7 @@ export interface Message {
 export interface AdminSettings {
   registrationEnabled: boolean;
   requireApproval: boolean;
+  systemEnabled?: boolean;
   defaultTtlSeconds: number;
   appName?: string;
   pwaShortName?: string;
@@ -98,6 +100,13 @@ async function safeJson<T = any>(res: Response, defaultErrorMsg: string): Promis
   if (!res.ok) {
     const errorCode = data && data.error;
     const errorMsg = data && (data.message || data.error);
+    if (typeof window !== 'undefined') {
+      if (res.status === 403 && (errorCode === 'ACCOUNT_BANNED' || /suspended|banned/i.test(errorMsg || ''))) {
+        window.dispatchEvent(new CustomEvent('auth:banned'));
+      } else if (res.status === 503 && errorCode === 'SYSTEM_DISABLED') {
+        window.dispatchEvent(new CustomEvent('system:status_changed', { detail: { systemEnabled: false } }));
+      }
+    }
     throw new ApiError(errorMsg || `${defaultErrorMsg} (${res.status})`, errorCode, res.status);
   }
 

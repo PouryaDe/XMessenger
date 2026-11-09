@@ -45,6 +45,7 @@ const uploadAvatar = multer({
 authRouter.get('/meta', (req, res) => {
   const regEnabled = getSettingValue('registration_enabled', 'true') === 'true';
   const requireApproval = getSettingValue('require_approval', 'true') === 'true';
+  const systemEnabled = getSettingValue('system_enabled', 'true') === 'true';
   const defaultTtl = parseInt(getSettingValue('default_ttl_seconds', '86400'), 10);
   const appName = getSettingValue('app_name', 'XMessenger');
   const pwaShortName = getSettingValue('pwa_short_name', 'XMessenger');
@@ -64,6 +65,7 @@ authRouter.get('/meta', (req, res) => {
   res.json({
     registrationEnabled: regEnabled,
     requireApproval,
+    systemEnabled,
     defaultTtl,
     appName,
     pwaShortName,
@@ -237,6 +239,7 @@ authRouter.get('/me', authenticate, (req: AuthenticatedRequest, res) => {
   } | undefined;
 
   const adminAvatarSetting = getSettingValue('admin_avatar_url', '');
+  const systemEnabled = getSettingValue('system_enabled', 'true') === 'true';
 
   res.json({
     user: userRow ? {
@@ -244,8 +247,9 @@ authRouter.get('/me', authenticate, (req: AuthenticatedRequest, res) => {
       username: userRow.username,
       role: userRow.role,
       status: userRow.status,
-      avatarUrl: userRow.avatar_url || undefined
+      avatarUrl: userRow.avatar_url || (userRow.role === 'admin' ? adminAvatarSetting : undefined) || undefined
     } : req.user,
+    systemEnabled,
     adminInfo: req.user!.role === 'user' && adminRow ? {
       id: adminRow.id,
       username: adminRow.username,

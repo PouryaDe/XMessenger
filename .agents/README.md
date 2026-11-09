@@ -9,8 +9,11 @@ This directory holds the agentic knowledge base, architectural contracts, design
 1. [`rules/ui-ux-design-system.md`](file:///c:/Users/Lion/Desktop/Projects/XMessenger/.agents/rules/ui-ux-design-system.md)
    - Color harmony rules (warm sandy linen `#DFDDD6` canvas, dark obsidian `#0E1218` ambient canvas, and full-bleed transparent header/footer integration).
    - Telegram curved corner tails and removal of redundant in-chat avatars.
+   - Message reactions (👍 and ❤️) integrated inside the bubble footer row with Telegram style and context menu quick-reactions bar.
    - Static floating pill input bar (zero hover/focus border jumps).
    - Standardized user list cards (`rounded-xl`, subtle hairline borders, no heavy shadows).
+   - Responsive Admin Settings tab navigation (2x2 grid on mobile screens).
+   - Dedicated System Maintenance Screen (`SystemDisabledScreen.tsx`) for user guidance during updates.
    - Unpinned stream TTL notice (floating centered glass pill scrolling naturally with chat).
    - Standard 3-line hamburger menu icon (`Menu` from `lucide-react`).
    - Dynamic smart context menu positioning preventing viewport and header clipping.
@@ -33,19 +36,24 @@ This directory holds the agentic knowledge base, architectural contracts, design
    - Comprehensive inventory of project scope and features:
      - 1-Way Hub-and-Spoke messaging.
      - Telegram message grouping, responsive bubble widths, and curved corner tails.
-     - Message reactions (👍 Like) via double-tap, animated burst, and real-time sync.
+     - Telegram message reactions (👍 and ❤️) inside message bubbles, quick context bar, double-tap, animated burst, and real-time sync.
      - Disappearing TTL messages with background hard-purge.
      - Image messaging with full-screen Lightbox and clipboard paste.
      - Telegram-style date separators and smart scroll preserving reading position.
      - Background Web Push notifications (PWA & Web) with zero-config VAPID.
-     - Dynamic PWA with 0ms instant hydration, smooth updates, custom branding, and profile photos.
-     - Database online backup and validated restore.
+     - Dynamic PWA with 0ms instant hydration, smooth updates, custom branding (presets X, F, G, R, M, S), and profile photo presets.
+     - System maintenance mode (`system_enabled` toggle with real-time socket propagation & dedicated screen).
+     - Strict real-time user ban enforcement with socket disconnection and admin notices.
+     - Responsive Admin Settings tab navigation (2x2 grid on mobile).
+     - Database online backup and validated restore with AES-256-GCM encryption verification.
      - Multi-domain Docker deployment with shared Nginx SSL gateway.
 
 5. [`rules/security.md`](file:///c:/Users/Lion/Desktop/Projects/XMessenger/.agents/rules/security.md)
    - AES-256-GCM database encryption at rest.
    - User peer isolation.
    - Hard TTL purge and instant two-way deletion.
+   - Live DB checks on socket events & real-time socket ejection on user ban.
+   - Maintenance mode authorization barrier (HTTP 503 + socket block for non-admins).
    - XSS sanitization and bcrypt password hashing.
 
 6. [`rules/architecture.md`](file:///c:/Users/Lion/Desktop/Projects/XMessenger/.agents/rules/architecture.md)

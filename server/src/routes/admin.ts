@@ -167,8 +167,23 @@ export function createAdminRouter(io?: Server) {
 
       // Notify user and admin room in real-time
       if (io) {
-        io.to(`user:${id}`).emit('user:status_changed', { status });
+        io.to(`user:${id}`).emit('user:status_changed', { userId: id, status });
         io.to('room:admin').emit('user:status_changed', { userId: id, status });
+
+        // If user is banned, disconnect active sockets after notifying
+        if (status === 'banned') {
+          const userRoom = `user:${id}`;
+          const socketsInRoom = io.sockets.adapter.rooms.get(userRoom);
+          if (socketsInRoom) {
+            for (const socketId of socketsInRoom) {
+              const clientSocket = io.sockets.sockets.get(socketId);
+              if (clientSocket) {
+                clientSocket.emit('user:status_changed', { userId: id, status: 'banned' });
+                clientSocket.disconnect(true);
+              }
+            }
+          }
+        }
       }
 
       res.json({ success: true, status });
@@ -206,6 +221,7 @@ export function createAdminRouter(io?: Server) {
   router.get('/settings', (req, res) => {
     const regEnabled = getSettingValue('registration_enabled', 'true') === 'true';
     const requireApproval = getSettingValue('require_approval', 'true') === 'true';
+    const systemEnabled = getSettingValue('system_enabled', 'true') === 'true';
     const defaultTtlSeconds = parseInt(getSettingValue('default_ttl_seconds', '86400'), 10);
     const appName = getSettingValue('app_name', 'XMessenger');
     const pwaShortName = getSettingValue('pwa_short_name', 'XMessenger');
@@ -215,6 +231,7 @@ export function createAdminRouter(io?: Server) {
     res.json({
       registrationEnabled: regEnabled,
       requireApproval,
+      systemEnabled,
       defaultTtlSeconds,
       appName,
       pwaShortName,
@@ -229,9 +246,12 @@ export function createAdminRouter(io?: Server) {
       const { 
         registrationEnabled, 
         requireApproval, 
+        systemEnabled,
         defaultTtlSeconds,
         appName,
-        pwaShortName
+        pwaShortName,
+        pwaIconUrl,
+        adminAvatarUrl
       } = req.body;
 
       if (typeof registrationEnabled === 'boolean') {
@@ -240,6 +260,13 @@ export function createAdminRouter(io?: Server) {
 
       if (typeof requireApproval === 'boolean') {
         updateSettingValue('require_approval', requireApproval ? 'true' : 'false');
+      }
+
+      if (typeof systemEnabled === 'boolean') {
+        updateSettingValue('system_enabled', systemEnabled ? 'true' : 'false');
+        if (io) {
+          io.emit('system:status_changed', { systemEnabled });
+        }
       }
 
       if (typeof defaultTtlSeconds === 'number' && defaultTtlSeconds > 0) {
@@ -252,6 +279,17 @@ export function createAdminRouter(io?: Server) {
 
       if (typeof pwaShortName === 'string' && pwaShortName.trim().length > 0) {
         updateSettingValue('pwa_short_name', pwaShortName.trim());
+      }
+
+      if (typeof pwaIconUrl === 'string') {
+        updateSettingValue('pwa_icon_url', pwaIconUrl.trim());
+      }
+
+      if (typeof adminAvatarUrl === 'string') {
+        updateSettingValue('admin_avatar_url', adminAvatarUrl.trim());
+        if (adminAvatarUrl.trim()) {
+          db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(adminAvatarUrl.trim());
+        }
       }
 
       res.json({ success: true, message: 'Settings updated successfully' });

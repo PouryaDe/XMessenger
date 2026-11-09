@@ -274,57 +274,57 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
           </button>
         </div>
 
-        {/* 4 Modern Segmented Tabs */}
-        <div className="flex items-center gap-1.5 p-1.5 my-3 bg-stone-100 dark:bg-black/30 rounded-2xl border border-black/5 dark:border-white/5 overflow-x-auto">
+        {/* 4 Modern Segmented Tabs (Fully Responsive 2-col on mobile, 4-col on tablet/desktop) */}
+        <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 my-3 bg-stone-100 dark:bg-black/30 rounded-2xl border border-black/5 dark:border-white/5">
           <button
             type="button"
             onClick={() => setActiveTab('general')}
-            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
+            className={`w-full py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'general'
-                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            <Sliders className="w-3.5 h-3.5" />
+            <Sliders className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{t('generalTab')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('notifications')}
-            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
+            className={`w-full py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'notifications'
-                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            <Bell className="w-3.5 h-3.5" />
+            <Bell className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{t('notificationsTab')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('branding')}
-            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
+            className={`w-full py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'branding'
-                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            <Smartphone className="w-3.5 h-3.5" />
+            <Smartphone className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{t('brandingTab')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('backup')}
-            className={`flex-1 py-2 px-2.5 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all shrink-0 ${
+            className={`w-full py-2 px-2 rounded-xl text-xs font-bold flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
               activeTab === 'backup'
-                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs scale-101'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs'
                 : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200'
             }`}
           >
-            <Database className="w-3.5 h-3.5" />
+            <Database className="w-3.5 h-3.5 shrink-0" />
             <span className="truncate">{t('backupTab')}</span>
           </button>
         </div>
@@ -360,6 +360,46 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                   v{APP_VERSION}
                 </span>
+              </div>
+
+              {/* System Active / Maintenance Mode Toggle */}
+              <div 
+                onClick={() => setSettings({ ...settings, systemEnabled: settings.systemEnabled === false ? true : false })}
+                className="flex items-start justify-between p-4 rounded-[24px] bg-white dark:bg-white/[0.04] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.06] cursor-pointer group transition-all"
+              >
+                <div>
+                  <div className="flex items-center gap-2">
+                    <label className="text-xs font-bold text-slate-900 dark:text-white cursor-pointer block select-none">
+                      {t('systemEnabledLabel')}
+                    </label>
+                    <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold ${
+                      settings.systemEnabled !== false
+                        ? 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 border border-emerald-500/25'
+                        : 'bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/25'
+                    }`}>
+                      {settings.systemEnabled !== false ? t('systemActive') : t('systemDisabled')}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-slate-400 mt-1 select-none">
+                    {t('systemEnabledDesc')}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  role="checkbox"
+                  aria-checked={settings.systemEnabled !== false}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setSettings({ ...settings, systemEnabled: settings.systemEnabled === false ? true : false });
+                  }}
+                  className={`w-6 h-6 rounded-[8px] flex items-center justify-center transition-all duration-200 mt-0.5 shrink-0 border ${
+                    settings.systemEnabled !== false
+                      ? 'bg-emerald-600 border-emerald-600 text-white shadow-xs'
+                      : 'bg-stone-100 dark:bg-white/[0.06] border-black/15 dark:border-white/15 text-transparent hover:border-black/30 dark:hover:border-white/30'
+                  }`}
+                >
+                  <Check className={`w-3.5 h-3.5 stroke-[3] transition-transform duration-150 ${settings.systemEnabled !== false ? 'scale-100' : 'scale-0'}`} />
+                </button>
               </div>
 
               {/* 1. Registration Switch */}
@@ -662,6 +702,47 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
+                {/* Allowed Formats & Size Spec */}
+                <div className="mt-3 p-2.5 rounded-xl bg-stone-100 dark:bg-white/[0.04] text-[11px] text-slate-500 dark:text-slate-400 border border-black/5 dark:border-white/5 flex items-center gap-2">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+                  <span>{t('iconSpecsLabel')}</span>
+                </div>
+
+                {/* Default Icon Presets (X, F, G, R, M, S) */}
+                <div className="mt-3.5">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-2 select-none">
+                    {t('defaultIconsTitle')}
+                  </span>
+                  <div className="grid grid-cols-6 gap-2">
+                    {[
+                      { id: 'X', url: '/icons/preset-x.svg', label: 'X' },
+                      { id: 'F', url: '/icons/preset-f.svg', label: 'F' },
+                      { id: 'G', url: '/icons/preset-g.svg', label: 'G' },
+                      { id: 'R', url: '/icons/preset-r.svg', label: 'R' },
+                      { id: 'M', url: '/icons/preset-m.svg', label: 'M' },
+                      { id: 'S', url: '/icons/preset-s.svg', label: 'S' }
+                    ].map((icon) => (
+                      <button
+                        key={icon.id}
+                        type="button"
+                        onClick={() => {
+                          setSettings(prev => prev ? { ...prev, pwaIconUrl: icon.url } : null);
+                          const linkIcon = document.querySelector('link[rel="icon"]');
+                          if (linkIcon) linkIcon.setAttribute('href', icon.url);
+                        }}
+                        className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all p-0.5 hover:scale-105 active:scale-95 cursor-pointer shadow-xs ${
+                          settings.pwaIconUrl === icon.url
+                            ? 'border-amber-500 ring-2 ring-amber-500/30'
+                            : 'border-black/10 dark:border-white/10 hover:border-black/30'
+                        }`}
+                        title={`Preset ${icon.label}`}
+                      >
+                        <img src={icon.url} alt={icon.label} className="w-full h-full object-cover rounded-[8px]" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-white/[0.06]">
                   <input
                     ref={pwaIconInputRef}
@@ -674,7 +755,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     type="button"
                     onClick={() => pwaIconInputRef.current?.click()}
                     disabled={loading}
-                    className="px-4 py-2 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs hover:scale-102 active:scale-98 transition-all flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs hover:scale-102 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <Camera className="w-3.5 h-3.5" />
                     <span>{t('uploadNewIcon')}</span>
@@ -685,7 +766,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       type="button"
                       onClick={handleResetPwaIcon}
                       disabled={loading}
-                      className="px-3.5 py-2 rounded-full text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors flex items-center gap-1"
+                      className="px-3.5 py-2 rounded-full text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{t('resetToDefaultIcon')}</span>
@@ -715,6 +796,39 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   </div>
                 </div>
 
+                {/* Default Admin Avatar Presets */}
+                <div className="mt-3.5">
+                  <span className="text-[11px] font-bold text-slate-700 dark:text-slate-300 block mb-2 select-none">
+                    {t('defaultAvatarsTitle')}
+                  </span>
+                  <div className="flex flex-wrap items-center gap-2.5">
+                    {[
+                      { id: 'shield', url: '/avatars/admin-shield.svg', label: 'Shield' },
+                      { id: 'support', url: '/avatars/admin-support.svg', label: 'Support' },
+                      { id: 'crown', url: '/avatars/admin-crown.svg', label: 'Crown' },
+                      { id: 'star', url: '/avatars/admin-star.svg', label: 'Star' },
+                      { id: 'minimal', url: '/avatars/admin-minimal.svg', label: 'Minimal' }
+                    ].map((av) => (
+                      <button
+                        key={av.id}
+                        type="button"
+                        onClick={() => {
+                          setSettings(prev => prev ? { ...prev, adminAvatarUrl: av.url } : null);
+                          updateAdminAvatar(av.url);
+                        }}
+                        className={`w-11 h-11 rounded-full overflow-hidden border-2 transition-all p-0.5 hover:scale-110 active:scale-95 cursor-pointer shadow-xs ${
+                          settings.adminAvatarUrl === av.url
+                            ? 'border-amber-500 ring-2 ring-amber-500/30'
+                            : 'border-black/10 dark:border-white/10 hover:border-black/30'
+                        }`}
+                        title={av.label}
+                      >
+                        <img src={av.url} alt={av.label} className="w-full h-full object-cover rounded-full" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
                 <div className="flex items-center gap-2 mt-3 pt-3 border-t border-stone-100 dark:border-white/[0.06]">
                   <input
                     ref={adminAvatarInputRef}
@@ -727,7 +841,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                     type="button"
                     onClick={() => adminAvatarInputRef.current?.click()}
                     disabled={loading}
-                    className="px-4 py-2 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs hover:scale-102 active:scale-98 transition-all flex items-center gap-1.5"
+                    className="px-4 py-2 rounded-full text-xs font-bold bg-slate-900 text-white dark:bg-white dark:text-slate-900 shadow-xs hover:scale-102 active:scale-98 transition-all flex items-center gap-1.5 cursor-pointer"
                   >
                     <Camera className="w-3.5 h-3.5" />
                     <span>{t('uploadAvatar')}</span>
@@ -738,7 +852,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       type="button"
                       onClick={handleRemoveAdminAvatar}
                       disabled={loading}
-                      className="px-3.5 py-2 rounded-full text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors flex items-center gap-1"
+                      className="px-3.5 py-2 rounded-full text-xs font-bold text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-950/40 transition-colors flex items-center gap-1 cursor-pointer"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                       <span>{t('removeAvatar')}</span>

@@ -135,8 +135,22 @@ export function setupSocketServer(io: Server) {
     // Send Message via Socket
     socket.on('message:send', ({ text, targetUserId, ttlSeconds, replyToId }: { text: string; targetUserId?: string; ttlSeconds?: number; replyToId?: string | null }, callback) => {
       try {
-        if (user.status === 'pending') {
+        const currentUserRow = db.prepare('SELECT id, status, role FROM users WHERE id = ?').get(user.id) as { id: string; status: string; role: string } | undefined;
+        if (!currentUserRow || currentUserRow.status === 'banned') {
+          if (callback) callback({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
+          socket.emit('user:status_changed', { userId: user.id, status: 'banned' });
+          socket.disconnect(true);
+          return;
+        }
+
+        if (currentUserRow.status === 'pending') {
           if (callback) callback({ error: 'ACCOUNT_PENDING_APPROVAL' });
+          return;
+        }
+
+        if (currentUserRow.role === 'user' && getSettingValue('system_enabled', 'true') === 'false') {
+          if (callback) callback({ error: 'SYSTEM_DISABLED', message: 'System is currently disabled for maintenance' });
+          socket.emit('system:status_changed', { systemEnabled: false });
           return;
         }
 
@@ -153,6 +167,11 @@ export function setupSocketServer(io: Server) {
         if (user.role === 'admin') {
           if (!targetUserId) {
             if (callback) callback({ error: 'MISSING_RECIPIENT' });
+            return;
+          }
+          const recipientCheck = db.prepare('SELECT id, status FROM users WHERE id = ?').get(targetUserId) as { id: string; status: string } | undefined;
+          if (!recipientCheck || recipientCheck.status === 'banned') {
+            if (callback) callback({ error: 'RECIPIENT_BANNED', message: 'Recipient is banned' });
             return;
           }
           recipientId = targetUserId;
@@ -257,6 +276,14 @@ export function setupSocketServer(io: Server) {
     // Delete message for everyone via Socket
     socket.on('message:delete', ({ messageId }: { messageId: string }, callback) => {
       try {
+        const currentUserRow = db.prepare('SELECT id, status, role FROM users WHERE id = ?').get(user.id) as { id: string; status: string; role: string } | undefined;
+        if (!currentUserRow || currentUserRow.status === 'banned') {
+          if (callback) callback({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
+          socket.emit('user:status_changed', { userId: user.id, status: 'banned' });
+          socket.disconnect(true);
+          return;
+        }
+
         const row = db.prepare('SELECT id, sender_id, recipient_id FROM messages WHERE id = ?').get(messageId) as {
           id: string;
           sender_id: string;
@@ -290,8 +317,22 @@ export function setupSocketServer(io: Server) {
     // Toggle reaction on message via Socket
     socket.on('message:react', ({ messageId, emoji }: { messageId: string; emoji?: string }, callback) => {
       try {
-        if (user.status !== 'active') {
-          if (callback) callback({ error: 'ACCOUNT_NOT_ACTIVE' });
+        const currentUserRow = db.prepare('SELECT id, status, role FROM users WHERE id = ?').get(user.id) as { id: string; status: string; role: string } | undefined;
+        if (!currentUserRow || currentUserRow.status === 'banned') {
+          if (callback) callback({ error: 'ACCOUNT_BANNED', message: 'Account is suspended' });
+          socket.emit('user:status_changed', { userId: user.id, status: 'banned' });
+          socket.disconnect(true);
+          return;
+        }
+
+        if (currentUserRow.status === 'pending') {
+          if (callback) callback({ error: 'ACCOUNT_PENDING_APPROVAL' });
+          return;
+        }
+
+        if (currentUserRow.role === 'user' && getSettingValue('system_enabled', 'true') === 'false') {
+          if (callback) callback({ error: 'SYSTEM_DISABLED', message: 'System is currently disabled for maintenance' });
+          socket.emit('system:status_changed', { systemEnabled: false });
           return;
         }
 

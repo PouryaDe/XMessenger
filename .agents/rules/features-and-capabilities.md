@@ -76,16 +76,20 @@ This document provides a comprehensive inventory of all built-in features, archi
 
 ---
 
-## 6. Message Reactions (👍 Like) & Gestures
+## 6. Message Reactions (👍 & ❤️) & Gestures
 
-1. **Double-Tap / Double-Click to Like**:
-   - Double-tapping on mobile or double-clicking on desktop triggers an instant `👍` like reaction.
-   - Features a lightweight, GPU-accelerated reaction burst animation (`animate-like-burst`) that runs without heavy external animation libraries.
-   - Touch events are debounced (450ms) to prevent synthetic `dblclick` event duplicates on iOS/Android.
-2. **Telegram Reaction Badges & Reactor Avatars**:
-   - Active reactions appear in a pill badge at the bubble corner with reaction emoji, reactor user avatar stack, and count.
-   - Users can toggle reactions via double-tap, tapping the reaction badge, or using the message context menu.
-3. **Security & Real-Time Sync**:
+1. **Dual Reaction Support (👍 Like & ❤️ Heart)**:
+   - Supports both `👍` and `❤️` reactions.
+   - Double-tapping on mobile or double-clicking on desktop triggers an instant reaction with a matching burst animation (`animate-like-burst`).
+   - Touch events are debounced (450ms) to prevent synthetic `dblclick` duplicate triggers.
+2. **Inside-Bubble Reaction Pills (Telegram Standard)**:
+   - Reaction chips reside strictly **inside the message bubble** on the bottom footer row alongside time and read receipts.
+   - Balanced horizontal padding (`px-2.5 py-1 sm:px-3 sm:py-1`) and clean `rounded-full` pills displaying emoji and count without cramped avatar letters.
+   - Soft translucent accent backgrounds (sky blue for 👍 and rose for ❤️) without multi-pixel blurry neon halos.
+   - Tapping an existing reaction pill inside the bubble directly toggles that reaction.
+3. **Context Menu Quick Reactions Bar**:
+   - Floating message context menu features a dedicated quick-reactions header with one-tap access to both `👍` and `❤️`.
+4. **Security & Real-Time Sync**:
    - Reactions are verified server-side (only active conversation participants or admin can react).
    - Emojis are bounded to `<= 16` characters to prevent payload injection.
    - Live synchronization via WebSocket (`message:react` / `message:reaction`) with automatic REST fallback (`POST /api/messages/:id/react`).
@@ -113,9 +117,15 @@ This document provides a comprehensive inventory of all built-in features, archi
    - Raw plaintext messages never hit the disk unencrypted.
 2. **Password Hashing**:
    - Salted and hashed using `bcrypt` (12 rounds).
-3. **JWT Authentication**:
+3. **JWT Authentication & Live Status Enforcement**:
    - Stateless JWT tokens passed via `Authorization: Bearer <token>` and validated on both REST API and Socket.IO handshakes.
-4. **Input Sanitization**:
+   - Live database status checks on every socket message send and REST action ensure instantaneous ban enforcement.
+   - Banned users are immediately notified via WebSocket (`user:status_changed`), their sockets forcefully severed, and presented with a dedicated red Banned Screen (`accessBlocked`).
+4. **System Maintenance Mode (`system_enabled`)**:
+   - Admin can toggle general user system access between Active (normal) and Disabled (maintenance).
+   - Real-time broadcast via `system:status_changed` transitions user screens immediately into a dedicated frosted `SystemDisabledScreen`.
+   - Admin access remains unrestricted during maintenance.
+5. **Input Sanitization**:
    - All rendered content is strictly sanitized against XSS attacks.
 
 ---
@@ -125,16 +135,18 @@ This document provides a comprehensive inventory of all built-in features, archi
 1. **0ms Instant Hydration & Zero Page Jumping**:
    - Authenticated user and conversation state are cached in `localStorage` and `sessionStorage`, enabling instant 0ms app rendering on PWA launch without intermediate loading screens or theme flashes.
    - App updates run with a sleek glassmorphic transition overlay (`Updating Application...`) preventing multi-step screen jumping on mobile.
-2. **Narrow Screen Responsiveness**:
+2. **Responsive Admin Settings & Tab Bar**:
+   - Segmented 4-tab control in `AdminSettingsModal` uses a responsive 2x2 grid on mobile (`grid grid-cols-2 sm:grid-cols-4`), eliminating awkward horizontal scrollbars and text truncation.
+3. **Narrow Screen Responsiveness**:
    - UserDrawer and AdminSettingsModal maintain strict minimum widths and truncation (`min-w-[5.25rem]`, `truncate`), preventing element wrapping or card breakage on 320px+ viewports.
-3. **Mobile Installation (iOS & Android)**:
+4. **Mobile Installation (iOS & Android)**:
    - Installable on iOS via Safari ("Add to Home Screen") and Android via Chrome ("Install App").
    - Responsive standalone view with notch (`.pt-safe`) and home indicator (`.pb-safe`) spacing.
-4. **Admin Branding & Customization**:
+5. **Admin Branding & Presets**:
    - **App Name**: Custom system title dynamically reflected in browser title and PWA manifest.
    - **PWA Short Name**: Custom label under the home screen app icon.
-   - **PWA Icon Upload**: Admin can upload custom PNG/SVG app icons dynamically served in `/manifest.json`.
-   - **Profile Photo Upload**: Admin and users can upload their own profile pictures stored in `/app/data/uploads/avatars`.
+   - **PWA Icon Presets & Upload**: Admin can choose from ready-made gradient icon presets (X, F, G, R, M, S) or upload a custom image (with displayed format and dimension guidelines).
+   - **Admin Profile Avatars & Upload**: Admin can select from 5 professional avatar presets (Shield, Support, Crown, Star, Minimal) or upload a custom photo.
 
 ---
 

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useLayoutEffect, useRef } from 'react';
+import React, { useState, useEffect, useLayoutEffect, useRef, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { Message, User } from '../../services/api.js';
 import { useTranslation } from 'react-i18next';
@@ -56,6 +56,7 @@ const MessageItemComponent: React.FC<Props> = ({
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [swipeOffset, setSwipeOffset] = useState(0);
   const [showReactionAnim, setShowReactionAnim] = useState(false);
+  const [reactionAnimEmoji, setReactionAnimEmoji] = useState<string>('👍');
   const lastTapRef = useRef<number>(0);
   const lastTriggerLikeRef = useRef<number>(0);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
@@ -215,7 +216,7 @@ const MessageItemComponent: React.FC<Props> = ({
     }
   };
 
-  const triggerLike = () => {
+  const triggerReaction = (emoji: string = '👍') => {
     const now = Date.now();
     // Guard against duplicate triggers on mobile touch (touchend + synthetic dblclick)
     if (now - lastTriggerLikeRef.current < 450) {
@@ -223,9 +224,10 @@ const MessageItemComponent: React.FC<Props> = ({
     }
     lastTriggerLikeRef.current = now;
     setShowMenu(false);
+    setReactionAnimEmoji(emoji === '❤️' ? '❤️' : '👍');
     setShowReactionAnim(true);
     setTimeout(() => setShowReactionAnim(false), 700);
-    onReact?.(message.id, '👍');
+    onReact?.(message.id, emoji);
   };
 
   const handleTouchEnd = () => {
@@ -235,8 +237,8 @@ const MessageItemComponent: React.FC<Props> = ({
     } else if (Math.abs(swipeOffset) < 10) {
       const now = Date.now();
       if (now - lastTapRef.current < 320) {
-        // Double tap on mobile triggers like!
-        triggerLike();
+        // Double tap on mobile triggers reaction!
+        triggerReaction(userReactionEmoji === '❤️' ? '❤️' : '👍');
         lastTapRef.current = 0;
       } else {
         lastTapRef.current = now;
@@ -249,7 +251,33 @@ const MessageItemComponent: React.FC<Props> = ({
   const formattedTime = formatMessageTime(message.createdAt);
 
   const reactions = message.reactions || [];
-  const hasLiked = reactions.some((r) => r.userId === currentUser?.id);
+  const userReaction = reactions.find((r) => r.userId === currentUser?.id);
+  const userReactionEmoji = userReaction?.emoji;
+
+  // Group reactions by emoji (e.g. 👍 and ❤️)
+  const reactionGroups = useMemo(() => {
+    const map = new Map<string, { emoji: string; count: number; users: string[]; hasReacted: boolean }>();
+    for (const r of reactions) {
+      const emoji = r.emoji || '👍';
+      const existing = map.get(emoji) || { emoji, count: 0, users: [], hasReacted: false };
+      existing.count += 1;
+      if (r.username && !existing.users.includes(r.username)) {
+        existing.users.push(r.username);
+      }
+      if (currentUser?.id && r.userId === currentUser.id) {
+        existing.hasReacted = true;
+      }
+      map.set(emoji, existing);
+    }
+    // Return sorted: 👍 first, ❤️ second, then other emojis
+    return Array.from(map.values()).sort((a, b) => {
+      if (a.emoji === '👍' && b.emoji !== '👍') return -1;
+      if (b.emoji === '👍' && a.emoji !== '👍') return 1;
+      if (a.emoji === '❤️' && b.emoji !== '❤️') return -1;
+      if (b.emoji === '❤️' && a.emoji !== '❤️') return 1;
+      return b.count - a.count;
+    });
+  }, [reactions, currentUser?.id]);
 
   // Telegram corner radii: intermediate messages are uniformly rounded; last message in streak has the tail corner
   const cornerRadiusClass = isOwn
@@ -292,9 +320,9 @@ const MessageItemComponent: React.FC<Props> = ({
           onClick={handleBubbleClick}
           onDoubleClick={(e) => {
             e.stopPropagation();
-            triggerLike();
+            triggerReaction(userReactionEmoji === '❤️' ? '❤️' : '👍');
           }}
-          className={`relative px-3.5 sm:px-4 ${reactions.length > 0 ? 'pb-3.5' : 'pb-2'} pt-2 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${cornerRadiusClass} ${
+          className={`relative px-3.5 sm:px-4 pb-2 pt-2 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${cornerRadiusClass} ${
             isOwn
               ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.06] dark:bg-[#232936] dark:text-white dark:border-white/[0.08]'
               : 'bg-white text-slate-900 border-black/[0.04] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06]'
@@ -342,11 +370,17 @@ const MessageItemComponent: React.FC<Props> = ({
             </svg>
           )}
 
-          {/* Lightweight animated reaction burst on double-tap */}
+          {/* Lightweight animated reaction burst on reaction / double-tap */}
           {showReactionAnim && (
             <div className="absolute inset-0 flex items-center justify-center pointer-events-none z-30">
-              <div className="animate-like-burst select-none text-3xl sm:text-4xl filter drop-shadow-[0_2px_10px_rgba(42,171,238,0.5)]">
-                👍
+              <div
+                className={`animate-like-burst select-none text-3xl sm:text-4xl filter ${
+                  reactionAnimEmoji === '❤️'
+                    ? 'drop-shadow-[0_2px_10px_rgba(244,63,94,0.45)]'
+                    : 'drop-shadow-[0_2px_10px_rgba(42,171,238,0.45)]'
+                }`}
+              >
+                {reactionAnimEmoji}
               </div>
             </div>
           )}
@@ -416,76 +450,72 @@ const MessageItemComponent: React.FC<Props> = ({
             <FormattedMessageText text={caption} />
           )}
 
-          {/* Footer inside bubble: Time + Read status */}
+          {/* Bottom row inside message bubble: Reactions (Telegram-style) + Time & Read status */}
           <div
-            dir="ltr"
-            className={`flex items-center gap-1.5 mt-1 text-[10px] font-sans justify-end select-none ${
-              isOwn ? 'text-slate-500 dark:text-slate-300' : 'text-slate-400 dark:text-slate-400'
+            className={`flex flex-wrap items-end justify-between gap-x-3 gap-y-1 ${
+              reactionGroups.length > 0 ? 'mt-2' : 'mt-1'
             }`}
           >
-            <span>{formattedTime}</span>
+            {/* Telegram-style Reaction Pills inside message bubble */}
+            {reactionGroups.length > 0 ? (
+              <div className="flex flex-wrap items-center gap-1.5 py-0.5">
+                {reactionGroups.map((group) => {
+                  const isHeart = group.emoji === '❤️';
+                  const activeStyle = isHeart
+                    ? 'bg-rose-500/15 dark:bg-rose-500/20 text-rose-600 dark:text-rose-400 border-rose-500/35 dark:border-rose-500/40 shadow-xs'
+                    : 'bg-[#2AABEE]/15 dark:bg-[#2AABEE]/20 text-[#0c82bf] dark:text-[#2AABEE] border-[#2AABEE]/35 dark:border-[#2AABEE]/40 shadow-xs';
+                  const inactiveStyle =
+                    'bg-black/[0.04] dark:bg-white/[0.08] text-slate-700 dark:text-slate-300 border-black/[0.06] dark:border-white/[0.08] hover:bg-black/[0.08] dark:hover:bg-white/[0.12]';
 
-            {isOwn && (
-              <span>
-                {isPending ? (
-                  <Clock className="w-3.5 h-3.5 text-amber-500/80 animate-pulse inline" />
-                ) : message.status === 'failed' ? (
-                  <span className="text-red-500 text-[10px] font-bold inline">!</span>
-                ) : message.isRead ? (
-                  <CheckCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 inline" />
-                ) : (
-                  <Check className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 inline" />
-                )}
-              </span>
-            )}
-          </div>
-
-          {/* Telegram Style Reaction Badge */}
-          {reactions.length > 0 && (
-            <div
-              onClick={(e) => {
-                e.stopPropagation();
-                triggerLike();
-              }}
-              className={`absolute -bottom-3 ${isOwn ? 'end-3' : 'start-3'} z-20 flex items-center gap-1.5 px-2.5 py-0.5 rounded-full cursor-pointer select-none transition-all duration-150 hover:scale-105 active:scale-95 border ${
-                hasLiked
-                  ? 'bg-[#2AABEE] border-[#2AABEE] text-white shadow-[0_2px_8px_rgba(42,171,238,0.38)]'
-                  : 'bg-white dark:bg-[#1E2530] border-black/10 dark:border-white/10 text-slate-700 dark:text-slate-200 shadow-[0_2px_5px_rgba(0,0,0,0.12)]'
-              }`}
-              title={reactions.map((r) => r.username).join(', ')}
-            >
-              <span className="text-sm leading-none drop-shadow-xs">👍</span>
-              {/* Reactor User Avatar */}
-              <div className="flex items-center -space-x-1.5 rtl:space-x-reverse">
-                {reactions.slice(0, 3).map((r, i) => (
-                  r.avatarUrl ? (
-                    <img
-                      key={r.userId || i}
-                      src={r.avatarUrl}
-                      alt={r.username}
-                      className={`w-4 h-4 rounded-full object-cover border-1.5 ${hasLiked ? 'border-[#2AABEE]' : 'border-white dark:border-[#1E2530]'}`}
-                    />
-                  ) : (
-                    <span
-                      key={r.userId || i}
-                      className={`w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center border-1.5 ${
-                        hasLiked 
-                          ? 'bg-white text-[#2AABEE] border-[#2AABEE]' 
-                          : 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border-white dark:border-[#1E2530]'
+                  return (
+                    <button
+                      key={group.emoji}
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        triggerReaction(group.emoji);
+                      }}
+                      className={`inline-flex items-center gap-1.5 px-2.5 py-1 sm:px-3 sm:py-1 rounded-full text-xs font-medium transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer border select-none ${
+                        group.hasReacted ? activeStyle : inactiveStyle
                       }`}
+                      title={group.users.length > 0 ? group.users.join(i18n.language === 'fa' ? '، ' : ', ') : undefined}
                     >
-                      {(r.username || '?')[0].toUpperCase()}
-                    </span>
-                  )
-                ))}
+                      <span className="text-[13px] sm:text-sm leading-none drop-shadow-xs">{group.emoji}</span>
+                      <span className="text-[11px] sm:text-xs font-bold leading-none tabular-nums">
+                        {group.count}
+                      </span>
+                    </button>
+                  );
+                })}
               </div>
-              {reactions.length > 1 && (
-                <span className={`text-[11px] font-bold leading-none ms-0.5 ${hasLiked ? 'text-white' : 'text-slate-700 dark:text-slate-200'}`}>
-                  {reactions.length}
+            ) : (
+              <div />
+            )}
+
+            {/* Footer inside bubble: Time + Read status */}
+            <div
+              dir="ltr"
+              className={`flex items-center gap-1.5 text-[10px] font-sans justify-end ms-auto pb-0.5 select-none ${
+                isOwn ? 'text-slate-500 dark:text-slate-300' : 'text-slate-400 dark:text-slate-400'
+              }`}
+            >
+              <span>{formattedTime}</span>
+
+              {isOwn && (
+                <span>
+                  {isPending ? (
+                    <Clock className="w-3.5 h-3.5 text-amber-500/80 animate-pulse inline" />
+                  ) : message.status === 'failed' ? (
+                    <span className="text-red-500 text-[10px] font-bold inline">!</span>
+                  ) : message.isRead ? (
+                    <CheckCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 inline" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5 text-slate-400 dark:text-slate-400 inline" />
+                  )}
                 </span>
               )}
             </div>
-          )}
+          </div>
 
           {/* Feedback badge for Copied */}
           {copied && (
@@ -505,19 +535,51 @@ const MessageItemComponent: React.FC<Props> = ({
                 left: `${menuPosition.left}px`,
                 transformOrigin: menuPosition.transformOrigin
               }}
-              className="fixed z-[9999] min-w-[192px] max-w-[240px] bg-white/95 dark:bg-[#151A24]/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-1.5 shadow-floating animate-message font-sans select-none"
+              className="fixed z-[9999] min-w-[200px] max-w-[260px] bg-white/95 dark:bg-[#151A24]/95 backdrop-blur-xl border border-black/10 dark:border-white/[0.08] rounded-2xl p-1.5 shadow-floating animate-message font-sans select-none"
             >
+              {/* Telegram-style Quick Reactions Bar at Top of Context Menu */}
               {onReact && (
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    triggerLike();
-                  }}
-                  className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer whitespace-nowrap"
-                >
-                  <span className="text-sm shrink-0">👍</span>
-                  <span className="flex-1 text-start truncate">{hasLiked ? t('removeLike') : t('like')}</span>
-                </button>
+                <div className="flex items-center gap-1.5 p-1 mb-1 pb-1.5 border-b border-black/[0.06] dark:border-white/[0.06]">
+                  {/* 👍 Option */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerReaction('👍');
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs transition-all duration-150 hover:scale-[1.02] active:scale-95 cursor-pointer ${
+                      userReactionEmoji === '👍'
+                        ? 'bg-[#2AABEE]/15 text-[#0c82bf] dark:text-[#2AABEE] border border-[#2AABEE]/35 font-bold shadow-xs'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-transparent font-medium'
+                    }`}
+                    title={userReactionEmoji === '👍' ? t('removeLike') : t('like')}
+                  >
+                    <span className="text-base leading-none drop-shadow-xs">👍</span>
+                    <span className="text-[11px] truncate">
+                      {userReactionEmoji === '👍' ? t('removeLike') : t('like')}
+                    </span>
+                  </button>
+
+                  {/* ❤️ Option */}
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      triggerReaction('❤️');
+                    }}
+                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs transition-all duration-150 hover:scale-[1.02] active:scale-95 cursor-pointer ${
+                      userReactionEmoji === '❤️'
+                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/35 font-bold shadow-xs'
+                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-transparent font-medium'
+                    }`}
+                    title={userReactionEmoji === '❤️' ? t('removeHeart') : t('heart')}
+                  >
+                    <span className="text-base leading-none drop-shadow-xs">❤️</span>
+                    <span className="text-[11px] truncate">
+                      {userReactionEmoji === '❤️' ? t('removeHeart') : t('heart')}
+                    </span>
+                  </button>
+                </div>
               )}
 
               {onReply && (

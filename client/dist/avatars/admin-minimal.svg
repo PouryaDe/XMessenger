@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#4C1D95" />
+      <stop offset="100%" stop-color="#1E1B4B" />
+    </linearGradient>
+    <linearGradient id="shape" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#C084FC" />
+      <stop offset="100%" stop-color="#818CF8" />
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)" />
+  <circle cx="128" cy="128" r="122" fill="none" stroke="#C084FC" stroke-width="4" stroke-opacity="0.3" />
+  <!-- Minimalist Geometric Diamond Emblem -->
+  <rect x="76" y="76" width="104" height="104" rx="28" fill="url(#shape)" transform="rotate(45 128 128)" />
+  <circle cx="128" cy="128" r="22" fill="#FFFFFF" />
+</svg>

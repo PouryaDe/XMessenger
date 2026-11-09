@@ -132,8 +132,27 @@ export function initSocket(token: string): Socket {
     useChatStore.getState().addAdminUser(newUser);
   });
 
-  socket.on('user:status_changed', ({ userId, status }: { userId: string; status: 'active' | 'pending' | 'banned' }) => {
-    useChatStore.getState().updateAdminUserStatus(userId, status);
+  socket.on('user:status_changed', ({ userId, status }: { userId?: string; status: 'active' | 'pending' | 'banned' }) => {
+    const currentAuth = useAuthStore.getState().user;
+    if (currentAuth && (!userId || currentAuth.id === userId)) {
+      useAuthStore.getState().setUser({ ...currentAuth, status });
+    }
+    if (userId) {
+      useChatStore.getState().updateAdminUserStatus(userId, status);
+    }
+  });
+
+  socket.on('system:status_changed', ({ systemEnabled }: { systemEnabled: boolean }) => {
+    useAuthStore.getState().setSystemEnabled(systemEnabled);
+  });
+
+  socket.on('connect_error', (err: any) => {
+    if (err?.message === 'ACCOUNT_BANNED') {
+      const currentAuth = useAuthStore.getState().user;
+      if (currentAuth) {
+        useAuthStore.getState().setUser({ ...currentAuth, status: 'banned' });
+      }
+    }
   });
 
   socket.on('user:deleted', ({ userId }: { userId: string }) => {

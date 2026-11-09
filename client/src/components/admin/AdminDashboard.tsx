@@ -23,7 +23,8 @@ import {
   Loader2,
   ChevronDown,
   Reply,
-  Flame
+  Flame,
+  ShieldAlert
 } from 'lucide-react';
 
 export const AdminDashboard: React.FC = () => {
@@ -44,7 +45,8 @@ export const AdminDashboard: React.FC = () => {
     sendTyping,
     syncMessages,
     isLoadingMessages,
-    toggleReaction
+    toggleReaction,
+    updateAdminUserStatus
   } = useChatStore();
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -280,6 +282,7 @@ export const AdminDashboard: React.FC = () => {
     const nextStatus = activeUser.status === 'banned' ? 'active' : 'banned';
     try {
       await api.updateUserStatus(activeUser.id, nextStatus);
+      updateAdminUserStatus(activeUser.id, nextStatus);
       refreshUsers();
     } catch (err: any) {
       alert(getErrorMessage(err, 'errBanUser'));
@@ -434,6 +437,23 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </header>
 
+            {/* Banner when user is banned */}
+            {activeUser.status === 'banned' && (
+              <div className="mx-4 sm:mx-6 mt-3 mb-1 p-3 rounded-2xl bg-red-500/10 border border-red-500/25 flex items-center justify-between gap-3 text-xs text-red-600 dark:text-red-400 animate-message">
+                <div className="flex items-center gap-2">
+                  <ShieldAlert className="w-4 h-4 shrink-0 text-red-500" />
+                  <span className="font-semibold">{t('userBannedNotice')}</span>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleBanToggle}
+                  className="px-3 py-1 rounded-xl bg-red-600 hover:bg-red-500 text-white font-bold text-[11px] shrink-0 transition-all hover:scale-105 active:scale-95 cursor-pointer shadow-xs"
+                >
+                  {t('unban')}
+                </button>
+              </div>
+            )}
+
             {/* Messages Area */}
             <div className="relative flex-1 flex flex-col min-h-0 w-full overflow-hidden overflow-x-hidden">
               <main 
@@ -530,10 +550,28 @@ export const AdminDashboard: React.FC = () => {
 
             {/* Bottom Docked Input Area with frosted glass spanning into safe-area */}
             <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-transparent border-t border-black/[0.05] dark:border-white/[0.06]">
-              <form
-                onSubmit={handleSend}
-                className="max-w-3xl mx-auto"
-              >
+              {activeUser.status === 'banned' ? (
+                <div
+                  dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
+                  className="max-w-3xl mx-auto flex items-center justify-between h-12 px-4 rounded-full bg-red-500/10 dark:bg-red-950/30 border border-red-500/25 text-red-600 dark:text-red-400 text-xs shadow-none animate-message"
+                >
+                  <div className="flex items-center gap-2 truncate">
+                    <ShieldAlert className="w-4 h-4 shrink-0 text-red-500" />
+                    <span className="truncate font-semibold">{t('userBannedNotice')}</span>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleBanToggle}
+                    className="px-3.5 py-1.5 rounded-full bg-red-600 hover:bg-red-500 text-white font-bold text-xs shrink-0 transition-all hover:scale-105 active:scale-95 shadow-xs cursor-pointer"
+                  >
+                    {t('unban')}
+                  </button>
+                </div>
+              ) : (
+                <form
+                  onSubmit={handleSend}
+                  className="max-w-3xl mx-auto"
+                >
                 {/* Active Reply Preview Banner */}
                 {replyingTo && (() => {
                   const replyImgMatch = replyingTo.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
@@ -665,6 +703,7 @@ export const AdminDashboard: React.FC = () => {
                   </button>
                 </div>
               </form>
+              )}
             </footer>
 
             {/* Hidden File Input placed outside the form to suppress iOS WebKit multi-input accessory navigation arrows */}

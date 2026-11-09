@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#0369A1" />
+    </linearGradient>
+  </defs>
+  <circle cx="128" cy="128" r="128" fill="url(#bg)" />
+  <circle cx="128" cy="128" r="122" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-opacity="0.3" />
+  <!-- Headset -->
+  <path d="M72 124 C72 94 96 70 128 70 C160 70 184 94 184 124 V154" fill="none" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round" />
+  <!-- Ear cups -->
+  <rect x="62" y="120" width="20" height="40" rx="10" fill="#FFFFFF" />
+  <rect x="174" y="120" width="20" height="40" rx="10" fill="#FFFFFF" />
+  <!-- Mic boom -->
+  <path d="M184 150 C184 176 164 190 140 190 H130" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" />
+  <circle cx="124" cy="190" r="8" fill="#FCD34D" />
+</svg>
