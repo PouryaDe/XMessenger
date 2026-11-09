@@ -331,14 +331,18 @@ if [ "$1" == "password" ] || [ "$1" == "passwd" ] || [ "$1" == "pass" ]; then
     sleep 1
   fi
 
-  ADMIN_USER=$(docker exec -i "${CONTAINER}" node -e "
+  ADMIN_USER=$(docker exec -i "${CONTAINER}" node -e '
   try {
-    const Database = require('better-sqlite3');
-    const db = new Database('/app/data/messenger.db');
-    const row = db.prepare(\"SELECT username FROM users WHERE role = 'admin' LIMIT 1\").get();
-    if (row) console.log(row.username);
+    const fs = require("fs");
+    const Database = require("better-sqlite3");
+    const dbPath = process.env.DB_PATH || "/app/data/xmessenger.db";
+    if (fs.existsSync(dbPath)) {
+      const db = new Database(dbPath);
+      const row = db.prepare("SELECT username FROM users WHERE role = ? LIMIT 1").get("admin");
+      if (row && row.username) console.log(row.username);
+    }
   } catch(e) {}
-  " 2>/dev/null || echo "admin")
+  ' 2>/dev/null || echo "admin")
   [ -z "$ADMIN_USER" ] && ADMIN_USER="admin"
 
   if [ -z "$NEW_PASS" ]; then
@@ -346,27 +350,36 @@ if [ "$1" == "password" ] || [ "$1" == "passwd" ] || [ "$1" == "pass" ]; then
   fi
 
   if [ -n "$NEW_PASS" ] && [ ${#NEW_PASS} -ge 6 ]; then
-    UPDATE_RESULT=$(docker exec -i "${CONTAINER}" node -e "
+    # Clean up accidental empty messenger.db if created previously
+    docker exec -i "${CONTAINER}" rm -f /app/data/messenger.db 2>/dev/null || true
+
+    UPDATE_RESULT=$(docker exec -i -e NEW_PASS="${NEW_PASS}" "${CONTAINER}" node -e '
     try {
-      const Database = require('better-sqlite3');
-      const bcrypt = require('bcryptjs');
-      const db = new Database('/app/data/messenger.db');
-      const newPass = process.argv[1];
+      const Database = require("better-sqlite3");
+      const bcrypt = require("bcryptjs");
+      const dbPath = process.env.DB_PATH || "/app/data/xmessenger.db";
+      const db = new Database(dbPath);
+      const newPass = process.env.NEW_PASS;
+      if (!newPass || newPass.length < 6) {
+        console.error("Password must be at least 6 characters");
+        process.exit(1);
+      }
       const hash = bcrypt.hashSync(newPass, 12);
-      const res = db.prepare(\"UPDATE users SET password_hash = ? WHERE role = 'admin'\").run(hash);
+      const res = db.prepare("UPDATE users SET password_hash = ? WHERE role = ?").run(hash, "admin");
       if (res.changes > 0) {
-        console.log('SUCCESS');
+        console.log("SUCCESS");
       } else {
-        console.log('NOT_FOUND');
+        console.error("No admin user found in database");
+        process.exit(1);
       }
     } catch(e) {
       console.error(e.message);
       process.exit(1);
     }
-    " "${NEW_PASS}" 2>/dev/null || echo "FAILED")
+    ' 2>&1)
 
     if [[ "$UPDATE_RESULT" == *"SUCCESS"* ]]; then
-      sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env" 2>/dev/null || true
+      sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env" 2>/dev/null || true
       echo -e "\n${GREEN}${BOLD}✓ Admin password successfully updated in database!${NC}"
       echo -e "  ${CYAN}URL:${NC}      https://${TARGET_DOMAIN}"
       echo -e "  ${CYAN}Username:${NC} ${BOLD}${ADMIN_USER}${NC}"
@@ -374,6 +387,7 @@ if [ "$1" == "password" ] || [ "$1" == "passwd" ] || [ "$1" == "pass" ]; then
       exit 0
     else
       echo -e "\n${RED}[ERROR] Failed to update password in database.${NC}"
+      echo -e "${YELLOW}Details: ${UPDATE_RESULT}${NC}"
       exit 1
     fi
   else
@@ -433,14 +447,18 @@ manage_instance() {
     fi
 
     # Read live admin username directly from database
-    local DB_ADMIN=$(docker exec -i "${CONTAINER}" node -e "
+    local DB_ADMIN=$(docker exec -i "${CONTAINER}" node -e '
     try {
-      const Database = require('better-sqlite3');
-      const db = new Database('/app/data/messenger.db');
-      const row = db.prepare(\"SELECT username FROM users WHERE role = 'admin' LIMIT 1\").get();
-      if (row) console.log(row.username);
+      const fs = require("fs");
+      const Database = require("better-sqlite3");
+      const dbPath = process.env.DB_PATH || "/app/data/xmessenger.db";
+      if (fs.existsSync(dbPath)) {
+        const db = new Database(dbPath);
+        const row = db.prepare("SELECT username FROM users WHERE role = ? LIMIT 1").get("admin");
+        if (row && row.username) console.log(row.username);
+      }
     } catch(e) {}
-    " 2>/dev/null || echo "")
+    ' 2>/dev/null || echo "")
     [ -n "$DB_ADMIN" ] && ADMIN_USERNAME="$DB_ADMIN"
 
     echo -e "  ${CYAN}Domain:${NC}              https://${DOMAIN}"
@@ -500,33 +518,43 @@ manage_instance() {
         read -p "Enter new admin password for '${ADMIN_USERNAME:-admin}' (min 6 characters): " NEW_PASS
 
         if [ -n "$NEW_PASS" ] && [ ${#NEW_PASS} -ge 6 ]; then
-          UPDATE_RESULT=$(docker exec -i "${CONTAINER}" node -e "
+          # Clean up accidental empty messenger.db if created previously
+          docker exec -i "${CONTAINER}" rm -f /app/data/messenger.db 2>/dev/null || true
+
+          UPDATE_RESULT=$(docker exec -i -e NEW_PASS="${NEW_PASS}" "${CONTAINER}" node -e '
           try {
-            const Database = require('better-sqlite3');
-            const bcrypt = require('bcryptjs');
-            const db = new Database('/app/data/messenger.db');
-            const newPass = process.argv[1];
+            const Database = require("better-sqlite3");
+            const bcrypt = require("bcryptjs");
+            const dbPath = process.env.DB_PATH || "/app/data/xmessenger.db";
+            const db = new Database(dbPath);
+            const newPass = process.env.NEW_PASS;
+            if (!newPass || newPass.length < 6) {
+              console.error("Password must be at least 6 characters");
+              process.exit(1);
+            }
             const hash = bcrypt.hashSync(newPass, 12);
-            const res = db.prepare(\"UPDATE users SET password_hash = ? WHERE role = 'admin'\").run(hash);
+            const res = db.prepare("UPDATE users SET password_hash = ? WHERE role = ?").run(hash, "admin");
             if (res.changes > 0) {
-              console.log('SUCCESS');
+              console.log("SUCCESS");
             } else {
-              console.log('NOT_FOUND');
+              console.error("No admin user found in database");
+              process.exit(1);
             }
           } catch(e) {
             console.error(e.message);
             process.exit(1);
           }
-          " "${NEW_PASS}" 2>/dev/null || echo "FAILED")
+          ' 2>&1)
 
           if [[ "$UPDATE_RESULT" == *"SUCCESS"* ]]; then
-            sed -i "s|ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env" 2>/dev/null || true
+            sed -i "s|^ADMIN_PASSWORD=.*|ADMIN_PASSWORD=${NEW_PASS}|g" "${INSTANCE_DIR}/.env" 2>/dev/null || true
             echo -e "\n${GREEN}${BOLD}✓ Admin password successfully updated in database!${NC}"
             echo -e "  ${CYAN}URL:${NC}      https://${DOMAIN}"
             echo -e "  ${CYAN}Username:${NC} ${BOLD}${ADMIN_USERNAME:-admin}${NC}"
             echo -e "  ${CYAN}Password:${NC} ${BOLD}${NEW_PASS}${NC}\n"
           else
             echo -e "\n${RED}[ERROR] Failed to update password in database.${NC}"
+            echo -e "${YELLOW}Details: ${UPDATE_RESULT}${NC}"
           fi
           read -p "Press Enter to continue..." dummy
         else
