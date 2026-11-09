@@ -81,8 +81,19 @@ fi
 
 if ! command -v docker &> /dev/null; then
   echo -e "${YELLOW}Docker not found. Installing Docker engine from system repositories...${NC}"
-  apt-get update -y
-  apt-get install -y docker.io docker-compose
+  # Check if broken local datacenter mirrors (e.g. ubuntu.mirror.afranet.com) exist and replace them
+  if grep -q "mirror.afranet.com" /etc/apt/sources.list 2>/dev/null; then
+    echo -e "${YELLOW}Detected outdated Afranet local mirror. Updating sources to canonical Ubuntu archive...${NC}"
+    sed -i 's|http://ubuntu.mirror.afranet.com/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list 2>/dev/null || true
+  fi
+
+  apt-get update -y || apt-get update --fix-missing -y
+  if ! apt-get install -y docker.io; then
+    echo -e "${YELLOW}First install attempt failed. Switching to standard archive.ubuntu.com and retrying...${NC}"
+    sed -i 's|http://[^ ]*/ubuntu|http://archive.ubuntu.com/ubuntu|g' /etc/apt/sources.list 2>/dev/null || true
+    apt-get update -y || apt-get update --fix-missing -y
+    apt-get install -y --fix-missing docker.io
+  fi
   systemctl enable --now docker || service docker start || true
   echo -e "${GREEN}Docker installed successfully.${NC}"
 else
