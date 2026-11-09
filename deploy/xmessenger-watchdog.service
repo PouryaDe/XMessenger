@@ -1,0 +1,17 @@
+[Unit]
+Description=XMessenger High-Availability Watchdog & Recovery Daemon
+After=network.target docker.service
+Wants=docker.service
+
+[Service]
+Type=simple
+User=root
+WorkingDirectory=/opt/xmessenger
+ExecStart=/bin/bash /opt/xmessenger/deploy/watchdog.sh
+Restart=always
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

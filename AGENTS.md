@@ -54,6 +54,11 @@ This file serves as the high-level roadmap and engineering guide for AI agents w
   - Neutralizes extension bypasses (trailing dots/spaces, delimiter injection).
   - Stored with full cryptographic UUIDv4; served under strict CSP sandboxing (`default-src 'none'; sandbox`).
   - Hard disk cleanup of attachments upon two-way message deletion, conversation wiping, and TTL expiry.
+- **High-Availability Watchdog & Self-Healing Daemon**:
+  - Automatically installed as systemd service `xmessenger-watchdog.service` and cron fallback.
+  - Continuously monitors Docker daemon, shared Nginx gateway, all backend instances (`/api/health`), and Certbot renewer.
+  - Automatically restarts any crashed, hung, deadlocked, or stopped containers within 15 seconds.
+  - CLI management and health diagnostics via `xmessenger watchdog` (shortcut `xwatchdog`) and menu option `W`.
 
 ---
 

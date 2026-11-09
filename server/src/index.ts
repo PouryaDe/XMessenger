@@ -5,7 +5,7 @@ import path from 'path';
 import fs from 'fs';
 import { Server } from 'socket.io';
 import { config } from './config/index.js';
-import { initDatabase, getSettingValue } from './database/index.js';
+import { db, initDatabase, getSettingValue } from './database/index.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createMessagesRouter } from './routes/messages.js';
@@ -52,13 +52,26 @@ app.use('/api/admin', createAdminRouter(io));
 app.use('/api/messages', createMessagesRouter(io));
 app.use('/api/push', pushRouter);
 
-// Health check endpoint
+// Health check endpoint for container healthchecks & watchdog daemon
 app.get('/api/health', (req, res) => {
-  res.json({
-    status: 'ok',
-    timestamp: new Date().toISOString(),
-    service: 'XMessenger Core Engine'
-  });
+  try {
+    db.prepare('SELECT 1').get();
+    res.json({
+      status: 'healthy',
+      database: 'connected',
+      uptime: Math.floor(process.uptime()),
+      timestamp: new Date().toISOString(),
+      version: config.appVersion,
+      service: 'XMessenger Core Engine'
+    });
+  } catch (err: any) {
+    res.status(500).json({
+      status: 'unhealthy',
+      database: 'error',
+      error: err.message || 'Database unavailable',
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // 7. Serve Uploaded User/Admin Content (Persistent Volume in data/uploads)

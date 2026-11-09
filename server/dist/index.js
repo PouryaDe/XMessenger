@@ -57737,11 +57737,24 @@ app.use("/api/admin", createAdminRouter(io2));
 app.use("/api/messages", createMessagesRouter(io2));
 app.use("/api/push", pushRouter);
 app.get("/api/health", (req, res) => {
-  res.json({
-    status: "ok",
-    timestamp: (/* @__PURE__ */ new Date()).toISOString(),
-    service: "XMessenger Core Engine"
-  });
+  try {
+    db.prepare("SELECT 1").get();
+    res.json({
+      status: "healthy",
+      database: "connected",
+      uptime: Math.floor(process.uptime()),
+      timestamp: (/* @__PURE__ */ new Date()).toISOString(),
+      version: config.appVersion,
+      service: "XMessenger Core Engine"
+    });
+  } catch (err) {
+    res.status(500).json({
+      status: "unhealthy",
+      database: "error",
+      error: err.message || "Database unavailable",
+      timestamp: (/* @__PURE__ */ new Date()).toISOString()
+    });
+  }
 });
 var uploadsDir = import_path6.default.join(config.dataDir, "uploads");
 if (!import_fs7.default.existsSync(uploadsDir)) {

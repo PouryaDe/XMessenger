@@ -562,9 +562,10 @@ if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-certbot$'; then
 fi
 
 # 10. Install Global Multi-Domain CLI Management Tool (xmessenger & xupdate)
+chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" "${BASE_DIR}/deploy/watchdog.sh" 2>/dev/null || true
 ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || cp -f "${PROJECT_ROOT}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
-chmod +x "${BASE_DIR}/deploy/xmessenger.sh" "${BASE_DIR}/update.sh" /usr/local/bin/xmessenger /usr/local/bin/xupdate 2>/dev/null || true
+chmod +x /usr/local/bin/xmessenger /usr/local/bin/xupdate 2>/dev/null || true
 
 # 11. Configure Continuous GitHub Auto-Update Service
 if [ -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" ] && [ -d /etc/systemd/system ]; then
@@ -572,6 +573,15 @@ if [ -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" ] && [ -d /etc/system
   systemctl daemon-reload 2>/dev/null || true
   systemctl enable --now xmessenger-autoupdate 2>/dev/null || true
   systemctl restart xmessenger-autoupdate 2>/dev/null || true
+fi
+
+# 12. Configure High-Availability Watchdog Service
+if [ -f "${BASE_DIR}/deploy/xmessenger-watchdog.service" ] && [ -d /etc/systemd/system ]; then
+  cp -f "${BASE_DIR}/deploy/xmessenger-watchdog.service" /etc/systemd/system/xmessenger-watchdog.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl enable --now xmessenger-watchdog 2>/dev/null || true
+  systemctl restart xmessenger-watchdog 2>/dev/null || true
+  echo -e "${GREEN}✓ High-Availability Watchdog service activated.${NC}"
 fi
 
 echo -e "\n${GREEN}${BOLD}==================================================================${NC}"

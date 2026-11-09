@@ -277,6 +277,27 @@ if [ "$1" == "restart" ]; then
   exit 0
 fi
 
+if [ "$1" == "watchdog" ] || [ "$1" == "wd" ]; then
+  echo -e "\n${BOLD}==================================================================${NC}"
+  echo -e "       ${BOLD}XMessenger Watchdog & High-Availability Service Monitor${NC}"
+  echo -e "${BOLD}==================================================================${NC}"
+  if systemctl is-active --quiet xmessenger-watchdog 2>/dev/null; then
+    echo -e "Watchdog Service Status: ${GREEN}[ACTIVE & RUNNING]${NC}"
+  else
+    echo -e "Watchdog Service Status: ${YELLOW}[INACTIVE / STANDALONE]${NC}"
+  fi
+  echo -e "\n${BLUE}▶ Running live single health verification cycle...${NC}"
+  bash "${BASE_DIR}/deploy/watchdog.sh" --once
+  echo -e "\n${BLUE}▶ Recent Watchdog Activity Logs:${NC}"
+  if [ -f "/var/log/xmessenger-watchdog.log" ]; then
+    tail -n 15 "/var/log/xmessenger-watchdog.log"
+  else
+    journalctl -u xmessenger-watchdog -n 15 --no-pager 2>/dev/null || echo "No logs found yet."
+  fi
+  echo -e "\n${BOLD}==================================================================${NC}\n"
+  exit 0
+fi
+
 if [ "$1" == "status" ] || [ "$1" == "ps" ]; then
   DOMAINS=($(get_domains))
   echo -e "\n${BOLD}==================================================================${NC}"
@@ -689,6 +710,7 @@ while true; do
   echo -e " ${BOLD}Global Server Operations:${NC}"
   echo -e "  ${CYAN}A)${NC} Add new domain & install new messenger"
   echo -e "  ${CYAN}S)${NC} Renew / Verify SSL certificates for all domains"
+  echo -e "  ${CYAN}W)${NC} Watchdog & High-Availability Service Monitor"
   echo -e "  ${CYAN}R)${NC} Reload / Restart shared Nginx Gateway"
   echo -e "  ${CYAN}U)${NC} Update all messenger instances to latest GitHub version"
   echo -e "  ${RED}0)${NC} Exit"
@@ -721,6 +743,27 @@ while true; do
       for d in "${DOMAINS[@]}"; do
         renew_or_obtain_ssl "$d" || true
       done
+      echo ""
+      read -p "Press Enter to continue..." dummy
+      ;;
+    [wW])
+      show_banner
+      echo -e "${BOLD}==================================================================${NC}"
+      echo -e "       ${BOLD}XMessenger Watchdog & High-Availability Service Monitor${NC}"
+      echo -e "${BOLD}==================================================================${NC}"
+      if systemctl is-active --quiet xmessenger-watchdog 2>/dev/null; then
+        echo -e "Watchdog Service: ${GREEN}[ACTIVE & RUNNING]${NC}"
+      else
+        echo -e "Watchdog Service: ${YELLOW}[INACTIVE / STANDALONE]${NC}"
+      fi
+      echo -e "\n${BLUE}▶ Running live single health verification cycle...${NC}"
+      bash "${BASE_DIR}/deploy/watchdog.sh" --once
+      echo -e "\n${BLUE}▶ Recent Watchdog Activity Logs:${NC}"
+      if [ -f "/var/log/xmessenger-watchdog.log" ]; then
+        tail -n 15 "/var/log/xmessenger-watchdog.log"
+      else
+        journalctl -u xmessenger-watchdog -n 15 --no-pager 2>/dev/null || echo "No logs found yet."
+      fi
       echo ""
       read -p "Press Enter to continue..." dummy
       ;;

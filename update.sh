@@ -155,8 +155,8 @@ server {
     add_header X-Frame-Options "SAMEORIGIN" always;
     add_header X-Content-Type-Options "nosniff" always;
 
-    # Client body limit (Supports Database Restore & Media Uploads)
-    client_max_body_size 100M;
+    # Client body limit (Supports Database Restore & 200MB File/Media Uploads)
+    client_max_body_size 250M;
 
     location /socket.io/ {
         proxy_pass http://xmessenger-${s}:3001/socket.io/;
@@ -197,7 +197,7 @@ echo -e "\n${BLUE}[4/4] Updating base Docker image (xmessenger-core:latest)...${
 echo -e "${GREEN}✓ Base image update running in background.${NC}"
 
 # 5. Install & Activate Continuous Auto-Update Daemon (Runs every 10s via systemd)
-echo -e "\n${BLUE}[5/5] Configuring automatic GitHub update service (xmessenger-autoupdate)...${NC}"
+echo -e "\n${BLUE}[5/6] Configuring automatic GitHub update service (xmessenger-autoupdate)...${NC}"
 chmod +x "${BASE_DIR}/deploy/autoupdate.sh" 2>/dev/null || true
 
 if [ -f "${BASE_DIR}/deploy/xmessenger-autoupdate.service" ] && [ -d /etc/systemd/system ]; then
@@ -214,13 +214,32 @@ if [ -d /etc/cron.d ]; then
   chmod 644 /etc/cron.d/xmessenger-autoupdate 2>/dev/null || true
 fi
 
-# 6. Ensure global shortcuts exist in /usr/local/bin as live symlinks
+# 6. Install & Activate High-Availability Watchdog Daemon (Runs every 15s via systemd)
+echo -e "\n${BLUE}[6/6] Configuring High-Availability Watchdog service (xmessenger-watchdog)...${NC}"
+chmod +x "${BASE_DIR}/deploy/watchdog.sh" 2>/dev/null || true
+
+if [ -f "${BASE_DIR}/deploy/xmessenger-watchdog.service" ] && [ -d /etc/systemd/system ]; then
+  cp -f "${BASE_DIR}/deploy/xmessenger-watchdog.service" /etc/systemd/system/xmessenger-watchdog.service
+  systemctl daemon-reload 2>/dev/null || true
+  systemctl enable --now xmessenger-watchdog 2>/dev/null || true
+  systemctl restart xmessenger-watchdog 2>/dev/null || true
+  echo -e "${GREEN}✓ High-Availability Watchdog daemon is active! Monitors containers every 15s.${NC}"
+fi
+
+if [ -d /etc/cron.d ]; then
+  echo "* * * * * root /bin/bash ${BASE_DIR}/deploy/watchdog.sh --once >/dev/null 2>&1" > /etc/cron.d/xmessenger-watchdog 2>/dev/null || true
+  chmod 644 /etc/cron.d/xmessenger-watchdog 2>/dev/null || true
+fi
+
+# 7. Ensure global shortcuts exist in /usr/local/bin as live symlinks
 ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
 chmod +x "${BASE_DIR}/update.sh" 2>/dev/null || true
 ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
 chmod +x "${BASE_DIR}/deploy/xmessenger.sh" 2>/dev/null || true
 ln -sf "${BASE_DIR}/deploy/autoupdate.sh" /usr/local/bin/xautoupdate 2>/dev/null || true
 chmod +x "${BASE_DIR}/deploy/autoupdate.sh" 2>/dev/null || true
+ln -sf "${BASE_DIR}/deploy/watchdog.sh" /usr/local/bin/xwatchdog 2>/dev/null || true
+chmod +x "${BASE_DIR}/deploy/watchdog.sh" 2>/dev/null || true
 
 # Also alias in root .bashrc for convenience
 if [ -f /root/.bashrc ]; then
