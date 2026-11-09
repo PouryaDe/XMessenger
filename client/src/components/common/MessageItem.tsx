@@ -539,45 +539,39 @@ const MessageItemComponent: React.FC<Props> = ({
             >
               {/* Telegram-style Quick Reactions Bar at Top of Context Menu */}
               {onReact && (
-                <div className="flex items-center gap-1.5 p-1 mb-1 pb-1.5 border-b border-black/[0.06] dark:border-white/[0.06]">
-                  {/* 👍 Option */}
+                <div className="flex items-center justify-around gap-2 px-1.5 py-1 mb-1 border-b border-black/[0.06] dark:border-white/[0.06]">
+                  {/* 👍 Emoji Button */}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       triggerReaction('👍');
                     }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs transition-all duration-150 hover:scale-[1.02] active:scale-95 cursor-pointer ${
+                    className={`flex-1 h-9 rounded-xl flex items-center justify-center transition-all duration-150 hover:scale-110 active:scale-95 cursor-pointer ${
                       userReactionEmoji === '👍'
-                        ? 'bg-[#2AABEE]/15 text-[#0c82bf] dark:text-[#2AABEE] border border-[#2AABEE]/35 font-bold shadow-xs'
-                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-transparent font-medium'
+                        ? 'bg-[#2AABEE]/20 border border-[#2AABEE]/40 shadow-xs ring-2 ring-[#2AABEE]/30'
+                        : 'hover:bg-black/5 dark:hover:bg-white/[0.08] border border-transparent'
                     }`}
                     title={userReactionEmoji === '👍' ? t('removeLike') : t('like')}
                   >
-                    <span className="text-base leading-none drop-shadow-xs">👍</span>
-                    <span className="text-[11px] truncate">
-                      {userReactionEmoji === '👍' ? t('removeLike') : t('like')}
-                    </span>
+                    <span className="text-xl leading-none select-none drop-shadow-xs">👍</span>
                   </button>
 
-                  {/* ❤️ Option */}
+                  {/* ❤️ Emoji Button */}
                   <button
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
                       triggerReaction('❤️');
                     }}
-                    className={`flex-1 flex items-center justify-center gap-1.5 py-1.5 px-2 rounded-xl text-xs transition-all duration-150 hover:scale-[1.02] active:scale-95 cursor-pointer ${
+                    className={`flex-1 h-9 rounded-xl flex items-center justify-center transition-all duration-150 hover:scale-110 active:scale-95 cursor-pointer ${
                       userReactionEmoji === '❤️'
-                        ? 'bg-rose-500/15 text-rose-600 dark:text-rose-400 border border-rose-500/35 font-bold shadow-xs'
-                        : 'text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] border border-transparent font-medium'
+                        ? 'bg-rose-500/20 border border-rose-500/40 shadow-xs ring-2 ring-rose-500/30'
+                        : 'hover:bg-black/5 dark:hover:bg-white/[0.08] border border-transparent'
                     }`}
                     title={userReactionEmoji === '❤️' ? t('removeHeart') : t('heart')}
                   >
-                    <span className="text-base leading-none drop-shadow-xs">❤️</span>
-                    <span className="text-[11px] truncate">
-                      {userReactionEmoji === '❤️' ? t('removeHeart') : t('heart')}
-                    </span>
+                    <span className="text-xl leading-none select-none drop-shadow-xs">❤️</span>
                   </button>
                 </div>
               )}
