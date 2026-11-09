@@ -408,20 +408,49 @@ EOF
 # Restart Nginx gateway so port 443 and new domain are instantly live
 docker restart xmessenger-nginx 2>/dev/null || true
 
-# Attempt to request/renew official Let's Encrypt certificate
-echo -e "${YELLOW}Requesting official Let's Encrypt SSL certificate for ${DOMAIN}...${NC}"
-docker run --rm \
-  --network xmessenger-net \
-  -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
-  -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
-  certbot/certbot certonly --webroot -w /var/www/certbot \
-  --email "${EMAIL}" \
-  -d "${DOMAIN}" \
-  --agree-tos \
-  --non-interactive \
-  --keep-until-expiring 2>/dev/null && docker restart xmessenger-nginx 2>/dev/null || {
-    echo -e "${YELLOW}[Notice] Let's Encrypt check finished. Messenger is securely live with HTTPS.${NC}"
-}
+# Obtain official Let's Encrypt SSL certificate if not already issued by Let's Encrypt
+CERT_FILE="${SHARED_DIR}/certbot/conf/live/${DOMAIN}/fullchain.pem"
+if [ -f "$CERT_FILE" ] && openssl x509 -in "$CERT_FILE" -issuer -noout 2>/dev/null | grep -qiE "(Let's Encrypt|ISRG Root)"; then
+  echo -e "${GREEN}✓ Authentic Let's Encrypt SSL certificate is already active for ${DOMAIN}.${NC}"
+else
+  echo -e "${YELLOW}Requesting official Let's Encrypt SSL certificate for ${DOMAIN}...${NC}"
+
+  # Clean up temporary fallback files so Certbot creates genuine lineage symlinks
+  TEMP_SSL_BACKUP=$(mktemp -d)
+  cp -r "${SHARED_DIR}/certbot/conf/live/${DOMAIN}" "${TEMP_SSL_BACKUP}/"
+  rm -rf "${SHARED_DIR}/certbot/conf/live/${DOMAIN}"
+  rm -rf "${SHARED_DIR}/certbot/conf/archive/${DOMAIN}"
+  rm -f "${SHARED_DIR}/certbot/conf/renewal/${DOMAIN}.conf"
+
+  EMAIL_ARGS="--register-unsafely-without-email"
+  if [ -n "$EMAIL" ] && [[ "$EMAIL" == *"@"* ]]; then
+    EMAIL_ARGS="--email ${EMAIL} --no-eff-email"
+  fi
+
+  chmod -R 755 "${SHARED_DIR}/certbot/www" 2>/dev/null || true
+
+  if docker run --rm \
+    --network xmessenger-net \
+    -v "${SHARED_DIR}/certbot/conf:/etc/letsencrypt" \
+    -v "${SHARED_DIR}/certbot/www:/var/www/certbot" \
+    certbot/certbot certonly --webroot -w /var/www/certbot \
+    ${EMAIL_ARGS} \
+    -d "${DOMAIN}" \
+    --agree-tos \
+    --non-interactive \
+    --force-renewal ; then
+
+    echo -e "${GREEN}✓ Official Let's Encrypt SSL certificate successfully obtained and activated!${NC}"
+    docker restart xmessenger-nginx 2>/dev/null || true
+    rm -rf "${TEMP_SSL_BACKUP}"
+  else
+    echo -e "${YELLOW}[Warning] Let's Encrypt issuance did not complete. Restoring fallback certificate...${NC}"
+    mkdir -p "${SHARED_DIR}/certbot/conf/live"
+    cp -r "${TEMP_SSL_BACKUP}/${DOMAIN}" "${SHARED_DIR}/certbot/conf/live/"
+    rm -rf "${TEMP_SSL_BACKUP}"
+    docker restart xmessenger-nginx 2>/dev/null || true
+  fi
+fi
 
 # 10. Launch Isolated Backend Container for this Domain
 echo -e "\n${BLUE}[6/6] Launching isolated backend for ${DOMAIN}...${NC}"

@@ -11,7 +11,7 @@ ENV NPM_CONFIG_UPDATE_NOTIFIER=false
 # 1. Install native build tools, compile production dependencies, and clean up compilers immediately
 COPY server/package*.json ./
 RUN apk add --no-cache --virtual .build-deps python3 make g++ && \
-    npm ci --only=production --no-audit --no-fund && \
+    npm ci --omit=dev --no-audit --no-fund && \
     apk del .build-deps
 
 # 2. Copy pre-compiled server dist and client web assets
