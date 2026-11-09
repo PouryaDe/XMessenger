@@ -26,22 +26,25 @@ if [ -d "${BASE_DIR}" ] && [ "$EUID" -eq 0 ]; then
 fi
 
 
-# Get list of configured domains
+# Get list of configured domains (deterministically sorted)
 get_domains() {
   if [ -d "${INSTANCES_DIR}" ]; then
-    find "${INSTANCES_DIR}" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null || true
+    find "${INSTANCES_DIR}" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort || true
   fi
 }
 
 renew_or_obtain_ssl() {
   local TARGET_DOMAIN="$1"
   local TARGET_EMAIL="$2"
+  local TARGET_SLUG=$(echo "$TARGET_DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
 
   if [ -z "$TARGET_EMAIL" ] && [ -f "${INSTANCES_DIR}/${TARGET_DOMAIN}/.env" ]; then
     TARGET_EMAIL=$(grep '^EMAIL=' "${INSTANCES_DIR}/${TARGET_DOMAIN}/.env" | cut -d= -f2- | tr -d '\r\n')
   fi
 
-  echo -e "\n${BLUE}Requesting / Renewing official SSL certificate for ${TARGET_DOMAIN}...${NC}"
+  echo -e "\n${BLUE}==================================================================${NC}"
+  echo -e "${BLUE}▶ Processing SSL certificate for: ${BOLD}https://${TARGET_DOMAIN}${NC}"
+  echo -e "${BLUE}==================================================================${NC}"
 
   # Ensure UFW allows 80 and 443 if active
   if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
@@ -104,12 +107,67 @@ renew_or_obtain_ssl() {
   fi
 
   if [ "$obtain_ok" -eq 1 ]; then
-    echo -e "${GREEN}✓ Official Let's Encrypt SSL certificate obtained and activated!${NC}"
-    docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
+    echo -e "${GREEN}✓ Official Let's Encrypt SSL certificate obtained and activated for ${TARGET_DOMAIN}!${NC}"
     [ -n "$temp_backup" ] && rm -rf "$temp_backup"
+
+    # Guarantee clean production Nginx route is configured for this domain
+    cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf"
+server {
+    listen 80;
+    server_name ${TARGET_DOMAIN};
+
+    location /.well-known/acme-challenge/ {
+        root /var/www/certbot;
+    }
+
+    location / {
+        return 301 https://\$host\$request_uri;
+    }
+}
+
+server {
+    listen 443 ssl;
+    server_name ${TARGET_DOMAIN};
+
+    ssl_certificate /etc/letsencrypt/live/${TARGET_DOMAIN}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${TARGET_DOMAIN}/privkey.pem;
+
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    # Security Headers
+    add_header X-Frame-Options "SAMEORIGIN" always;
+    add_header X-Content-Type-Options "nosniff" always;
+
+    # Client body limit (Supports Database Restore & Media Uploads)
+    client_max_body_size 100M;
+
+    location /socket.io/ {
+        proxy_pass http://xmessenger-${TARGET_SLUG}:3001/socket.io/;
+        proxy_http_version 1.1;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+        proxy_read_timeout 86400;
+    }
+
+    location / {
+        proxy_pass http://xmessenger-${TARGET_SLUG}:3001;
+        proxy_http_version 1.1;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
+    }
+}
+EOF
+    docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
     return 0
   else
-    echo -e "${RED}[ERROR] Let's Encrypt issuance failed.${NC}"
+    echo -e "${RED}[ERROR] Let's Encrypt issuance failed for ${TARGET_DOMAIN}.${NC}"
     echo -e "${YELLOW}Common causes: DNS A-record not pointing to this server IP, or incoming port 80 blocked.${NC}"
     if [ -n "$temp_backup" ] && [ -d "${temp_backup}/${TARGET_DOMAIN}" ]; then
       mkdir -p "${SHARED_DIR}/certbot/conf/live"
@@ -131,28 +189,80 @@ fi
 
 if [ "$1" == "ssl" ] || [ "$1" == "cert" ]; then
   TARGET_DOMAIN="$2"
-  if [ -z "$TARGET_DOMAIN" ]; then
-    TARGET_DOMAIN=$(get_domains | head -n 1)
-  fi
-  if [ -z "$TARGET_DOMAIN" ]; then
-    echo "No domain found in ${INSTANCES_DIR}."
+  DOMAINS=($(get_domains))
+
+  if [ ${#DOMAINS[@]} -eq 0 ]; then
+    echo "No messenger instances found in ${INSTANCES_DIR}."
     exit 1
   fi
-  renew_or_obtain_ssl "$TARGET_DOMAIN"
+
+  if [ -n "$TARGET_DOMAIN" ]; then
+    if [ ! -d "${INSTANCES_DIR}/${TARGET_DOMAIN}" ]; then
+      echo -e "${RED}[ERROR] Domain '${TARGET_DOMAIN}' not configured on this server.${NC}"
+      echo -e "Available domains: ${DOMAINS[*]}"
+      exit 1
+    fi
+    renew_or_obtain_ssl "$TARGET_DOMAIN"
+  else
+    echo -e "\n${CYAN}${BOLD}Found ${#DOMAINS[@]} active messenger domain(s). Processing SSL certificates...${NC}"
+    for d in "${DOMAINS[@]}"; do
+      renew_or_obtain_ssl "$d"
+    done
+  fi
   exit 0
 fi
 
 if [ "$1" == "restart" ]; then
-  docker restart xmessenger-nginx 2>/dev/null || true
-  for c in $(docker ps --format '{{.Names}}' | grep '^xmessenger-'); do
-    docker restart "$c" 2>/dev/null || true
-  done
-  echo "All XMessenger containers restarted."
+  TARGET_DOMAIN="$2"
+  if [ -n "$TARGET_DOMAIN" ]; then
+    TARGET_SLUG=$(echo "$TARGET_DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+    docker restart "xmessenger-${TARGET_SLUG}" 2>/dev/null || true
+    echo "Instance xmessenger-${TARGET_SLUG} (https://${TARGET_DOMAIN}) restarted."
+  else
+    for c in $(docker ps --format '{{.Names}}' | grep '^xmessenger-' | grep -v 'nginx' | grep -v 'certbot'); do
+      docker restart "$c" 2>/dev/null || true
+    done
+    docker restart xmessenger-nginx 2>/dev/null || true
+    echo "All XMessenger instances and gateway restarted."
+  fi
   exit 0
 fi
 
 if [ "$1" == "status" ] || [ "$1" == "ps" ]; then
+  DOMAINS=($(get_domains))
+  echo -e "\n${BOLD}==================================================================${NC}"
+  echo -e "       ${BOLD}XMessenger Multi-Domain Status Overview (${#DOMAINS[@]} instances)${NC}"
+  echo -e "${BOLD}==================================================================${NC}"
+  for d in "${DOMAINS[@]}"; do
+    s=$(echo "$d" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+    c="xmessenger-${s}"
+    if docker ps --format '{{.Names}}' | grep -q "^${c}$"; then
+      status="${GREEN}ONLINE${NC}"
+    else
+      status="${RED}STOPPED${NC}"
+    fi
+    echo -e "  • ${BOLD}https://${d}${NC} -> ${status} (${c})"
+  done
+  echo ""
   docker ps --filter "name=xmessenger"
+  echo -e "${BOLD}==================================================================${NC}\n"
+  exit 0
+fi
+
+if [ "$1" == "logs" ] || [ "$1" == "log" ]; then
+  TARGET_DOMAIN="$2"
+  if [ -z "$TARGET_DOMAIN" ]; then
+    DOMAINS=($(get_domains))
+    if [ ${#DOMAINS[@]} -eq 1 ]; then
+      TARGET_DOMAIN="${DOMAINS[0]}"
+    else
+      echo -e "${YELLOW}Please specify domain for logs (e.g. xmessenger logs ${DOMAINS[0]}):${NC}"
+      for d in "${DOMAINS[@]}"; do echo "  - $d"; done
+      exit 1
+    fi
+  fi
+  TARGET_SLUG=$(echo "$TARGET_DOMAIN" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+  docker logs -f --tail=100 "xmessenger-${TARGET_SLUG}"
   exit 0
 fi
 
@@ -234,6 +344,7 @@ manage_instance() {
       2)
         echo -e "\n${YELLOW}Injecting latest build and restarting ${CONTAINER}...${NC}"
         cd "${BASE_DIR}"
+        docker cp VERSION "${CONTAINER}:/app/VERSION" 2>/dev/null || true
         docker cp client/dist/. "${CONTAINER}:/app/client-dist/" 2>/dev/null || true
         docker cp server/dist/. "${CONTAINER}:/app/dist/" 2>/dev/null || true
         docker restart "${CONTAINER}"
@@ -297,6 +408,9 @@ manage_instance() {
           docker volume rm -f "xmessenger-data-${SLUG}" 2>/dev/null || true
           rm -rf "${INSTANCE_DIR}"
           rm -f "${SHARED_DIR}/nginx/conf.d/${DOMAIN}.conf"
+          rm -rf "${SHARED_DIR}/certbot/conf/live/${DOMAIN}" 2>/dev/null || true
+          rm -rf "${SHARED_DIR}/certbot/conf/archive/${DOMAIN}" 2>/dev/null || true
+          rm -f "${SHARED_DIR}/certbot/conf/renewal/${DOMAIN}.conf" 2>/dev/null || true
           docker restart xmessenger-nginx 2>/dev/null || true
           echo -e "\n${GREEN}Instance for ${DOMAIN} uninstalled successfully.${NC}"
           sleep 2
@@ -336,6 +450,7 @@ while true; do
 
   echo -e " ${BOLD}Global Server Operations:${NC}"
   echo -e "  ${CYAN}A)${NC} Add new domain & install new messenger"
+  echo -e "  ${CYAN}S)${NC} Renew / Verify SSL certificates for all domains"
   echo -e "  ${CYAN}R)${NC} Reload / Restart shared Nginx Gateway"
   echo -e "  ${CYAN}U)${NC} Update all messenger instances to latest GitHub version"
   echo -e "  ${RED}0)${NC} Exit"
@@ -360,6 +475,15 @@ while true; do
       show_banner
       echo -e "${YELLOW}Running installation script for new domain...${NC}\n"
       bash "${BASE_DIR}/deploy/install.sh"
+      read -p "Press Enter to continue..." dummy
+      ;;
+    [sS])
+      show_banner
+      echo -e "${YELLOW}Processing SSL certificates for all active messenger domains...${NC}\n"
+      for d in "${DOMAINS[@]}"; do
+        renew_or_obtain_ssl "$d"
+      done
+      echo ""
       read -p "Press Enter to continue..." dummy
       ;;
     [rR])

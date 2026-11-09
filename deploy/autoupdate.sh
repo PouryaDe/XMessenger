@@ -42,27 +42,18 @@ check_and_update() {
     ln -sf "${BASE_DIR}/deploy/xmessenger.sh" /usr/local/bin/xmessenger 2>/dev/null || true
     ln -sf "${BASE_DIR}/update.sh" /usr/local/bin/xupdate 2>/dev/null || true
 
-    # 2. Update primary container xmessenger-xchat-iranistream-com
-    if docker ps -a --format '{{.Names}}' | grep -q 'xmessenger-xchat-iranistream-com'; then
-      echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AutoUpdate] Injecting dist into xmessenger-xchat-iranistream-com..."
-      docker cp VERSION xmessenger-xchat-iranistream-com:/app/VERSION 2>/dev/null || true
-      docker cp client/dist/. xmessenger-xchat-iranistream-com:/app/client-dist/ 2>/dev/null || true
-      docker cp server/dist/. xmessenger-xchat-iranistream-com:/app/dist/ 2>/dev/null || true
-      docker restart xmessenger-xchat-iranistream-com >/dev/null 2>&1 || true
-    fi
-
-    # 3. Update all other xmessenger app containers
+    # 2. Update all running xmessenger app containers across all domains
     CONTAINERS=$(docker ps -a --format '{{.Names}}' | grep '^xmessenger-' | grep -v 'nginx' | grep -v 'certbot' || true)
     for c in $CONTAINERS; do
       [ -z "$c" ] && continue
-      [ "$c" == "xmessenger-xchat-iranistream-com" ] && continue
+      echo "[$(date '+%Y-%m-%d %H:%M:%S')] [AutoUpdate] Injecting dist into ${c}..."
       docker cp VERSION "${c}:/app/VERSION" 2>/dev/null || true
       docker cp client/dist/. "${c}:/app/client-dist/" 2>/dev/null || true
       docker cp server/dist/. "${c}:/app/dist/" 2>/dev/null || true
       docker restart "${c}" >/dev/null 2>&1 || true
     done
 
-    # 4. Ensure Nginx Gateway is started and restarted to flush proxy cache
+    # 3. Ensure Nginx Gateway is started and restarted to flush proxy cache
     docker start xmessenger-nginx >/dev/null 2>&1 || true
     docker restart xmessenger-nginx >/dev/null 2>&1 || true
 

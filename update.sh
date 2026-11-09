@@ -66,17 +66,12 @@ UPDATED_COUNT=0
 
 CONTAINERS=$(docker ps -a --format '{{.Names}}' | grep '^xmessenger-' | grep -v 'nginx' | grep -v 'certbot' || true)
 
-# Include any configured domain instances
+# Include any configured domain instances dynamically from instances directory
 if [ -d "${BASE_DIR}/instances" ]; then
-  for d in $(find "${BASE_DIR}/instances" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null || true); do
+  for d in $(find "${BASE_DIR}/instances" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort || true); do
     s=$(echo "$d" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
     CONTAINERS="${CONTAINERS} xmessenger-${s}"
   done
-fi
-
-# Ensure primary instance is always included if exists
-if docker ps -a --format '{{.Names}}' | grep -q 'xmessenger-xchat-iranistream-com'; then
-  CONTAINERS="${CONTAINERS} xmessenger-xchat-iranistream-com"
 fi
 
 # Deduplicate container names
@@ -99,7 +94,7 @@ if [ "$UPDATED_COUNT" -eq 0 ]; then
   echo -e "${YELLOW}No running instance containers detected.${NC}"
 fi
 
-# Ensure 100M client body limit & clean up any corrupted Nginx location blocks
+# Ensure 100M client body limit & clean up any corrupted Nginx location blocks for ALL domains
 if [ -d "${BASE_DIR}/shared/nginx/conf.d" ]; then
   # Ensure 00-default.conf has WebSocket connection upgrade mapping
   cat <<'EOF' > "${BASE_DIR}/shared/nginx/conf.d/00-default.conf"
@@ -122,28 +117,36 @@ server {
     }
 }
 EOF
-  # Guarantee 100% clean Nginx config for xchat.iranistream.com
-  if [ -f "${BASE_DIR}/shared/nginx/conf.d/xchat.iranistream.com.conf" ]; then
-    cat <<'EOF' > "${BASE_DIR}/shared/nginx/conf.d/xchat.iranistream.com.conf"
+
+  # Dynamically ensure 100% clean, unified Nginx config for every configured domain
+  if [ -d "${BASE_DIR}/instances" ]; then
+    for d in $(find "${BASE_DIR}/instances" -mindepth 1 -maxdepth 1 -type d -exec basename {} \; 2>/dev/null | sort || true); do
+      [ -z "$d" ] && continue
+      s=$(echo "$d" | tr '.' '-' | tr -cd 'a-zA-Z0-9-')
+      cfg="${BASE_DIR}/shared/nginx/conf.d/${d}.conf"
+
+      # If domain has SSL certificate files ready, write clean production config
+      if [ -f "${BASE_DIR}/shared/certbot/conf/live/${d}/fullchain.pem" ]; then
+        cat <<EOF > "$cfg"
 server {
     listen 80;
-    server_name xchat.iranistream.com;
+    server_name ${d};
 
     location /.well-known/acme-challenge/ {
         root /var/www/certbot;
     }
 
     location / {
-        return 301 https://$host$request_uri;
+        return 301 https://\$host\$request_uri;
     }
 }
 
 server {
     listen 443 ssl;
-    server_name xchat.iranistream.com;
+    server_name ${d};
 
-    ssl_certificate /etc/letsencrypt/live/xchat.iranistream.com/fullchain.pem;
-    ssl_certificate_key /etc/letsencrypt/live/xchat.iranistream.com/privkey.pem;
+    ssl_certificate /etc/letsencrypt/live/${d}/fullchain.pem;
+    ssl_certificate_key /etc/letsencrypt/live/${d}/privkey.pem;
 
     ssl_protocols TLSv1.2 TLSv1.3;
     ssl_prefer_server_ciphers on;
@@ -156,33 +159,30 @@ server {
     client_max_body_size 100M;
 
     location /socket.io/ {
-        proxy_pass http://xmessenger-xchat-iranistream-com:3001/socket.io/;
+        proxy_pass http://xmessenger-${s}:3001/socket.io/;
         proxy_http_version 1.1;
-        proxy_set_header Upgrade $http_upgrade;
-        proxy_set_header Connection $http_connection;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Upgrade \$http_upgrade;
+        proxy_set_header Connection \$connection_upgrade;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
         proxy_read_timeout 86400;
     }
 
     location / {
-        proxy_pass http://xmessenger-xchat-iranistream-com:3001;
+        proxy_pass http://xmessenger-${s}:3001;
         proxy_http_version 1.1;
-        proxy_set_header Host $host;
-        proxy_set_header X-Real-IP $remote_addr;
-        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-        proxy_set_header X-Forwarded-Proto $scheme;
+        proxy_set_header Host \$host;
+        proxy_set_header X-Real-IP \$remote_addr;
+        proxy_set_header X-Forwarded-For \$proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto \$scheme;
     }
 }
 EOF
+      fi
+    done
   fi
-
-  for cfg in "${BASE_DIR}/shared/nginx/conf.d"/*.conf; do
-    [ -f "$cfg" ] || continue
-    sed -i 's|http://xmessenger:3001|http://xmessenger-xchat-iranistream-com:3001|g' "$cfg" 2>/dev/null || true
-  done
 fi
 
 # 3. Ensure Nginx Gateway is running and healthy
