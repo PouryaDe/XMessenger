@@ -79,7 +79,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
         <div className="flex items-center gap-1.5 shrink-0">
           <button
             onClick={onOpenSettings}
-            className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
+            className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer"
             title={t('settings')}
           >
             <Sliders className="w-3.5 h-3.5 text-amber-500" />
@@ -88,7 +88,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           <ThemeToggle size="sm" />
           <button
             onClick={logout}
-            className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-400 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0"
+            className="w-8 h-8 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-400 hover:text-red-500 dark:text-slate-400 dark:hover:text-red-400 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer"
             title={t('logout')}
           >
             <LogOut className="w-3.5 h-3.5" />

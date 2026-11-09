@@ -338,7 +338,7 @@ export const UserChatView: React.FC = () => {
         {/* Hamburger Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title={t('menuAndSettings')}
         >
           <Menu className="w-4 h-4 text-slate-600 dark:text-slate-300" />

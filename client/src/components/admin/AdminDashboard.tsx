@@ -336,11 +336,11 @@ export const AdminDashboard: React.FC = () => {
           <>
             {/* Top Chat Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
             <header className="pt-safe pb-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-transparent z-10 border-b border-black/[0.05] dark:border-white/[0.06]">
-              <div className="flex items-center gap-3">
+              <div className="flex items-center gap-3 min-w-0 flex-1">
                 {/* Back button for mobile */}
                 <button
                   onClick={() => setActiveUserId(null)}
-                  className="sm:hidden w-10 h-10 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all"
+                  className="sm:hidden w-10 h-10 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all shrink-0 cursor-pointer"
                 >
                   <ArrowLeft className="w-5 h-5 rtl:rotate-180" />
                 </button>
@@ -350,7 +350,7 @@ export const AdminDashboard: React.FC = () => {
                   className="flex items-center gap-3 min-w-0 cursor-pointer group hover:opacity-90 transition-opacity"
                   title={t('userProfileAndNotes')}
                 >
-                  <div className="relative">
+                  <div className="relative shrink-0">
                     <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-xs uppercase shadow-xs overflow-hidden shrink-0 ${
                       activeUser.avatarUrl
                         ? 'bg-stone-200/60 dark:bg-white/[0.08] border border-black/5 dark:border-white/10'
@@ -369,28 +369,28 @@ export const AdminDashboard: React.FC = () => {
                     />
                   </div>
 
-                  <div>
+                  <div className="min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors">
+                      <h3 className="font-bold text-sm text-slate-900 dark:text-white group-hover:text-amber-500 transition-colors truncate">
                         {activeUser.username}
                       </h3>
                       {activeUser.category && (
-                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
+                        <span className="text-[10px] px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">
                           {activeUser.category === 'vip' ? '⭐ VIP' : activeUser.category === 'friends' ? '👥 ' + t('categoryFriends') : activeUser.category === 'temporary' ? '⏳ ' + t('categoryTemporary') : activeUser.category === 'work' ? '💼 ' + t('categoryWork') : activeUser.category}
                         </span>
                       )}
                       {activeUser.status === 'pending' && (
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold">
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/30 font-bold shrink-0">
                           {t('statusPending')}
                         </span>
                       )}
                       {activeUser.status === 'banned' && (
-                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold">
+                        <span className="text-[10px] px-2.5 py-0.5 rounded-full bg-red-500/15 text-red-600 dark:text-red-400 border border-red-500/30 font-bold shrink-0">
                           {t('statusBanned')}
                         </span>
                       )}
                     </div>
-                    <p className="text-xs text-slate-400">
+                    <p className="text-xs text-slate-400 truncate">
                       {isUserTyping ? (
                         <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
                       ) : onlineUsers[activeUser.id] ? (
@@ -409,11 +409,11 @@ export const AdminDashboard: React.FC = () => {
               </div>
 
               {/* Action Buttons for this user */}
-              <div className="flex items-center gap-2">
+              <div className="flex items-center gap-2 shrink-0">
                 <button
                   type="button"
                   onClick={() => setProfileModalOpen(true)}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
+                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] shadow-xs border border-black/5 dark:border-white/[0.09] text-amber-500 hover:text-amber-600 dark:hover:text-amber-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   title={t('userProfileAndNotes')}
                 >
                   <FileText className="w-4 h-4" />
@@ -421,7 +421,7 @@ export const AdminDashboard: React.FC = () => {
                 {activeUser.status === 'pending' && (
                   <button
                     onClick={handleApproveUser}
-                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-all hover:scale-105 active:scale-95"
+                    className="flex items-center gap-1.5 px-3.5 py-2 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-xs transition-all hover:scale-105 active:scale-95 cursor-pointer"
                     title={t('approve')}
                   >
                     <CheckCircle className="w-3.5 h-3.5" />
@@ -431,7 +431,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleBanToggle}
-                  className={`w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center transition-all hover:scale-105 active:scale-95 ${
+                  className={`w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer ${
                     activeUser.status === 'banned'
                       ? 'text-amber-600 bg-amber-50 dark:bg-amber-500/20'
                       : 'text-slate-400 hover:text-amber-500 dark:text-slate-300 dark:hover:text-amber-400'
@@ -443,7 +443,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleWipeChat}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] text-slate-400 hover:text-red-500 dark:text-slate-300 dark:hover:text-red-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] shadow-xs border border-black/5 dark:border-white/[0.09] text-slate-400 hover:text-red-500 dark:text-slate-300 dark:hover:text-red-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   title={t('clearChat')}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -451,7 +451,7 @@ export const AdminDashboard: React.FC = () => {
 
                 <button
                   onClick={handleDeleteUser}
-                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] dark:backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.09] text-slate-400 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95"
+                  className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] shadow-xs border border-black/5 dark:border-white/[0.09] text-slate-400 hover:text-red-600 dark:text-slate-300 dark:hover:text-red-400 flex items-center justify-center transition-all hover:scale-105 active:scale-95 cursor-pointer"
                   title={t('deleteUser')}
                 >
                   <UserX className="w-4 h-4" />
