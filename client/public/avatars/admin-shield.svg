@@ -1,17 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#1E293B" />
-      <stop offset="100%" stop-color="#0F172A" />
-    </linearGradient>
-    <linearGradient id="shieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FCD34D" />
-      <stop offset="100%" stop-color="#F59E0B" />
-    </linearGradient>
-  </defs>
-  <circle cx="128" cy="128" r="128" fill="url(#bg)" />
-  <circle cx="128" cy="128" r="122" fill="none" stroke="#F59E0B" stroke-width="4" stroke-opacity="0.3" />
-  <path d="M128 44 L196 74 V128 C196 172 167 212 128 224 C89 212 60 172 60 128 V74 Z" fill="url(#shieldGrad)" />
-  <path d="M128 44 V224 C167 212 196 172 196 128 V74 Z" fill="#D97706" opacity="0.35" />
-  <path d="M112 124 L124 136 L150 110" fill="none" stroke="#FFFFFF" stroke-width="8" stroke-linecap="round" stroke-linejoin="round" />
+  <circle cx="128" cy="128" r="128" fill="#0E1218" />
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="3" />
+  <!-- Minimal Flat Shield -->
+  <path d="M 128 54 L 186 78 V 126 C 186 166 160 200 128 212 C 96 200 70 166 70 126 V 78 Z" fill="#F59E0B" />
+  <!-- Inset Shield Detail -->
+  <path d="M 128 66 L 174 86 V 126 C 174 158 153 186 128 198 C 103 186 82 158 82 126 V 86 Z" fill="#0E1218" />
+  <!-- Clean Bold Checkmark -->
+  <path d="M 108 130 L 122 144 L 152 114" fill="none" stroke="#FFFFFF" stroke-width="10" stroke-linecap="round" stroke-linejoin="round" />
 </svg>

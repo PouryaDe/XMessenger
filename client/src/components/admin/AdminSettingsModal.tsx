@@ -845,11 +845,11 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                   </span>
                   <div className="flex flex-wrap items-center gap-2.5">
                     {[
-                      { id: 'shield', url: '/avatars/admin-shield.svg', label: 'Shield' },
-                      { id: 'support', url: '/avatars/admin-support.svg', label: 'Support' },
-                      { id: 'crown', url: '/avatars/admin-crown.svg', label: 'Crown' },
-                      { id: 'star', url: '/avatars/admin-star.svg', label: 'Star' },
-                      { id: 'minimal', url: '/avatars/admin-minimal.svg', label: 'Minimal' }
+                      { id: 'support', url: '/avatars/admin-support.svg', label: t('avatarSupport') },
+                      { id: 'agent', url: '/avatars/admin-agent.svg', label: t('avatarAgent') },
+                      { id: 'chat', url: '/avatars/admin-chat.svg', label: t('avatarChat') },
+                      { id: 'shield', url: '/avatars/admin-shield.svg', label: t('avatarShield') },
+                      { id: 'help', url: '/avatars/admin-help.svg', label: t('avatarHelp') }
                     ].map((av) => (
                       <button
                         key={av.id}

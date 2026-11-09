@@ -31,8 +31,8 @@ This file serves as the high-level roadmap and engineering guide for AI agents w
   - Active sockets are immediately disconnected upon ban.
   - Real-time client transition to ban banner and locked input in Admin dashboard.
 - **Branding & Presets**:
-  - Dynamic PWA icon presets (`preset-x.svg`, `preset-f.svg`, `preset-g.svg`, `preset-r.svg`, `preset-m.svg`, `preset-s.svg`) with specs (PNG/SVG/WebP, min 192x192).
-  - Admin avatar presets (`admin-shield.svg`, `admin-support.svg`, `admin-crown.svg`, `admin-star.svg`, `admin-minimal.svg`).
+  - Dynamic PWA icon presets (`preset-x.svg`, `preset-f.svg`, `preset-g.svg`, `preset-r.svg`, `preset-m.svg`, `preset-s.svg`) styled with unified obsidian squircle `#0E1218` and bold white geometric letterforms matching `shield.svg`.
+  - Flat minimal admin avatar presets focused on support & care (`admin-support.svg`, `admin-agent.svg`, `admin-chat.svg`, `admin-shield.svg`, `admin-help.svg`).
 - **Database Backup & Integrity**:
   - SQLite non-blocking online backup via `db.backup()`.
   - Strict validation (`quick_check`, table schemas, admin existence) on restore.

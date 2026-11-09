@@ -179,6 +179,11 @@ const resources = {
       iconSpecsLabel: 'فرمت‌های مجاز: PNG, JPG, WebP, SVG | ابعاد پیشنهادی: ۵۱۲×۵۱۲ یا ۱۹۲×۱۹۲ پیکسل | حداکثر حجم: ۲ مگابایت',
       defaultIconsTitle: 'آیکن‌های پیش‌فرض اختصاصی (X, F, G, R, M, S)',
       defaultAvatarsTitle: 'تصاویر پیش‌فرض پروفایل ادمین',
+      avatarSupport: 'هدست پشتیبانی',
+      avatarAgent: 'کارشناس پاسخگو',
+      avatarChat: 'گفتگوی آنلاین',
+      avatarShield: 'سپر اعتبار',
+      avatarHelp: 'مرکز راهنمایی',
       // User Profile, Notes & Categories
       userProfileAndNotes: 'پروفایل کاربر و یادداشت‌ها',
       adminNotesTitle: 'یادداشت‌های اختصاصی ادمین',
@@ -468,6 +473,11 @@ const resources = {
       iconSpecsLabel: 'Allowed formats: PNG, JPG, WebP, SVG | Recommended dimensions: 512x512 or 192x192 px | Max size: 2MB',
       defaultIconsTitle: 'Default Ready Icons (X, F, G, R, M, S)',
       defaultAvatarsTitle: 'Default Admin Profile Avatars',
+      avatarSupport: 'Support Headset',
+      avatarAgent: 'Support Specialist',
+      avatarChat: 'Live Chat Support',
+      avatarShield: 'Verified Support',
+      avatarHelp: 'Help Center',
       // User Profile, Notes & Categories
       userProfileAndNotes: 'User Profile & Notes',
       adminNotesTitle: 'Admin Private Notes',

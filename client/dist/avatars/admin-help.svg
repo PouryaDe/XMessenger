@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
+  <circle cx="128" cy="128" r="128" fill="#0E1218" />
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="3" />
+  <!-- Outer Lifebuoy Ring -->
+  <circle cx="128" cy="128" r="68" fill="none" stroke="#FFFFFF" stroke-width="28" />
+  <!-- Inner Ring Hole Cut -->
+  <circle cx="128" cy="128" r="40" fill="#0E1218" />
+  <!-- 4 Colored Rescue / Support Stripes -->
+  <!-- Top -->
+  <rect x="114" y="60" width="28" height="28" rx="4" fill="#F59E0B" />
+  <!-- Bottom -->
+  <rect x="114" y="168" width="28" height="28" rx="4" fill="#F59E0B" />
+  <!-- Left -->
+  <rect x="60" y="114" width="28" height="28" rx="4" fill="#F59E0B" />
+  <!-- Right -->
+  <rect x="168" y="114" width="28" height="28" rx="4" fill="#F59E0B" />
+  <!-- Center Heart or Spark -->
+  <circle cx="128" cy="128" r="14" fill="#F59E0B" />
+</svg>

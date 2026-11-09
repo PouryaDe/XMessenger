@@ -1,21 +1,14 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" width="256" height="256">
-  <defs>
-    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#064E3B" />
-      <stop offset="100%" stop-color="#022C22" />
-    </linearGradient>
-    <linearGradient id="crown" x1="0%" y1="0%" x2="100%" y2="100%">
-      <stop offset="0%" stop-color="#FDE047" />
-      <stop offset="100%" stop-color="#EAB308" />
-    </linearGradient>
-  </defs>
-  <circle cx="128" cy="128" r="128" fill="url(#bg)" />
-  <circle cx="128" cy="128" r="122" fill="none" stroke="#FDE047" stroke-width="4" stroke-opacity="0.3" />
-  <!-- Crown -->
-  <path d="M60 170 L72 96 L106 130 L128 80 L150 130 L184 96 L196 170 Z" fill="url(#crown)" stroke="#CA8A04" stroke-width="4" stroke-linejoin="round" />
-  <circle cx="72" cy="92" r="7" fill="#FDE047" />
-  <circle cx="128" cy="74" r="9" fill="#FFFFFF" />
-  <circle cx="184" cy="92" r="7" fill="#FDE047" />
-  <!-- Base jewels -->
-  <rect x="68" y="176" width="120" height="12" rx="6" fill="#FDE047" />
+  <circle cx="128" cy="128" r="128" fill="#0E1218" />
+  <circle cx="128" cy="128" r="120" fill="none" stroke="#FFFFFF" stroke-opacity="0.08" stroke-width="3" />
+  <!-- Head -->
+  <circle cx="128" cy="106" r="32" fill="#FFFFFF" />
+  <!-- Shoulders / Torso -->
+  <path d="M 68 206 C 68 166 94 156 128 156 C 162 156 188 166 188 206 Z" fill="#FFFFFF" />
+  <!-- Headset -->
+  <path d="M 94 106 C 94 82 108 72 128 72 C 148 72 162 82 162 106" fill="none" stroke="#F59E0B" stroke-width="6" stroke-linecap="round" />
+  <rect x="90" y="98" width="8" height="18" rx="4" fill="#F59E0B" />
+  <rect x="158" y="98" width="8" height="18" rx="4" fill="#F59E0B" />
+  <path d="M 162 112 C 162 126 150 134 136 134 H 130" fill="none" stroke="#F59E0B" stroke-width="5" stroke-linecap="round" />
+  <circle cx="124" cy="134" r="5" fill="#F59E0B" />
 </svg>
