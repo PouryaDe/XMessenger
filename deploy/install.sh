@@ -356,6 +356,8 @@ echo -e "${GREEN}✓ Backend container xmessenger-${SLUG} is running.${NC}"
 echo -e "\n${BLUE}[6/6] Setting up SSL Certificate & Nginx Gateway for ${DOMAIN}...${NC}"
 
 # Open firewall ports if UFW is active on Ubuntu/Debian host
+systemctl stop apache2 2>/dev/null || true
+systemctl stop nginx 2>/dev/null || true
 if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
   echo -e "${YELLOW}Configuring UFW firewall to allow HTTP (80) and HTTPS (443)...${NC}"
   ufw allow 80/tcp 2>/dev/null || true

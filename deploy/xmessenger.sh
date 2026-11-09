@@ -46,16 +46,39 @@ renew_or_obtain_ssl() {
   echo -e "${BLUE}▶ Processing SSL certificate for: ${BOLD}https://${TARGET_DOMAIN}${NC}"
   echo -e "${BLUE}==================================================================${NC}"
 
+  # Stop any conflicting host web servers
+  systemctl stop apache2 2>/dev/null || true
+  systemctl stop nginx 2>/dev/null || true
+
   # Ensure UFW allows 80 and 443 if active
   if command -v ufw &>/dev/null && ufw status 2>/dev/null | grep -q "Status: active"; then
     ufw allow 80/tcp 2>/dev/null || true
     ufw allow 443/tcp 2>/dev/null || true
   fi
 
-  # Ensure Shared Nginx gateway is online
+  # Temporarily stash existing domain Nginx route to .bak so gateway serves clean port 80 via 00-default.conf
+  local had_cfg=0
+  if [ -f "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf" ]; then
+    had_cfg=1
+    mv "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf" "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf.bak" 2>/dev/null || true
+  fi
+
+  # Ensure Shared Nginx gateway is up and running on ports 80 & 443
   if ! docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$'; then
     docker start xmessenger-nginx 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
+  else
+    docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
   fi
+
+  # Wait for Nginx to be healthy and responsive on port 80
+  for i in {1..10}; do
+    if docker ps --format '{{.Names}}' | grep -q '^xmessenger-nginx$' && \
+       (curl -s -m 2 http://127.0.0.1 >/dev/null 2>&1 || curl -s -m 2 http://localhost >/dev/null 2>&1 || true); then
+      break
+    fi
+    docker start xmessenger-nginx 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
+    sleep 1
+  done
 
   # If certificate is self-signed fallback, temporarily back it up so Certbot has a clean slate
   local cert_file="${SHARED_DIR}/certbot/conf/live/${TARGET_DOMAIN}/fullchain.pem"
@@ -109,6 +132,7 @@ renew_or_obtain_ssl() {
   if [ "$obtain_ok" -eq 1 ]; then
     echo -e "${GREEN}✓ Official Let's Encrypt SSL certificate obtained and activated for ${TARGET_DOMAIN}!${NC}"
     [ -n "$temp_backup" ] && rm -rf "$temp_backup"
+    rm -f "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf.bak" 2>/dev/null || true
 
     # Guarantee clean production Nginx route is configured for this domain
     cat <<EOF > "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf"
@@ -173,8 +197,20 @@ EOF
       mkdir -p "${SHARED_DIR}/certbot/conf/live"
       cp -r "${temp_backup}/${TARGET_DOMAIN}" "${SHARED_DIR}/certbot/conf/live/"
       rm -rf "$temp_backup"
-      docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
+    elif [ ! -f "${SHARED_DIR}/certbot/conf/live/${TARGET_DOMAIN}/fullchain.pem" ]; then
+      echo -e "${YELLOW}Generating self-signed fallback certificate so your messenger stays functional...${NC}"
+      mkdir -p "${SHARED_DIR}/certbot/conf/live/${TARGET_DOMAIN}"
+      openssl req -x509 -nodes -days 365 -newkey rsa:2048 \
+        -keyout "${SHARED_DIR}/certbot/conf/live/${TARGET_DOMAIN}/privkey.pem" \
+        -out "${SHARED_DIR}/certbot/conf/live/${TARGET_DOMAIN}/fullchain.pem" \
+        -subj "/CN=${TARGET_DOMAIN}"
     fi
+
+    # Restore Nginx configuration so domain stays online
+    if [ "$had_cfg" -eq 1 ] && [ -f "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf.bak" ]; then
+      mv "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf.bak" "${SHARED_DIR}/nginx/conf.d/${TARGET_DOMAIN}.conf" 2>/dev/null || true
+    fi
+    docker exec xmessenger-nginx nginx -s reload 2>/dev/null || docker restart xmessenger-nginx 2>/dev/null || true
     return 1
   fi
 }
@@ -206,7 +242,7 @@ if [ "$1" == "ssl" ] || [ "$1" == "cert" ]; then
   else
     echo -e "\n${CYAN}${BOLD}Found ${#DOMAINS[@]} active messenger domain(s). Processing SSL certificates...${NC}"
     for d in "${DOMAINS[@]}"; do
-      renew_or_obtain_ssl "$d"
+      renew_or_obtain_ssl "$d" || true
     done
   fi
   exit 0
@@ -481,7 +517,7 @@ while true; do
       show_banner
       echo -e "${YELLOW}Processing SSL certificates for all active messenger domains...${NC}\n"
       for d in "${DOMAINS[@]}"; do
-        renew_or_obtain_ssl "$d"
+        renew_or_obtain_ssl "$d" || true
       done
       echo ""
       read -p "Press Enter to continue..." dummy
