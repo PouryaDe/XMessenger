@@ -22,6 +22,21 @@ function createMessagesRouter(io) {
     if (!fs_1.default.existsSync(chatUploadDir)) {
         fs_1.default.mkdirSync(chatUploadDir, { recursive: true });
     }
+    /**
+     * Fixes Multer / Busboy Latin-1 header decoding bug for non-ASCII (Persian, Arabic, UTF-8) filenames.
+     */
+    function fixMulterFilename(name) {
+        if (!name || typeof name !== 'string')
+            return '';
+        try {
+            const fixed = Buffer.from(name, 'latin1').toString('utf8');
+            if (!fixed.includes('\uFFFD') && /[\u00C0-\u00FF]/.test(name)) {
+                return fixed;
+            }
+        }
+        catch { }
+        return name;
+    }
     // Security: Strict blacklist of executable and script files
     const FORBIDDEN_FILE_EXTENSIONS = new Set([
         '.php', '.php3', '.php4', '.php5', '.phtml', '.phar',
@@ -88,8 +103,9 @@ function createMessagesRouter(io) {
             }
             const ext = path_1.default.extname(uploadedFile.originalname).toLowerCase();
             const isImage = uploadedFile.mimetype.startsWith('image/') || ['.jpg', '.jpeg', '.png', '.webp', '.gif'].includes(ext);
-            // Sanitize original filename for client display and regex delimiters (| [ ])
-            const safeFilename = (path_1.default.basename(uploadedFile.originalname || '').replace(/[|\[\]\r\n\t]/g, '_').trim()) || uploadedFile.filename;
+            // Fix Multer latin1 encoding bug and sanitize original filename for client display and regex delimiters (| [ ])
+            const fixedOriginal = fixMulterFilename(uploadedFile.originalname || '');
+            const safeFilename = (path_1.default.basename(fixedOriginal).replace(/[|\[\]\r\n\t]/g, '_').trim()) || uploadedFile.filename;
             res.status(201).json({
                 success: true,
                 url: `/uploads/chat/${uploadedFile.filename}`,
@@ -110,10 +126,11 @@ function createMessagesRouter(io) {
             if (!fs_1.default.existsSync(filePath)) {
                 return res.status(404).json({ error: 'FILE_NOT_FOUND', message: 'File not found or expired' });
             }
-            // Sanitize requested download name against header injection (CRLF, quotes)
-            const originalName = typeof req.query.name === 'string' && req.query.name.trim().length > 0
-                ? path_1.default.basename(req.query.name.trim()).replace(/[\r\n\t"']/g, '_')
+            // Sanitize requested download name against header injection (CRLF, quotes) and fix any mojibake
+            const rawQueryName = typeof req.query.name === 'string' && req.query.name.trim().length > 0
+                ? req.query.name.trim()
                 : safeFilename;
+            const originalName = path_1.default.basename(fixMulterFilename(rawQueryName)).replace(/[\r\n\t"']/g, '_');
             res.download(filePath, originalName);
         }
         catch (err) {

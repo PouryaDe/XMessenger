@@ -189,6 +189,36 @@ describe('File Attachment Upload & Download Security Tests', () => {
     }
   });
 
+  it('correctly detects and repairs Multer Latin-1 mojibake for Persian filenames', () => {
+    function fixMulterFilename(name: string): string {
+      try {
+        const fixed = Buffer.from(name, 'latin1').toString('utf8');
+        if (!fixed.includes('\uFFFD') && /[\u00C0-\u00FF]/.test(name)) {
+          return fixed;
+        }
+      } catch {}
+      return name;
+    }
+
+    const testCases = [
+      { original: 'امتحان زبان', latinMojibake: Buffer.from('امتحان زبان', 'utf8').toString('latin1') },
+      { original: 'گزارش_مالی_۱۴۰۵', latinMojibake: Buffer.from('گزارش_مالی_۱۴۰۵', 'utf8').toString('latin1') },
+      { original: 'فایل صوتی فارسی', latinMojibake: Buffer.from('فایل صوتی فارسی', 'utf8').toString('latin1') }
+    ];
+
+    for (const { original, latinMojibake } of testCases) {
+      assert.strictEqual(
+        fixMulterFilename(latinMojibake),
+        original,
+        `Expected mojibake to be restored to ${original}`
+      );
+    }
+
+    // Ensure English and already-clean Persian are untouched
+    assert.strictEqual(fixMulterFilename('EnglishReport.pdf'), 'EnglishReport.pdf');
+    assert.strictEqual(fixMulterFilename('امتحان_تمیز.pdf'), 'امتحان_تمیز.pdf');
+  });
+
   it('unlinks attached files from disk when message text is parsed for deletion', () => {
     const chatUploadDir = path.join(config.dataDir, 'uploads', 'chat');
     if (!fs.existsSync(chatUploadDir)) {

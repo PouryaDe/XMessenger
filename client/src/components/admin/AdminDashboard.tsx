@@ -12,7 +12,7 @@ import { DateSeparator } from '../common/DateSeparator.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getAvatarPalette } from '../../utils/avatar.js';
-import { formatFileSize } from '../../utils/formatters.js';
+import { formatFileSize, decodeMojibake } from '../../utils/formatters.js';
 import { 
   Paperclip,
   CheckCircle, 
@@ -294,7 +294,10 @@ export const AdminDashboard: React.FC = () => {
         if (uploadRes.isImage) {
           finalMessage = `[image:${uploadRes.url}]${text ? '\n' + text : ''}`;
         } else {
-          finalMessage = `[file:${uploadRes.url}|${uploadRes.filename}|${uploadRes.size}]${text ? '\n' + text : ''}`;
+          // Prefer pristine UTF-8 filename from browser File object over server response
+          const rawFileName = currentAttachment.file.name || uploadRes.filename || 'file';
+          const cleanFileName = rawFileName.replace(/[|\[\]\r\n\t]/g, '_').trim() || 'file';
+          finalMessage = `[file:${uploadRes.url}|${cleanFileName}|${uploadRes.size}]${text ? '\n' + text : ''}`;
         }
 
         await sendMessage(finalMessage, activeUserId, undefined, currentReplyId);
@@ -649,10 +652,11 @@ export const AdminDashboard: React.FC = () => {
                   const replyImgMatch = replyingTo.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
                   const replyImgUrl = replyImgMatch ? replyImgMatch[1] : null;
                   const replyFileMatch = replyingTo.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
+                  const replyFileName = replyFileMatch ? decodeMojibake(replyFileMatch[2]) : '';
                   const replyPreviewText = replyImgMatch
                     ? ((replyImgMatch[2] || '').trim() || `📷 ${t('photo')}`)
                     : replyFileMatch
-                    ? (`📎 ${replyFileMatch[2]}` + ((replyFileMatch[4] || '').trim() ? ` — ${(replyFileMatch[4] || '').trim()}` : ''))
+                    ? (`📎 ${replyFileName}` + ((replyFileMatch[4] || '').trim() ? ` — ${(replyFileMatch[4] || '').trim()}` : ''))
                     : replyingTo.text;
                   const isReplyingSelf = replyingTo.senderId === user?.id || replyingTo.isOwn === true;
 

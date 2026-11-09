@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { FormattedMessageText } from './FormattedMessageText.js';
 import { formatMessageTime } from '../../utils/date.js';
 import { calculateMessageMenuPosition } from '../../utils/menuPosition.js';
-import { formatFileSize } from '../../utils/formatters.js';
+import { formatFileSize, decodeMojibake } from '../../utils/formatters.js';
 import { 
   Trash2, 
   Check, 
@@ -78,7 +78,7 @@ const MessageItemComponent: React.FC<Props> = ({
   // Parse potential file attachment: format is [file: url|filename|size] + newline + caption
   const fileMatch = message.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
   const fileUrl = fileMatch ? fileMatch[1] : null;
-  const fileName = fileMatch ? fileMatch[2] : null;
+  const fileName = fileMatch ? decodeMojibake(fileMatch[2]) : null;
   const fileSize = fileMatch ? parseInt(fileMatch[3], 10) : 0;
 
   const caption = imageMatch
@@ -91,11 +91,12 @@ const MessageItemComponent: React.FC<Props> = ({
   const repliedImageMatch = repliedMessage?.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
   const repliedImageUrl = repliedImageMatch ? repliedImageMatch[1] : null;
   const repliedFileMatch = repliedMessage?.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
+  const repliedFileName = repliedFileMatch ? decodeMojibake(repliedFileMatch[2]) : '';
   const repliedTextSnippet = repliedMessage
     ? (repliedImageMatch
         ? ((repliedImageMatch[2] || '').trim() || `📷 ${t('photo')}`)
         : repliedFileMatch
-        ? (`📎 ${repliedFileMatch[2]}` + ((repliedFileMatch[4] || '').trim() ? ` — ${(repliedFileMatch[4] || '').trim()}` : ''))
+        ? (`📎 ${repliedFileName}` + ((repliedFileMatch[4] || '').trim() ? ` — ${(repliedFileMatch[4] || '').trim()}` : ''))
         : repliedMessage.text)
     : '';
 

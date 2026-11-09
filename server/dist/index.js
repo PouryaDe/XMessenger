@@ -57198,6 +57198,17 @@ function createMessagesRouter(io3) {
   if (!import_fs6.default.existsSync(chatUploadDir2)) {
     import_fs6.default.mkdirSync(chatUploadDir2, { recursive: true });
   }
+  function fixMulterFilename(name) {
+    if (!name || typeof name !== "string") return "";
+    try {
+      const fixed = Buffer.from(name, "latin1").toString("utf8");
+      if (!fixed.includes("\uFFFD") && /[\u00C0-\u00FF]/.test(name)) {
+        return fixed;
+      }
+    } catch {
+    }
+    return name;
+  }
   const FORBIDDEN_FILE_EXTENSIONS = /* @__PURE__ */ new Set([
     ".php",
     ".php3",
@@ -57295,7 +57306,8 @@ function createMessagesRouter(io3) {
       }
       const ext = import_path5.default.extname(uploadedFile.originalname).toLowerCase();
       const isImage = uploadedFile.mimetype.startsWith("image/") || [".jpg", ".jpeg", ".png", ".webp", ".gif"].includes(ext);
-      const safeFilename = import_path5.default.basename(uploadedFile.originalname || "").replace(/[|\[\]\r\n\t]/g, "_").trim() || uploadedFile.filename;
+      const fixedOriginal = fixMulterFilename(uploadedFile.originalname || "");
+      const safeFilename = import_path5.default.basename(fixedOriginal).replace(/[|\[\]\r\n\t]/g, "_").trim() || uploadedFile.filename;
       res.status(201).json({
         success: true,
         url: `/uploads/chat/${uploadedFile.filename}`,
@@ -57315,7 +57327,8 @@ function createMessagesRouter(io3) {
       if (!import_fs6.default.existsSync(filePath)) {
         return res.status(404).json({ error: "FILE_NOT_FOUND", message: "File not found or expired" });
       }
-      const originalName = typeof req.query.name === "string" && req.query.name.trim().length > 0 ? import_path5.default.basename(req.query.name.trim()).replace(/[\r\n\t"']/g, "_") : safeFilename;
+      const rawQueryName = typeof req.query.name === "string" && req.query.name.trim().length > 0 ? req.query.name.trim() : safeFilename;
+      const originalName = import_path5.default.basename(fixMulterFilename(rawQueryName)).replace(/[\r\n\t"']/g, "_");
       res.download(filePath, originalName);
     } catch (err) {
       console.error("Download error:", err);
