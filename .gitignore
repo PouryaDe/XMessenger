@@ -29,9 +29,11 @@ data/
 # Uploads
 uploads/
 
-# Graphify
-graphify-out/
-.graphify*
+# Graphify temporary caches (keep report & graph if needed)
+graphify-out/.graphify_*
+graphify-out/*.json
+!graphify-out/graph.json
+!graphify-out/GRAPH_REPORT.md
 
 # Logs & temp
 logs/
