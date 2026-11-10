@@ -129,6 +129,13 @@ export function initSocket(token: string): Socket {
     }
   });
 
+  socket.on('admin:avatar_changed', ({ avatarUrl }: { avatarUrl?: string }) => {
+    useAuthStore.getState().updateAdminAvatar(avatarUrl);
+    if (useAuthStore.getState().user?.role === 'admin') {
+      useAuthStore.getState().updateUserAvatar(avatarUrl);
+    }
+  });
+
   socket.on('user:category_updated', ({ userId, category }: { userId: string; category: string | null }) => {
     useChatStore.getState().updateAdminUserCategory(userId, category);
   });

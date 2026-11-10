@@ -26,8 +26,9 @@ interface Props {
 
 export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, onSelectChannel }) => {
   const { t, i18n } = useTranslation();
-  const { logout } = useAuthStore();
+  const { user, adminInfo, logout } = useAuthStore();
   const { adminUsers, activeUserId, onlineUsers, channelPosts, channelMeta } = useChatStore();
+  const adminAvatar = user?.avatarUrl || adminInfo?.avatarUrl;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'active' | 'banned'>('all');
@@ -71,8 +72,12 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
       {/* Top Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
       <div className="pt-safe pb-2.5 px-4 sm:px-5 border-b border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between shrink-0 bg-transparent">
         <div className="flex items-center gap-2.5">
-          <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-white/[0.08] text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] shrink-0">
-            <Users className="w-4 h-4" />
+          <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-white/[0.08] text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] shrink-0 overflow-hidden">
+            {adminAvatar ? (
+              <img src={adminAvatar} alt="Admin" className="w-full h-full object-cover" />
+            ) : (
+              <Users className="w-4 h-4" />
+            )}
           </div>
           <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-none flex items-center">
             {t('adminPanel')}

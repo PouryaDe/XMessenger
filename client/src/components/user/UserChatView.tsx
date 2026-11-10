@@ -450,9 +450,13 @@ export const UserChatView: React.FC = () => {
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
             }`}
           >
-            <ShieldCheck className={`w-3.5 h-3.5 transition-colors ${
-              activeTab === 'chat' ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'
-            }`} />
+            {adminInfo?.avatarUrl ? (
+              <img src={adminInfo.avatarUrl} alt="" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+            ) : (
+              <ShieldCheck className={`w-3.5 h-3.5 transition-colors ${
+                activeTab === 'chat' ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'
+              }`} />
+            )}
             <span>{t('directChat')}</span>
           </button>
 

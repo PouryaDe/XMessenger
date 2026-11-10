@@ -122,6 +122,10 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
     setMsg(null);
     try {
       await api.updateAdminSettings(settings);
+      if (settings.adminAvatarUrl !== undefined) {
+        updateUserAvatar(settings.adminAvatarUrl || undefined);
+        updateAdminAvatar(settings.adminAvatarUrl || undefined);
+      }
       setMsg({ type: 'success', text: t('settingsSaved') });
       setTimeout(() => {
         setMsg(null);
@@ -131,6 +135,21 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
       setMsg({ type: 'error', text: getErrorMessage(err, 'errGeneral') });
     } finally {
       setLoading(false);
+    }
+  };
+
+  // Select Admin Avatar Preset
+  const handleSelectAdminAvatarPreset = async (url: string) => {
+    setSettings(prev => prev ? { ...prev, adminAvatarUrl: url } : null);
+    updateUserAvatar(url);
+    updateAdminAvatar(url);
+    try {
+      if (settings) {
+        await api.updateAdminSettings({ ...settings, adminAvatarUrl: url });
+        setMsg({ type: 'success', text: t('settingsSaved') });
+      }
+    } catch {
+      // Retain state so admin can still save manually
     }
   };
 
@@ -854,10 +873,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
                       <button
                         key={av.id}
                         type="button"
-                        onClick={() => {
-                          setSettings(prev => prev ? { ...prev, adminAvatarUrl: av.url } : null);
-                          updateAdminAvatar(av.url);
-                        }}
+                        onClick={() => handleSelectAdminAvatarPreset(av.url)}
                         className={`w-11 h-11 rounded-full overflow-hidden border-2 transition-all p-0.5 hover:scale-110 active:scale-95 cursor-pointer shadow-xs ${
                           settings.adminAvatarUrl === av.url
                             ? 'border-amber-500 ring-2 ring-amber-500/30'

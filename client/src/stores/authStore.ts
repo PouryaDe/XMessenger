@@ -100,13 +100,13 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   updateAdminAvatar: (avatarUrl?: string) => {
     const currentAdmin = get().adminInfo;
-    if (currentAdmin) {
-      const updated = { ...currentAdmin, avatarUrl };
-      try {
-        localStorage.setItem('xmessenger_admin_info', JSON.stringify(updated));
-      } catch {}
-      set({ adminInfo: updated });
-    }
+    const updated = currentAdmin
+      ? { ...currentAdmin, avatarUrl }
+      : { id: '', username: 'admin', avatarUrl };
+    try {
+      localStorage.setItem('xmessenger_admin_info', JSON.stringify(updated));
+    } catch {}
+    set({ adminInfo: updated });
   },
 
   checkAuth: async () => {

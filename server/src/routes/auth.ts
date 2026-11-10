@@ -324,6 +324,9 @@ authRouter.post('/avatar', authenticate, uploadAvatar.single('avatar'), (req: Au
     // If admin, synchronize with global admin avatar setting
     if (req.user!.role === 'admin') {
       updateSettingValue('admin_avatar_url', avatarUrl);
+      if (io) {
+        io.emit('admin:avatar_changed', { avatarUrl });
+      }
     }
 
     res.json({
@@ -353,6 +356,9 @@ authRouter.delete('/avatar', authenticate, (req: AuthenticatedRequest, res) => {
 
     if (req.user!.role === 'admin') {
       updateSettingValue('admin_avatar_url', '');
+      if (io) {
+        io.emit('admin:avatar_changed', { avatarUrl: undefined });
+      }
     }
 
     res.json({ success: true, message: 'Avatar removed' });

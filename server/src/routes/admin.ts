@@ -404,9 +404,11 @@ export function createAdminRouter(io?: Server) {
       }
 
       if (typeof adminAvatarUrl === 'string') {
-        updateSettingValue('admin_avatar_url', adminAvatarUrl.trim());
-        if (adminAvatarUrl.trim()) {
-          db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(adminAvatarUrl.trim());
+        const trimmed = adminAvatarUrl.trim();
+        updateSettingValue('admin_avatar_url', trimmed);
+        db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(trimmed || null);
+        if (io) {
+          io.emit('admin:avatar_changed', { avatarUrl: trimmed || undefined });
         }
       }
 
