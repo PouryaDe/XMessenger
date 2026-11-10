@@ -127,14 +127,14 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
         </div>
 
         {/* Modern iOS / Telegram Segmented Control */}
-        <div className="grid grid-cols-4 p-1 rounded-full bg-slate-200/60 dark:bg-[#121620]/80 backdrop-blur-md border border-black/[0.05] dark:border-white/[0.07] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)] select-none">
+        <div className="grid grid-cols-4 p-1 rounded-full bg-stone-300/60 dark:bg-[#121620]/80 border border-black/[0.07] dark:border-white/[0.07] shadow-none select-none">
           <button
             type="button"
             onClick={() => setFilterTab('all')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-full text-xs transition-all cursor-pointer ${
               filterTab === 'all'
-                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-slate-900 dark:text-white shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-slate-900 dark:text-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.08] dark:border-white/[0.08] font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
             }`}
           >
             <span>{t('allUsers')}</span>
@@ -150,8 +150,8 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
             onClick={() => setFilterTab('pending')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-full text-xs transition-all cursor-pointer ${
               filterTab === 'pending'
-                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-amber-600 dark:text-amber-400 shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-amber-600 dark:text-amber-400 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.08] dark:border-white/[0.08] font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
             }`}
           >
             <span className="truncate">{t('pendingUsers')}</span>
@@ -167,8 +167,8 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
             onClick={() => setFilterTab('active')}
             className={`flex items-center justify-center py-1.5 px-1 rounded-full text-xs transition-all cursor-pointer ${
               filterTab === 'active'
-                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-emerald-600 dark:text-emerald-400 shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-emerald-600 dark:text-emerald-400 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.08] dark:border-white/[0.08] font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
             }`}
           >
             <span>{t('activeUsers')}</span>
@@ -179,8 +179,8 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
             onClick={() => setFilterTab('banned')}
             className={`flex items-center justify-center py-1.5 px-1 rounded-full text-xs transition-all cursor-pointer ${
               filterTab === 'banned'
-                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-red-600 dark:text-red-400 shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-red-600 dark:text-red-400 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.08] dark:border-white/[0.08] font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'
             }`}
           >
             <span>{t('bannedUsers')}</span>

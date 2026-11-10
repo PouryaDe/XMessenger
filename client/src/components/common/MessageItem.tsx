@@ -354,10 +354,10 @@ const MessageItemComponent: React.FC<Props> = ({
             e.stopPropagation();
             triggerReaction(userReactionEmoji === '❤️' ? '❤️' : '👍');
           }}
-          className={`relative px-3.5 sm:px-4 pb-2 pt-2 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${cornerRadiusClass} ${
+          className={`relative px-3.5 sm:px-4 pb-2 pt-2 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none border ${cornerRadiusClass} ${
             isOwn
-              ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.06] dark:bg-[#232936] dark:text-white dark:border-white/[0.08]'
-              : 'bg-white text-slate-900 border-black/[0.06] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06]'
+              ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.07] dark:bg-[#232936] dark:text-white dark:border-white/[0.08]'
+              : 'bg-white text-slate-900 border-black/[0.07] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06]'
           } ${
             isHighlighted
               ? 'ring-2 ring-amber-500 dark:ring-amber-400 scale-[1.02]'
@@ -368,7 +368,7 @@ const MessageItemComponent: React.FC<Props> = ({
           {isLastInGroup && isOwn && (
             <svg
               viewBox="0 0 11 20"
-              className="absolute -bottom-[1px] -right-[8px] w-[10px] h-[18px] pointer-events-none overflow-visible filter drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.05)] dark:drop-shadow-none"
+              className="absolute -bottom-[1px] -right-[8px] w-[10px] h-[18px] pointer-events-none overflow-visible filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.03)] dark:drop-shadow-none"
             >
               <path
                 d="M0 0 C0 8 3 16 11 20 L0 20 Z"
@@ -378,7 +378,7 @@ const MessageItemComponent: React.FC<Props> = ({
                 d="M0 0 C0 8 3 16 11 20 L0 20"
                 fill="none"
                 strokeWidth="1"
-                className="stroke-black/[0.06] dark:stroke-white/[0.08]"
+                className="stroke-black/[0.07] dark:stroke-white/[0.08]"
               />
             </svg>
           )}
@@ -387,7 +387,7 @@ const MessageItemComponent: React.FC<Props> = ({
           {isLastInGroup && !isOwn && (
             <svg
               viewBox="0 0 11 20"
-              className="absolute -bottom-[1px] -left-[8px] w-[10px] h-[18px] pointer-events-none overflow-visible filter drop-shadow-[0_1px_1.5px_rgba(0,0,0,0.05)] dark:drop-shadow-none -scale-x-100"
+              className="absolute -bottom-[1px] -left-[8px] w-[10px] h-[18px] pointer-events-none overflow-visible filter drop-shadow-[0_1px_1px_rgba(0,0,0,0.03)] dark:drop-shadow-none -scale-x-100"
             >
               <path
                 d="M0 0 C0 8 3 16 11 20 L0 20 Z"
@@ -397,7 +397,7 @@ const MessageItemComponent: React.FC<Props> = ({
                 d="M0 0 C0 8 3 16 11 20 L0 20"
                 fill="none"
                 strokeWidth="1"
-                className="stroke-black/[0.06] dark:stroke-white/[0.06]"
+                className="stroke-black/[0.07] dark:stroke-white/[0.06]"
               />
             </svg>
           )}

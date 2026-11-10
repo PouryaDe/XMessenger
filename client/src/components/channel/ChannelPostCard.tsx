@@ -258,7 +258,7 @@ export const ChannelPostCard: React.FC<Props> = ({
         }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="w-full bg-white/90 dark:bg-[#121620]/80 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] rounded-[20px] sm:rounded-[24px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-sm overflow-hidden transition-all hover:shadow-md animate-fade-in cursor-pointer relative"
+        className="w-full bg-white dark:bg-[#121620]/90 dark:backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] rounded-[20px] sm:rounded-[24px] shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none overflow-hidden transition-all hover:border-black/[0.14] dark:hover:border-white/[0.14] animate-fade-in cursor-pointer relative"
       >
         {/* Animated reaction burst on double-tap / reaction */}
         {showReactionAnim && (

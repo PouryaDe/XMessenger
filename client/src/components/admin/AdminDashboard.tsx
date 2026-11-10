@@ -572,8 +572,8 @@ export const AdminDashboard: React.FC = () => {
                   <>
                     {/* Ephemeral 24h Purge Notice at the beginning of chat stream (unpinned, scrolls naturally like date separators) */}
                     <div className="w-full flex justify-center my-3 select-none pointer-events-none animate-fade-in shrink-0">
-                      <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-slate-900/40 dark:bg-black/50 text-amber-300/95 dark:text-amber-300/95 backdrop-blur-md border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.12)] pointer-events-auto">
-                        <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+                      <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-white/95 dark:bg-black/50 text-amber-850 dark:text-amber-300 border border-amber-500/30 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none pointer-events-auto">
+                        <Flame className="w-3.5 h-3.5 text-amber-500 shrink-0 animate-pulse" />
                         <span>{t('chatTtlBanner')}</span>
                       </span>
                     </div>
@@ -745,7 +745,7 @@ export const AdminDashboard: React.FC = () => {
                 <div
                   data-input-pill
                   dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
-                  className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-none border border-black/[0.06] dark:border-white/[0.08]"
+                  className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 border border-black/[0.08] dark:border-white/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none"
                 >
                   {/* Attachment Button */}
                   <button

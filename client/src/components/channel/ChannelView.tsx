@@ -360,7 +360,7 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
             <div
               data-input-pill
               dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
-              className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none border border-black/[0.08] dark:border-white/[0.08]"
+              className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 border border-black/[0.08] dark:border-white/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none"
             >
               {/* Attachment Button */}
               <button

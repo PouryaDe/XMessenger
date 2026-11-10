@@ -91,7 +91,7 @@ export const PostReactionsModal: React.FC<Props> = ({
       onClick={onClose}
     >
       <div 
-        className="w-full max-w-md bg-white/95 dark:bg-[#121620]/95 backdrop-blur-2xl border border-black/10 dark:border-white/10 rounded-[28px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scale-in"
+        className="w-full max-w-md bg-white dark:bg-[#121620]/95 border border-black/10 dark:border-white/10 rounded-[28px] shadow-2xl overflow-hidden flex flex-col max-h-[85vh] animate-scale-in"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

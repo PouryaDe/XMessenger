@@ -437,14 +437,14 @@ export const UserChatView: React.FC = () => {
 
       {/* Top Segmented Navigation Switcher: Direct Chat vs Announcement Channel */}
       <div className="px-4 py-2 shrink-0 bg-transparent select-none">
-        <div className="grid grid-cols-2 p-1 rounded-full bg-slate-200/60 dark:bg-[#121620]/80 backdrop-blur-md border border-black/[0.05] dark:border-white/[0.07] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]">
+        <div className="grid grid-cols-2 p-1 rounded-full bg-stone-300/60 dark:bg-[#121620]/80 border border-black/[0.07] dark:border-white/[0.07] shadow-none">
           <button
             type="button"
             onClick={() => setActiveTab('chat')}
             className={`flex items-center justify-center gap-2 py-2 px-3 rounded-full text-xs transition-all duration-200 cursor-pointer ${
               activeTab === 'chat'
-                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-slate-900 dark:text-white shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-slate-900 dark:text-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.08] dark:border-white/[0.08] font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] font-medium'
             }`}
           >
             {adminInfo?.avatarUrl ? (
@@ -470,8 +470,8 @@ export const UserChatView: React.FC = () => {
             onClick={() => setActiveTab('channel')}
             className={`flex items-center justify-center gap-2 py-2 px-3 rounded-full text-xs transition-all duration-200 cursor-pointer relative ${
               activeTab === 'channel'
-                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-amber-600 dark:text-amber-400 shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-amber-600 dark:text-amber-400 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.08] dark:border-white/[0.08] font-bold'
+                : 'text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] font-medium'
             }`}
           >
             <Megaphone
@@ -481,7 +481,7 @@ export const UserChatView: React.FC = () => {
             />
             <span className="tracking-tight">{t('channelFeed')}</span>
             {channelUnreadCount > 0 && (
-              <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black inline-flex items-center justify-center leading-none shadow-[0_2px_4px_rgba(245,158,11,0.35)] shrink-0 animate-pulse">
+              <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black inline-flex items-center justify-center leading-none shadow-[0_1px_3px_rgba(245,158,11,0.35)] shrink-0 animate-pulse">
                 {channelUnreadCount}
               </span>
             )}
@@ -500,7 +500,7 @@ export const UserChatView: React.FC = () => {
           {/* Push Notification Suggestion Banner */}
       {showPushPrompt && (
         <div className="px-4 pt-2.5 pb-1 flex justify-center shrink-0 select-none animate-fade-in z-20">
-          <div className="w-full max-w-lg p-3 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-none flex items-center justify-between gap-3">
+          <div className="w-full max-w-lg p-3 rounded-2xl bg-white dark:bg-[#151922]/95 border border-black/[0.08] dark:border-white/[0.08] shadow-[0_1px_3px_rgba(0,0,0,0.03)] dark:shadow-none flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
               <div className="w-8 h-8 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/30 flex items-center justify-center shrink-0">
                 <Bell className="w-4 h-4 animate-bounce" />
@@ -561,7 +561,7 @@ export const UserChatView: React.FC = () => {
             <>
               {/* Ephemeral 24h Purge Notice at the beginning of chat stream (unpinned, scrolls naturally like date separators) */}
               <div className="w-full flex justify-center my-3 select-none pointer-events-none animate-fade-in shrink-0">
-                <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-white/85 dark:bg-black/50 text-amber-800 dark:text-amber-300 backdrop-blur-md border border-amber-500/25 dark:border-white/10 shadow-[0_1px_4px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.12)] pointer-events-auto">
+                <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-white/95 dark:bg-black/50 text-amber-850 dark:text-amber-300 border border-amber-500/30 dark:border-white/10 shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none pointer-events-auto">
                   <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
                   <span>{t('chatTtlBanner')}</span>
                 </span>
@@ -713,7 +713,7 @@ export const UserChatView: React.FC = () => {
           <div
             data-input-pill
             dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
-            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none border border-black/[0.08] dark:border-white/[0.08]"
+            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 border border-black/[0.08] dark:border-white/[0.08] shadow-[0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-none"
           >
             {/* Attachment Button */}
             <button
