@@ -413,13 +413,13 @@ export const UserChatView: React.FC = () => {
               <h2 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
                 {t('chatWithAdmin')}
               </h2>
-              <p className="text-[11px] text-slate-400">
+              <p className="text-[11px] text-slate-500 dark:text-slate-400">
                 {isOpponentTyping ? (
-                  <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
+                  <span className="text-amber-600 dark:text-amber-400 font-medium animate-pulse">{t('typing')}</span>
                 ) : adminInfo?.showPresence === false ? (
                   <span>{t('lastSeenRecently')}</span>
                 ) : isAdminOnline ? (
-                  <span className="text-emerald-500 font-medium">{t('online')}</span>
+                  <span className="text-emerald-600 dark:text-emerald-400 font-medium">{t('online')}</span>
                 ) : (
                   <span>{formatLastSeen(adminLastSeen || adminInfo?.lastSeen, isAdminOnline)}</span>
                 )}
@@ -431,7 +431,7 @@ export const UserChatView: React.FC = () => {
         {/* Hamburger Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
         <button
           onClick={() => setDrawerOpen(true)}
-          className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-xs border border-black/5 dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
+          className="w-9 h-9 rounded-full bg-white dark:bg-white/[0.08] hover:bg-black/[0.04] dark:hover:bg-white/[0.12] text-slate-700 dark:text-slate-200 shadow-[0_1px_2px_rgba(0,0,0,0.06)] dark:shadow-none border border-black/[0.06] dark:border-white/[0.09] flex items-center justify-center hover:scale-105 active:scale-95 transition-all cursor-pointer"
           title={t('menuAndSettings')}
         >
           <Menu className="w-4 h-4 text-slate-600 dark:text-slate-300" />
@@ -439,18 +439,20 @@ export const UserChatView: React.FC = () => {
       </header>
 
       {/* Top Segmented Navigation Switcher: Direct Chat vs Announcement Channel */}
-      <div className="px-4 py-2 border-b border-black/[0.04] dark:border-white/[0.05] bg-black/[0.015] dark:bg-white/[0.01] shrink-0">
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.04] dark:border-white/[0.06] select-none">
+      <div className="px-4 py-2 border-b border-black/[0.05] dark:border-white/[0.06] bg-black/[0.015] dark:bg-white/[0.01] shrink-0">
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.05] dark:border-white/[0.06] select-none">
           <button
             type="button"
             onClick={() => setActiveTab('chat')}
             className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs transition-all cursor-pointer ${
               activeTab === 'chat'
-                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+            <ShieldCheck className={`w-3.5 h-3.5 transition-colors ${
+              activeTab === 'chat' ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'
+            }`} />
             <span>{t('directChat')}</span>
           </button>
 
@@ -459,11 +461,13 @@ export const UserChatView: React.FC = () => {
             onClick={() => setActiveTab('channel')}
             className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs transition-all cursor-pointer relative ${
               activeTab === 'channel'
-                ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-xs font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
+                ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
             }`}
           >
-            <Megaphone className="w-3.5 h-3.5 text-amber-500" />
+            <Megaphone className={`w-3.5 h-3.5 transition-colors ${
+              activeTab === 'channel' ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'
+            }`} />
             <span>{t('channelFeed')}</span>
             {channelUnreadCount > 0 && (
               <span className="min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9.5px] font-bold inline-flex items-center justify-center leading-none shadow-xs shrink-0 animate-pulse">
@@ -485,13 +489,13 @@ export const UserChatView: React.FC = () => {
           {/* Push Notification Suggestion Banner */}
       {showPushPrompt && (
         <div className="px-4 pt-2.5 pb-1 flex justify-center shrink-0 select-none animate-fade-in z-20">
-          <div className="w-full max-w-lg p-3 rounded-2xl bg-white/85 dark:bg-[#151922]/90 backdrop-blur-xl border border-amber-500/30 dark:border-amber-400/25 shadow-xs flex items-center justify-between gap-3">
+          <div className="w-full max-w-lg p-3 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] shadow-[0_2px_10px_rgba(0,0,0,0.05)] dark:shadow-none flex items-center justify-between gap-3">
             <div className="flex items-center gap-2.5 min-w-0">
-              <div className="w-8 h-8 rounded-full bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
+              <div className="w-8 h-8 rounded-full bg-amber-500/10 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/20 dark:border-amber-500/30 flex items-center justify-center shrink-0">
                 <Bell className="w-4 h-4 animate-bounce" />
               </div>
               <div className="min-w-0 flex-1">
-                <p className="text-xs font-bold text-slate-800 dark:text-slate-100 truncate">
+                <p className="text-xs font-bold text-slate-900 dark:text-slate-100 truncate">
                   {t('pushPromptTitle')}
                 </p>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
@@ -532,13 +536,13 @@ export const UserChatView: React.FC = () => {
         >
           {messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
-              <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
+              <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
                 <Lock className="w-7 h-7" />
               </div>
-              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+              <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
                 {t('secureChatNoticeTitle')}
               </h4>
-              <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
+              <p className="text-xs max-w-xs mt-1 text-slate-500 dark:text-slate-400 leading-relaxed">
                 {t('secureChatNoticeDesc')}
               </p>
             </div>
@@ -546,8 +550,8 @@ export const UserChatView: React.FC = () => {
             <>
               {/* Ephemeral 24h Purge Notice at the beginning of chat stream (unpinned, scrolls naturally like date separators) */}
               <div className="w-full flex justify-center my-3 select-none pointer-events-none animate-fade-in shrink-0">
-                <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-slate-900/40 dark:bg-black/50 text-amber-300/95 dark:text-amber-300/95 backdrop-blur-md border border-white/10 shadow-[0_2px_8px_rgba(0,0,0,0.12)] pointer-events-auto">
-                  <Flame className="w-3.5 h-3.5 text-amber-400 shrink-0 animate-pulse" />
+                <span className="inline-flex items-center justify-center gap-1.5 px-3.5 py-1 rounded-full text-[11px] sm:text-xs font-medium tracking-tight bg-white/85 dark:bg-black/50 text-amber-800 dark:text-amber-300 backdrop-blur-md border border-amber-500/25 dark:border-white/10 shadow-[0_1px_4px_rgba(0,0,0,0.05)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.12)] pointer-events-auto">
+                  <Flame className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0 animate-pulse" />
                   <span>{t('chatTtlBanner')}</span>
                 </span>
               </div>
@@ -630,7 +634,7 @@ export const UserChatView: React.FC = () => {
             const isReplyingSelf = replyingTo.senderId === user?.id || replyingTo.isOwn === true;
 
             return (
-              <div className="mb-2 px-3.5 py-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-sm animate-message">
+              <div className="mb-2 px-3.5 py-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none animate-message">
                 <div className="flex items-center gap-2.5 min-w-0 flex-1 overflow-hidden">
                   <Reply className="w-4 h-4 text-amber-500 shrink-0" />
                   <div className="w-0.5 h-7 rounded-full bg-amber-500 shrink-0" />
@@ -664,7 +668,7 @@ export const UserChatView: React.FC = () => {
 
           {/* Selected Attachment Preview Chip */}
           {selectedAttachment && (
-            <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/5 dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-sm animate-message">
+            <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none animate-message">
               <div className="flex items-center gap-3 overflow-hidden min-w-0">
                 {selectedAttachment.isImage && selectedAttachment.previewUrl ? (
                   <img
@@ -698,7 +702,7 @@ export const UserChatView: React.FC = () => {
           <div
             data-input-pill
             dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
-            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-none border border-black/[0.06] dark:border-white/[0.08]"
+            className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none border border-black/[0.08] dark:border-white/[0.08]"
           >
             {/* Attachment Button */}
             <button

@@ -357,7 +357,7 @@ const MessageItemComponent: React.FC<Props> = ({
           className={`relative px-3.5 sm:px-4 pb-2 pt-2 transition-all cursor-pointer text-sm leading-relaxed shadow-[0_1px_2px_rgba(0,0,0,0.05)] dark:shadow-none border ${cornerRadiusClass} ${
             isOwn
               ? 'bg-[#EDE8E0] text-slate-900 border-black/[0.06] dark:bg-[#232936] dark:text-white dark:border-white/[0.08]'
-              : 'bg-white text-slate-900 border-black/[0.04] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06]'
+              : 'bg-white text-slate-900 border-black/[0.06] dark:bg-[#161B24] dark:text-slate-100 dark:border-white/[0.06]'
           } ${
             isHighlighted
               ? 'ring-2 ring-amber-500 dark:ring-amber-400 scale-[1.02]'
@@ -397,7 +397,7 @@ const MessageItemComponent: React.FC<Props> = ({
                 d="M0 0 C0 8 3 16 11 20 L0 20"
                 fill="none"
                 strokeWidth="1"
-                className="stroke-black/[0.04] dark:stroke-white/[0.06]"
+                className="stroke-black/[0.06] dark:stroke-white/[0.06]"
               />
             </svg>
           )}
@@ -574,7 +574,7 @@ const MessageItemComponent: React.FC<Props> = ({
             <div
               dir="ltr"
               className={`flex items-center gap-1.5 text-[10px] font-sans justify-end ms-auto pb-0.5 select-none ${
-                isOwn ? 'text-slate-500 dark:text-slate-300' : 'text-slate-400 dark:text-slate-400'
+                isOwn ? 'text-slate-500 dark:text-slate-300' : 'text-slate-500 dark:text-slate-400'
               }`}
             >
               <span>{formattedTime}</span>

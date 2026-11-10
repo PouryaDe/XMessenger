@@ -122,14 +122,14 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
         </div>
 
         {/* Modern iOS / Telegram Segmented Control */}
-        <div className="grid grid-cols-4 p-1 rounded-2xl bg-black/[0.035] dark:bg-black/40 border border-black/[0.04] dark:border-white/[0.06] select-none">
+        <div className="grid grid-cols-4 p-1 rounded-2xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.05] dark:border-white/[0.06] select-none">
           <button
             type="button"
             onClick={() => setFilterTab('all')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'all'
-                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
             }`}
           >
             <span>{t('allUsers')}</span>
@@ -145,8 +145,8 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
             onClick={() => setFilterTab('pending')}
             className={`flex items-center justify-center gap-1.5 py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'pending'
-                ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-xs font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
+                ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
             }`}
           >
             <span className="truncate">{t('pendingUsers')}</span>
@@ -162,8 +162,8 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
             onClick={() => setFilterTab('active')}
             className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'active'
-                ? 'bg-white dark:bg-white/[0.14] text-emerald-600 dark:text-emerald-400 shadow-xs font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
+                ? 'bg-white dark:bg-white/[0.14] text-emerald-600 dark:text-emerald-400 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-emerald-600 dark:hover:text-emerald-400 font-medium'
             }`}
           >
             <span>{t('activeUsers')}</span>
@@ -174,8 +174,8 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
             onClick={() => setFilterTab('banned')}
             className={`flex items-center justify-center py-1.5 px-1 rounded-xl text-xs transition-all cursor-pointer ${
               filterTab === 'banned'
-                ? 'bg-white dark:bg-white/[0.14] text-red-600 dark:text-red-400 shadow-xs font-bold'
-                : 'text-slate-500 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'
+                ? 'bg-white dark:bg-white/[0.14] text-red-600 dark:text-red-400 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
+                : 'text-slate-600 dark:text-slate-400 hover:text-red-600 dark:hover:text-red-400 font-medium'
             }`}
           >
             <span>{t('bannedUsers')}</span>
@@ -224,7 +224,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
             className={`w-full p-2.5 rounded-2xl flex items-center justify-between text-start transition-all cursor-pointer border ${
               activeUserId === '__channel__'
                 ? 'bg-amber-500/15 border-amber-500/30 text-slate-900 dark:text-white shadow-xs'
-                : 'hover:bg-black/[0.035] dark:hover:bg-white/[0.05] border-black/[0.04] dark:border-white/[0.05] bg-black/[0.015] dark:bg-white/[0.02]'
+                : 'hover:bg-black/[0.035] dark:hover:bg-white/[0.05] border-black/[0.06] dark:border-white/[0.05] bg-white/40 dark:bg-white/[0.02]'
             }`}
           >
             <div className="flex items-center gap-3 min-w-0">

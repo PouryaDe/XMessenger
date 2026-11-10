@@ -295,13 +295,13 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
           </div>
         ) : channelPosts.length === 0 ? (
           <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 select-none">
-            <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
+            <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
               <Megaphone className="w-8 h-8" />
             </div>
-            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+            <h4 className="font-bold text-sm text-slate-900 dark:text-slate-100">
               {title}
             </h4>
-            <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
+            <p className="text-xs max-w-xs mt-1 text-slate-500 dark:text-slate-400 leading-relaxed">
               {t('noChannelPosts')}
             </p>
           </div>
@@ -350,9 +350,9 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                   {showDateSeparator && <DateSeparator date={post.createdAt} />}
 
                   {/* Telegram Channel Post Card */}
-                  <article className="w-full bg-white/80 dark:bg-[#121620]/80 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] rounded-[24px] shadow-sm overflow-hidden transition-all hover:shadow-md animate-fade-in">
+                  <article className="w-full bg-white/90 dark:bg-[#121620]/80 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] rounded-[24px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-sm overflow-hidden transition-all hover:shadow-md animate-fade-in">
                     {/* Post Card Header */}
-                    <div className="px-4 pt-3.5 pb-2 flex items-center justify-between border-b border-black/[0.03] dark:border-white/[0.04]">
+                    <div className="px-4 pt-3.5 pb-2 flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.04]">
                       <div className="flex items-center gap-2">
                         <div className="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                           <Megaphone className="w-3.5 h-3.5" />
@@ -362,7 +362,7 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                         </span>
                       </div>
 
-                      <div className="flex items-center gap-2 text-[11px] text-slate-400 select-none">
+                      <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 select-none">
                         <span>{formattedTime}</span>
                         {isAdmin && (
                           <button
@@ -397,16 +397,16 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                           target="_blank"
                           rel="noopener noreferrer"
                           download={fileName}
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors border border-black/[0.04] dark:border-white/[0.06]"
+                          className="flex items-center gap-3 p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors border border-black/[0.05] dark:border-white/[0.06]"
                         >
                           <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
                             <FileText className="w-5 h-5" />
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="font-bold text-xs text-slate-800 dark:text-slate-100 truncate">
+                            <div className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
                               {fileName}
                             </div>
-                            <div className="text-[10px] text-slate-400 mt-0.5">
+                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
                               {formatFileSize(fileSize)}
                             </div>
                           </div>
@@ -419,13 +419,13 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
 
                     {/* Caption / Text */}
                     {caption && (
-                      <div className="px-4 py-3 text-xs sm:text-sm text-slate-800 dark:text-slate-100 leading-relaxed break-words whitespace-pre-wrap select-text font-sans">
+                      <div className="px-4 py-3 text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed break-words whitespace-pre-wrap select-text font-sans">
                         <FormattedMessageText text={caption} />
                       </div>
                     )}
 
                     {/* Post Card Footer Toolbar (Telegram-Style) */}
-                    <div className="px-4 py-2.5 bg-black/[0.015] dark:bg-white/[0.02] border-t border-black/[0.03] dark:border-white/[0.04] flex items-center justify-between gap-2 select-none">
+                    <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between gap-2 select-none">
                       {/* Left: Reactions */}
                       <div className="flex items-center gap-1.5 flex-wrap">
                         {['👍', '❤️'].map((emoji) => {
@@ -437,8 +437,8 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                               onClick={() => handleToggleReaction(post.id, emoji)}
                               className={`h-7 px-2.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
                                 state.hasReacted
-                                  ? 'bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/40 shadow-xs scale-102'
-                                  : 'bg-black/[0.04] dark:bg-white/[0.06] text-slate-600 dark:text-slate-300 hover:bg-black/[0.07] dark:hover:bg-white/[0.10]'
+                                  ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/35 dark:border-amber-500/40 shadow-xs scale-102'
+                                  : 'bg-black/[0.04] dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-black/[0.07] dark:hover:bg-white/[0.10] border border-black/[0.04] dark:border-transparent'
                               }`}
                             >
                               <span>{emoji}</span>
@@ -457,7 +457,7 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                           <button
                             type="button"
                             onClick={() => setActiveViewerPostId(post.id)}
-                            className="h-7 px-2.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-amber-500/15 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-transparent hover:border-amber-500/30"
+                            className="h-7 px-2.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-amber-500/15 text-slate-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-black/[0.04] dark:border-transparent hover:border-amber-500/30"
                             title={t('postViewers')}
                           >
                             <Eye className="w-3.5 h-3.5 text-amber-500" />
@@ -475,7 +475,7 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                               handleUserForward(post);
                             }
                           }}
-                          className="h-7 px-3 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-amber-500/15 text-slate-600 dark:text-slate-300 hover:text-amber-600 dark:hover:text-amber-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-transparent hover:border-amber-500/30"
+                          className="h-7 px-3 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-amber-500/15 text-slate-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-black/[0.04] dark:border-transparent hover:border-amber-500/30"
                           title={t('forward')}
                         >
                           <Forward className="w-3.5 h-3.5 rtl:scale-x-[-1]" />
