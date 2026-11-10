@@ -53,8 +53,33 @@ export interface Message {
   isRead: boolean;
   isOwn?: boolean;
   replyToId?: string | null;
+  forwardFrom?: string | null;
   status?: 'sending' | 'sent' | 'failed';
   reactions?: MessageReaction[];
+}
+
+export interface ChannelMeta {
+  title: string;
+  description: string;
+  subscribersCount: number;
+}
+
+export interface ChannelPost {
+  id: string;
+  adminId: string;
+  text: string;
+  createdAt: string;
+  viewsCount: number;
+  reactions?: MessageReaction[];
+  hasViewed?: boolean;
+}
+
+export interface ChannelViewer {
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+  category?: string;
+  viewedAt: string;
 }
 
 export interface AdminSettings {
@@ -435,5 +460,70 @@ export const api = {
       headers: { ...getAuthHeader() }
     });
     return safeJson<{ success: boolean; message: string }>(res, 'Failed to send test push notification');
+  },
+
+  // Broadcast Channel Methods
+  async getChannelMeta(): Promise<ChannelMeta> {
+    const res = await fetch(`${API_BASE}/channel/meta`, {
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<ChannelMeta>(res, 'Failed to fetch channel meta');
+  },
+
+  async getChannelPosts(): Promise<{ posts: ChannelPost[] }> {
+    const res = await fetch(`${API_BASE}/channel/posts`, {
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ posts: ChannelPost[] }>(res, 'Failed to fetch channel posts');
+  },
+
+  async createChannelPost(text: string): Promise<{ success: boolean; post: ChannelPost }> {
+    const res = await fetch(`${API_BASE}/channel/posts`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ text })
+    });
+    return safeJson<{ success: boolean; post: ChannelPost }>(res, 'Failed to create channel post');
+  },
+
+  async deleteChannelPost(postId: string): Promise<{ success: boolean }> {
+    const res = await fetch(`${API_BASE}/channel/posts/${postId}`, {
+      method: 'DELETE',
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ success: boolean }>(res, 'Failed to delete channel post');
+  },
+
+  async viewChannelPost(postId: string): Promise<{ success: boolean; viewsCount: number }> {
+    const res = await fetch(`${API_BASE}/channel/posts/${postId}/view`, {
+      method: 'POST',
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ success: boolean; viewsCount: number }>(res, 'Failed to record post view');
+  },
+
+  async getChannelPostViewers(postId: string): Promise<{ viewers: ChannelViewer[] }> {
+    const res = await fetch(`${API_BASE}/channel/posts/${postId}/viewers`, {
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ viewers: ChannelViewer[] }>(res, 'Failed to fetch post viewers');
+  },
+
+  async reactChannelPost(postId: string, emoji?: string): Promise<{ success: boolean; reactions: MessageReaction[] }> {
+    const res = await fetch(`${API_BASE}/channel/posts/${postId}/react`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ emoji })
+    });
+    return safeJson<{ success: boolean; reactions: MessageReaction[] }>(res, 'Failed to react to channel post');
+  },
+
+  async forwardChannelPost(postId: string, targetUserId?: string): Promise<{ success: boolean; message: Message }> {
+    const res = await fetch(`${API_BASE}/channel/posts/${postId}/forward`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
+      body: JSON.stringify({ targetUserId })
+    });
+    return safeJson<{ success: boolean; message: Message }>(res, 'Failed to forward channel post');
   }
 };

@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Message, MessageReaction, AdminUserItem, api } from '../services/api.js';
+import { Message, MessageReaction, AdminUserItem, ChannelPost, ChannelMeta, api } from '../services/api.js';
 import { getSocket } from '../services/socket.js';
 import { useAuthStore } from './authStore.js';
 import { playSendSound } from '../utils/sound.js';
@@ -15,6 +15,10 @@ interface ChatState {
   lastSeenUsers: Record<string, string>;
   typingUsers: Record<string, boolean>;
   isLoadingMessages: boolean;
+  channelPosts: ChannelPost[];
+  channelMeta: ChannelMeta | null;
+  isLoadingChannel: boolean;
+  channelUnreadCount: number;
 
   // Actions
   setActiveUserId: (id: string | null) => void;
@@ -42,6 +46,15 @@ interface ChatState {
   setAdminLastSeen: (lastSeen: string) => void;
   setTyping: (userId: string, isTyping: boolean) => void;
   sendTyping: (isTyping: boolean, targetUserId?: string) => void;
+
+  // Channel Actions
+  loadChannelPosts: () => Promise<void>;
+  loadChannelMeta: () => Promise<void>;
+  addChannelPost: (post: ChannelPost) => void;
+  removeChannelPost: (postId: string) => void;
+  updateChannelPostViews: (postId: string, viewsCount: number, viewerUserId?: string) => void;
+  updateChannelPostReactions: (postId: string, reactions: MessageReaction[]) => void;
+  markChannelPostAsViewed: (postId: string) => Promise<void>;
 }
 
 // Read cached messages from session for 0ms instant hydration on refresh / PWA reloads
@@ -90,6 +103,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   lastSeenUsers: {},
   typingUsers: {},
   isLoadingMessages: false,
+  channelPosts: [],
+  channelMeta: null,
+  isLoadingChannel: false,
+  channelUnreadCount: 0,
 
   setActiveUserId: (id) => {
     const prevActiveId = get().activeUserId;
@@ -701,6 +718,89 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const socket = getSocket();
     if (socket && socket.connected) {
       socket.emit('typing', { isTyping, targetUserId });
+    }
+  },
+
+  loadChannelMeta: async () => {
+    try {
+      const meta = await api.getChannelMeta();
+      set({ channelMeta: meta });
+    } catch (e) {
+      console.warn('[Channel] Error loading channel meta:', e);
+    }
+  },
+
+  loadChannelPosts: async () => {
+    set({ isLoadingChannel: true });
+    try {
+      const { posts } = await api.getChannelPosts();
+      const unread = posts.filter((p) => !p.hasViewed).length;
+      set({ channelPosts: posts, channelUnreadCount: unread, isLoadingChannel: false });
+    } catch (e) {
+      console.warn('[Channel] Error loading channel posts:', e);
+      set({ isLoadingChannel: false });
+    }
+  },
+
+  addChannelPost: (post) => {
+    set((state) => {
+      const exists = state.channelPosts.some((p) => p.id === post.id);
+      if (exists) {
+        return {
+          channelPosts: state.channelPosts.map((p) => p.id === post.id ? { ...p, ...post } : p)
+        };
+      }
+      const isUnread = !post.hasViewed;
+      return {
+        channelPosts: [...state.channelPosts, post],
+        channelUnreadCount: isUnread ? state.channelUnreadCount + 1 : state.channelUnreadCount
+      };
+    });
+  },
+
+  removeChannelPost: (postId) => {
+    set((state) => {
+      const target = state.channelPosts.find((p) => p.id === postId);
+      const wasUnread = target && !target.hasViewed;
+      return {
+        channelPosts: state.channelPosts.filter((p) => p.id !== postId),
+        channelUnreadCount: wasUnread ? Math.max(0, state.channelUnreadCount - 1) : state.channelUnreadCount
+      };
+    });
+  },
+
+  updateChannelPostViews: (postId, viewsCount, viewerUserId) => {
+    const currentUserId = useAuthStore.getState().user?.id;
+    set((state) => ({
+      channelPosts: state.channelPosts.map((p) => {
+        if (p.id !== postId) return p;
+        const hasViewed = p.hasViewed || (viewerUserId ? viewerUserId === currentUserId : false);
+        return { ...p, viewsCount, hasViewed };
+      })
+    }));
+  },
+
+  updateChannelPostReactions: (postId, reactions) => {
+    set((state) => ({
+      channelPosts: state.channelPosts.map((p) => p.id === postId ? { ...p, reactions } : p)
+    }));
+  },
+
+  markChannelPostAsViewed: async (postId) => {
+    // Optimistic local state update
+    set((state) => {
+      const target = state.channelPosts.find((p) => p.id === postId);
+      if (!target || target.hasViewed) return state;
+      return {
+        channelPosts: state.channelPosts.map((p) => p.id === postId ? { ...p, hasViewed: true, viewsCount: p.viewsCount + 1 } : p),
+        channelUnreadCount: Math.max(0, state.channelUnreadCount - 1)
+      };
+    });
+
+    try {
+      await api.viewChannelPost(postId);
+    } catch (e) {
+      console.warn('[Channel] Error viewing post:', e);
     }
   }
 }));

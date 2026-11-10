@@ -187,7 +187,7 @@ export function createMessagesRouter(io?: Server) {
 
       // Fetch non-expired messages in chronological order
       const rows = db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions, forward_from
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -204,6 +204,7 @@ export function createMessagesRouter(io?: Server) {
         is_read: number;
         reply_to_id?: string | null;
         reactions?: string | null;
+        forward_from?: string | null;
       }>;
 
       // Mark incoming messages as read
@@ -240,6 +241,7 @@ export function createMessagesRouter(io?: Server) {
         isRead: Boolean(r.is_read),
         isOwn: r.sender_id === currentUser.id,
         replyToId: r.reply_to_id || null,
+        forwardFrom: r.forward_from || null,
         reactions: r.reactions ? (() => { try { return JSON.parse(r.reactions); } catch { return []; } })() : []
       }));
 

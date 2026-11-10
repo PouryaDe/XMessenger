@@ -9,6 +9,7 @@ import { db, initDatabase, getSettingValue } from './database/index.js';
 import { createAuthRouter } from './routes/auth.js';
 import { createAdminRouter } from './routes/admin.js';
 import { createMessagesRouter } from './routes/messages.js';
+import { createChannelRouter } from './routes/channel.js';
 import { pushRouter } from './routes/push.js';
 import { setupSocketServer } from './socket/index.js';
 import { startTtlWorker } from './workers/ttlCleaner.js';
@@ -50,6 +51,7 @@ app.use(express.json({ limit: '5mb' }));
 app.use('/api/auth', createAuthRouter(io));
 app.use('/api/admin', createAdminRouter(io));
 app.use('/api/messages', createMessagesRouter(io));
+app.use('/api/channel', createChannelRouter(io));
 app.use('/api/push', pushRouter);
 
 // Health check endpoint for container healthchecks & watchdog daemon

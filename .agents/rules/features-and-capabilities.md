@@ -186,3 +186,22 @@ This document provides a comprehensive inventory of all built-in features, archi
    - **CSP Sandboxing**: Upload directory is served with `Content-Security-Policy: default-src 'none'; sandbox` and `X-Content-Type-Options: nosniff`.
 3. **Automated Disk Cleanup**:
    - Attached files are unlinked from disk when messages are deleted by user/admin, wiped in chat clear, or expired by the background TTL worker.
+
+---
+
+## 13. Telegram-style Broadcast Channel (`/api/channel`)
+
+1. **One-to-Many Architecture**:
+   - Channel feed accessible to all active users via top segmented switcher in user view and pinned card in admin sidebar.
+   - Read-only for regular users; administrators have full authoring privileges (rich formatting, 200MB attachments, delete).
+   - Permanent posts (no ephemeral TTL auto-purge; manual administrative deletion only).
+2. **Granular View Tracking**:
+   - Regular users see aggregate count (`👁 14`).
+   - Admin can open `PostViewersModal.tsx` to view the full list of users who viewed each post with avatars, categories, and exact timestamps.
+   - Database enforces de-duplication via composite primary key `(post_id, user_id)` in `channel_post_views`.
+3. **Telegram-style Forwarding**:
+   - Users can forward channel posts to support chat with the `forwardedFromChannel` banner.
+   - Admins can forward channel posts to any active user thread via `ForwardPostModal.tsx`.
+4. **Real-time Notifications & Web Push**:
+   - Live socket broadcast (`channel:post_new`, `channel:post_viewed`, `channel:post_reaction`).
+   - Web Push notification dispatched to all active subscribers.

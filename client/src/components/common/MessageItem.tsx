@@ -15,6 +15,7 @@ import {
   Download, 
   Reply,
   Clock,
+  Forward,
   FileText
 } from 'lucide-react';
 
@@ -413,6 +414,14 @@ const MessageItemComponent: React.FC<Props> = ({
               >
                 {reactionAnimEmoji}
               </div>
+            </div>
+          )}
+
+          {/* Forwarded from Channel Banner */}
+          {message.forwardFrom === 'channel' && (
+            <div className="mb-1.5 flex items-center gap-1.5 text-[11px] font-semibold text-amber-600 dark:text-amber-400 select-none">
+              <Forward className="w-3.5 h-3.5 shrink-0 rtl:scale-x-[-1]" />
+              <span>{t('forwardedFromChannel')}</span>
             </div>
           )}
 

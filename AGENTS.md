@@ -60,6 +60,13 @@ This file serves as the high-level roadmap and engineering guide for AI agents w
   - Continuously monitors Docker daemon, shared Nginx gateway, all backend instances (`/api/health`), and Certbot renewer.
   - Automatically restarts any crashed, hung, deadlocked, or stopped containers within 15 seconds.
   - CLI management and health diagnostics via `xmessenger watchdog` (shortcut `xwatchdog`) and menu option `W`.
+- **Telegram-style Broadcast Channel (`/api/channel`)**:
+  - One-to-many broadcast channel accessible to all active users via top segmented switcher on mobile and pinned item in admin sidebar.
+  - Read-only for regular users; administrators have full publishing privileges (rich text, 200MB attachments, delete).
+  - Permanent posts (exempt from ephemeral TTL auto-purge; manual administrative deletion only).
+  - Granular view tracking (`channel_post_views`): regular users see total count (`👁 14`), while admin can inspect full list of viewers with avatars, categories, and timestamps via `PostViewersModal.tsx`.
+  - Telegram-style post forwarding: users forward channel posts into 1-on-1 support chat with `forwardedFromChannel` banner; admin can forward posts to any target user thread via `ForwardPostModal.tsx`.
+  - Real-time socket broadcast (`channel:post_new`, `channel:post_viewed`, `channel:post_reaction`) and asynchronous Web Push notification dispatch.
 
 ---
 

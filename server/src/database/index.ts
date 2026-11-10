@@ -80,6 +80,13 @@ export function initDatabase() {
     // Column already exists
   }
 
+  // Ensure forward_from column exists for existing databases
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN forward_from TEXT DEFAULT NULL;");
+  } catch (_) {
+    // Column already exists
+  }
+
   // 3. Push Subscriptions table
   db.exec(`
     CREATE TABLE IF NOT EXISTS push_subscriptions (
@@ -116,6 +123,38 @@ export function initDatabase() {
     );
   `);
 
+  // 6. Broadcast Channel Posts table (AES-256-GCM encryption at rest, permanent posts)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channel_posts (
+      id TEXT PRIMARY KEY,
+      admin_id TEXT NOT NULL,
+      ciphertext TEXT NOT NULL,
+      iv TEXT NOT NULL,
+      auth_tag TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      views_count INTEGER DEFAULT 0,
+      reactions TEXT DEFAULT '[]',
+      FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_channel_posts_created_at ON channel_posts(created_at);
+  `);
+
+  // 7. Channel Post Views table (Records granular user views for Admin inspectability)
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channel_post_views (
+      post_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      viewed_at TEXT NOT NULL,
+      PRIMARY KEY (post_id, user_id),
+      FOREIGN KEY (post_id) REFERENCES channel_posts(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_channel_views_post_id ON channel_post_views(post_id);
+    CREATE INDEX IF NOT EXISTS idx_channel_views_user_id ON channel_post_views(user_id);
+  `);
+
   // Seed default settings if not exists
   const getSetting = db.prepare('SELECT value FROM settings WHERE key = ?');
   const setSetting = db.prepare('INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)');
@@ -129,6 +168,8 @@ export function initDatabase() {
   setSetting.run('pwa_short_name', 'XMessenger');
   setSetting.run('pwa_icon_url', '');
   setSetting.run('admin_avatar_url', '');
+  setSetting.run('channel_title', 'کانال اطلاع‌رسانی');
+  setSetting.run('channel_description', 'کانال رسمی اطلاع‌رسانی و اخبار سامانه');
 
   // Seed initial Admin if not exists
   const existingAdmin = db.prepare("SELECT id, username FROM users WHERE role = 'admin'").get() as { id: string; username: string } | undefined;

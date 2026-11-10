@@ -7,6 +7,7 @@ import { APP_VERSION } from '../../config/version.js';
 import { AdminSidebar } from './AdminSidebar.js';
 import { AdminSettingsModal } from './AdminSettingsModal.js';
 import { UserProfileModal } from './UserProfileModal.js';
+import { ChannelView } from '../channel/ChannelView.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
@@ -63,8 +64,15 @@ export const AdminDashboard: React.FC = () => {
     syncMessages,
     isLoadingMessages,
     toggleReaction,
-    updateAdminUserStatus
+    updateAdminUserStatus,
+    loadChannelPosts,
+    loadChannelMeta
   } = useChatStore();
+
+  useEffect(() => {
+    loadChannelMeta();
+    loadChannelPosts();
+  }, []);
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
   const [profileModalOpen, setProfileModalOpen] = useState(false);
@@ -380,12 +388,15 @@ export const AdminDashboard: React.FC = () => {
         <AdminSidebar
           onOpenSettings={() => setSettingsModalOpen(true)}
           onSelectUser={handleSelectUser}
+          onSelectChannel={() => setActiveUserId('__channel__')}
         />
       </div>
 
       {/* Main Chat Area */}
       <div className={`${!activeUserId ? 'hidden sm:flex' : 'flex'} flex-1 flex-col h-full bg-transparent relative overflow-hidden overflow-x-hidden`}>
-        {activeUser ? (
+        {activeUserId === '__channel__' ? (
+          <ChannelView isAdmin={true} onBack={() => setActiveUserId(null)} />
+        ) : activeUser ? (
           <>
             {/* Top Chat Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
             <header className="pt-safe pb-2.5 px-4 sm:px-6 flex items-center justify-between shrink-0 bg-transparent z-10 border-b border-black/[0.05] dark:border-white/[0.06]">

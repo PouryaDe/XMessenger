@@ -178,3 +178,34 @@ export async function dispatchPushForMessage(
     console.warn('[Push] Error dispatching push notification for message:', err);
   }
 }
+
+export async function dispatchPushForChannelPost(postId: string): Promise<void> {
+  try {
+    const channelTitle = getSettingValue('channel_title', 'کانال اطلاع‌رسانی');
+    const pwaIconUrl = getSettingValue('pwa_icon_url', '');
+
+    // Select all active users (excluding admins who sent the post)
+    const activeUsers = db.prepare("SELECT id FROM users WHERE status = 'active' AND role != 'admin'").all() as Array<{ id: string }>;
+    if (!activeUsers || activeUsers.length === 0) {
+      return;
+    }
+
+    const notificationBody = 'پست جدیدی در کانال اطلاع‌رسانی منتشر شد';
+
+    for (const u of activeUsers) {
+      sendPushToUser(u.id, {
+        title: channelTitle,
+        body: notificationBody,
+        icon: pwaIconUrl || '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: `channel-post-${postId}`,
+        data: {
+          url: '/?tab=channel',
+          channelPostId: postId
+        }
+      }).catch(() => {});
+    }
+  } catch (err) {
+    console.warn('[Push] Error dispatching push notification for channel post:', err);
+  }
+}

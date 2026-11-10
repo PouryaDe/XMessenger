@@ -174,6 +174,33 @@ export function initSocket(token: string): Socket {
     useChatStore.getState().removeAdminUser(userId);
   });
 
+  // Channel Real-Time Listeners
+  socket.on('channel:post_new', (post) => {
+    const authStore = useAuthStore.getState();
+    const currentUserId = authStore.user?.id || '';
+    const isOwn = post.adminId === currentUserId;
+
+    useChatStore.getState().addChannelPost({ ...post, hasViewed: isOwn });
+
+    if (!isOwn) {
+      playReceiveSound();
+      const channelTitle = useChatStore.getState().channelMeta?.title || 'کانال اطلاع‌رسانی';
+      notifyIncomingMessage(channelTitle, post.text);
+    }
+  });
+
+  socket.on('channel:post_deleted', ({ postId }: { postId: string }) => {
+    useChatStore.getState().removeChannelPost(postId);
+  });
+
+  socket.on('channel:post_viewed', ({ postId, viewsCount, userId }: { postId: string; viewsCount: number; userId?: string }) => {
+    useChatStore.getState().updateChannelPostViews(postId, viewsCount, userId);
+  });
+
+  socket.on('channel:post_reaction', ({ postId, reactions }: { postId: string; reactions: any[] }) => {
+    useChatStore.getState().updateChannelPostReactions(postId, reactions);
+  });
+
   // Re-sync messages and reconnect if needed when returning to the tab or unlocking phone
   if (!visibilityAttached && typeof document !== 'undefined') {
     document.addEventListener('visibilitychange', () => {

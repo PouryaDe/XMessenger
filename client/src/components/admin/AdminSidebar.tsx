@@ -14,18 +14,20 @@ import {
   Search, 
   Sliders, 
   LogOut,
-  X
+  X,
+  Megaphone
 } from 'lucide-react';
 
 interface Props {
   onOpenSettings: () => void;
   onSelectUser: (user: AdminUserItem) => void;
+  onSelectChannel?: () => void;
 }
 
-export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) => {
+export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, onSelectChannel }) => {
   const { t, i18n } = useTranslation();
   const { logout } = useAuthStore();
-  const { adminUsers, activeUserId, onlineUsers } = useChatStore();
+  const { adminUsers, activeUserId, onlineUsers, channelPosts, channelMeta } = useChatStore();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'active' | 'banned'>('all');
@@ -216,6 +218,43 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
           dir={i18n.language === 'fa' ? 'rtl' : 'ltr'} 
           className="p-2.5 space-y-1"
         >
+          {/* Pinned Broadcast Channel Card */}
+          <div
+            onClick={() => onSelectChannel ? onSelectChannel() : onSelectUser({ id: '__channel__' } as any)}
+            className={`w-full p-2.5 rounded-2xl flex items-center justify-between text-start transition-all cursor-pointer border ${
+              activeUserId === '__channel__'
+                ? 'bg-amber-500/15 border-amber-500/30 text-slate-900 dark:text-white shadow-xs'
+                : 'hover:bg-black/[0.035] dark:hover:bg-white/[0.05] border-black/[0.04] dark:border-white/[0.05] bg-black/[0.015] dark:bg-white/[0.02]'
+            }`}
+          >
+            <div className="flex items-center gap-3 min-w-0">
+              <div className="w-11 h-11 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-white flex items-center justify-center font-bold shadow-xs shrink-0">
+                <Megaphone className="w-5 h-5" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center gap-1.5">
+                  <span className="font-bold text-xs sm:text-sm text-slate-900 dark:text-white truncate">
+                    {t('channel')}
+                  </span>
+                  <span className="px-1.5 py-0.2 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 text-[10px] font-bold">
+                    Official
+                  </span>
+                </div>
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
+                  {channelMeta?.description || t('channelSubtitle')}
+                </div>
+              </div>
+            </div>
+
+            <div className="flex flex-col items-end gap-1 shrink-0">
+              <span className="text-[10px] font-medium text-amber-600 dark:text-amber-400 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                {channelPosts.length} {t('posts')}
+              </span>
+            </div>
+          </div>
+
+          <div className="h-[1px] bg-black/[0.05] dark:bg-white/[0.05] my-1.5 mx-1" />
+
           {filteredUsers.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-400">
               {t('noUsersFound')}

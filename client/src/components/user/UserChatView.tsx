@@ -6,6 +6,7 @@ import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
 import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
+import { ChannelView } from '../channel/ChannelView.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { formatFileSize, decodeMojibake } from '../../utils/formatters.js';
@@ -27,6 +28,7 @@ import {
   ChevronDown,
   Reply,
   Bell,
+  Megaphone,
   FileText
 } from 'lucide-react';
 
@@ -58,8 +60,24 @@ export const UserChatView: React.FC = () => {
     typingUsers,
     sendTyping,
     markConversationAsRead,
-    toggleReaction
+    toggleReaction,
+    channelUnreadCount,
+    channelMeta,
+    loadChannelPosts,
+    loadChannelMeta
   } = useChatStore();
+
+  const [activeTab, setActiveTab] = useState<'chat' | 'channel'>(() => {
+    if (typeof window !== 'undefined' && window.location.search.includes('tab=channel')) {
+      return 'channel';
+    }
+    return 'chat';
+  });
+
+  useEffect(() => {
+    loadChannelMeta();
+    loadChannelPosts();
+  }, []);
 
   const [inputText, setInputText] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);
@@ -353,42 +371,62 @@ export const UserChatView: React.FC = () => {
       
       {/* Top Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
       <header className="pt-safe pb-2.5 px-4 sm:px-5 flex items-center justify-between shrink-0 bg-transparent border-b border-black/[0.05] dark:border-white/[0.06] z-10">
-        {/* Admin Avatar & Live Status */}
-        <div className="flex items-center gap-3">
-          <div className="relative">
-            <div className="w-10 h-10 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold shadow-xs overflow-hidden">
-              {adminInfo?.avatarUrl ? (
-                <img src={adminInfo.avatarUrl} alt="Admin" className="w-full h-full object-cover" />
-              ) : (
-                <ShieldCheck className="w-5 h-5 text-amber-500" />
+        {activeTab === 'channel' ? (
+          /* Channel Avatar & Info */
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-white flex items-center justify-center shadow-xs shrink-0">
+              <Megaphone className="w-5 h-5" />
+            </div>
+            <div className="min-w-0">
+              <div className="flex items-center gap-1.5">
+                <h2 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
+                  {channelMeta?.title || t('channelTitle')}
+                </h2>
+                <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
+              </div>
+              <p className="text-[11px] text-slate-400 truncate">
+                {channelMeta?.subscribersCount || 1} {t('subscribers')}
+              </p>
+            </div>
+          </div>
+        ) : (
+          /* Admin Avatar & Live Status */
+          <div className="flex items-center gap-3">
+            <div className="relative">
+              <div className="w-10 h-10 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold shadow-xs overflow-hidden">
+                {adminInfo?.avatarUrl ? (
+                  <img src={adminInfo.avatarUrl} alt="Admin" className="w-full h-full object-cover" />
+                ) : (
+                  <ShieldCheck className="w-5 h-5 text-amber-500" />
+                )}
+              </div>
+              {adminInfo?.showPresence !== false && (
+                <div
+                  className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] transition-colors ${
+                    isAdminOnline ? 'bg-emerald-500' : 'bg-slate-400'
+                  }`}
+                />
               )}
             </div>
-            {adminInfo?.showPresence !== false && (
-              <div
-                className={`absolute bottom-0 right-0 rtl:right-auto rtl:left-0 w-2.5 h-2.5 rounded-full border-2 border-white dark:border-[#12161E] transition-colors ${
-                  isAdminOnline ? 'bg-emerald-500' : 'bg-slate-400'
-                }`}
-              />
-            )}
-          </div>
 
-          <div>
-            <h2 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
-              {t('chatWithAdmin')}
-            </h2>
-            <p className="text-[11px] text-slate-400">
-              {isOpponentTyping ? (
-                <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
-              ) : adminInfo?.showPresence === false ? (
-                <span>{t('lastSeenRecently')}</span>
-              ) : isAdminOnline ? (
-                <span className="text-emerald-500 font-medium">{t('online')}</span>
-              ) : (
-                <span>{formatLastSeen(adminLastSeen || adminInfo?.lastSeen, isAdminOnline)}</span>
-              )}
-            </p>
+            <div>
+              <h2 className="font-bold text-sm text-slate-900 dark:text-white leading-tight">
+                {t('chatWithAdmin')}
+              </h2>
+              <p className="text-[11px] text-slate-400">
+                {isOpponentTyping ? (
+                  <span className="text-amber-500 font-medium animate-pulse">{t('typing')}</span>
+                ) : adminInfo?.showPresence === false ? (
+                  <span>{t('lastSeenRecently')}</span>
+                ) : isAdminOnline ? (
+                  <span className="text-emerald-500 font-medium">{t('online')}</span>
+                ) : (
+                  <span>{formatLastSeen(adminLastSeen || adminInfo?.lastSeen, isAdminOnline)}</span>
+                )}
+              </p>
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Hamburger Menu Button (Opens Drawer for Theme, Language, Password, Logout) */}
         <button
@@ -400,7 +438,51 @@ export const UserChatView: React.FC = () => {
         </button>
       </header>
 
-      {/* Push Notification Suggestion Banner */}
+      {/* Top Segmented Navigation Switcher: Direct Chat vs Announcement Channel */}
+      <div className="px-4 py-2 border-b border-black/[0.04] dark:border-white/[0.05] bg-black/[0.015] dark:bg-white/[0.01] shrink-0">
+        <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.04] dark:border-white/[0.06] select-none">
+          <button
+            type="button"
+            onClick={() => setActiveTab('chat')}
+            className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs transition-all cursor-pointer ${
+              activeTab === 'chat'
+                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-xs font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 font-medium'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-amber-500" />
+            <span>{t('directChat')}</span>
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setActiveTab('channel')}
+            className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs transition-all cursor-pointer relative ${
+              activeTab === 'channel'
+                ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-xs font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
+            }`}
+          >
+            <Megaphone className="w-3.5 h-3.5 text-amber-500" />
+            <span>{t('channelFeed')}</span>
+            {channelUnreadCount > 0 && (
+              <span className="min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9.5px] font-bold inline-flex items-center justify-center leading-none shadow-xs shrink-0 animate-pulse">
+                {channelUnreadCount}
+              </span>
+            )}
+          </button>
+        </div>
+      </div>
+
+      {activeTab === 'channel' ? (
+        <ChannelView
+          isAdmin={false}
+          hideHeader={true}
+          onSwitchToSupportChat={() => setActiveTab('chat')}
+        />
+      ) : (
+        <>
+          {/* Push Notification Suggestion Banner */}
       {showPushPrompt && (
         <div className="px-4 pt-2.5 pb-1 flex justify-center shrink-0 select-none animate-fade-in z-20">
           <div className="w-full max-w-lg p-3 rounded-2xl bg-white/85 dark:bg-[#151922]/90 backdrop-blur-xl border border-amber-500/30 dark:border-amber-400/25 shadow-xs flex items-center justify-between gap-3">
@@ -683,6 +765,8 @@ export const UserChatView: React.FC = () => {
           </div>
         </form>
       </footer>
+      </>
+      )}
 
       {/* Hidden File Input placed outside the form to suppress iOS WebKit multi-input accessory navigation arrows */}
       <input
