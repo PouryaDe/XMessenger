@@ -436,42 +436,52 @@ export const UserChatView: React.FC = () => {
       </header>
 
       {/* Top Segmented Navigation Switcher: Direct Chat vs Announcement Channel */}
-      <div className="px-4 py-2 border-b border-black/[0.05] dark:border-white/[0.06] bg-black/[0.015] dark:bg-white/[0.01] shrink-0">
-        <div className="grid grid-cols-2 p-1 rounded-2xl bg-black/[0.04] dark:bg-black/40 border border-black/[0.05] dark:border-white/[0.06] select-none">
+      <div className="px-4 py-2 shrink-0 bg-transparent select-none">
+        <div className="grid grid-cols-2 p-1 rounded-full bg-slate-200/60 dark:bg-[#121620]/80 backdrop-blur-md border border-black/[0.05] dark:border-white/[0.07] shadow-[inset_0_1px_2px_rgba(0,0,0,0.03)] dark:shadow-[inset_0_1px_2px_rgba(0,0,0,0.25)]">
           <button
             type="button"
             onClick={() => setActiveTab('chat')}
-            className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs transition-all cursor-pointer ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-full text-xs transition-all duration-200 cursor-pointer ${
               activeTab === 'chat'
-                ? 'bg-white dark:bg-white/[0.14] text-slate-900 dark:text-white shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
-                : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-slate-200 font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-slate-900 dark:text-white shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] font-medium'
             }`}
           >
             {adminInfo?.avatarUrl ? (
-              <img src={adminInfo.avatarUrl} alt="" className="w-3.5 h-3.5 rounded-full object-cover shrink-0" />
+              <img
+                src={adminInfo.avatarUrl}
+                alt=""
+                className={`w-4 h-4 rounded-full object-cover shrink-0 transition-transform ${
+                  activeTab === 'chat' ? 'ring-1.5 ring-amber-500/40 scale-105' : 'opacity-70'
+                }`}
+              />
             ) : (
-              <ShieldCheck className={`w-3.5 h-3.5 transition-colors ${
-                activeTab === 'chat' ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'
-              }`} />
+              <ShieldCheck
+                className={`w-4 h-4 transition-all duration-200 ${
+                  activeTab === 'chat' ? 'text-amber-500 scale-105' : 'text-slate-400 dark:text-slate-500'
+                }`}
+              />
             )}
-            <span>{t('directChat')}</span>
+            <span className="tracking-tight">{t('directChat')}</span>
           </button>
 
           <button
             type="button"
             onClick={() => setActiveTab('channel')}
-            className={`flex items-center justify-center gap-2 py-1.5 px-3 rounded-xl text-xs transition-all cursor-pointer relative ${
+            className={`flex items-center justify-center gap-2 py-2 px-3 rounded-full text-xs transition-all duration-200 cursor-pointer relative ${
               activeTab === 'channel'
-                ? 'bg-white dark:bg-white/[0.14] text-amber-600 dark:text-amber-400 shadow-[0_1px_3px_rgba(0,0,0,0.08),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-none font-bold border border-black/[0.04] dark:border-white/[0.06]'
-                : 'text-slate-600 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 font-medium'
+                ? 'bg-white dark:bg-gradient-to-b dark:from-[#242A38] dark:to-[#1B202C] text-amber-600 dark:text-amber-400 shadow-[0_2px_6px_rgba(0,0,0,0.07),0_1px_2px_rgba(0,0,0,0.04)] dark:shadow-[0_2px_8px_rgba(0,0,0,0.4),inset_0_1px_0_rgba(255,255,255,0.08)] border border-black/[0.04] dark:border-white/[0.08] font-bold'
+                : 'text-slate-500 dark:text-slate-400 hover:text-amber-600 dark:hover:text-amber-400 hover:bg-black/[0.02] dark:hover:bg-white/[0.03] font-medium'
             }`}
           >
-            <Megaphone className={`w-3.5 h-3.5 transition-colors ${
-              activeTab === 'channel' ? 'text-amber-500' : 'text-slate-400 dark:text-slate-500'
-            }`} />
-            <span>{t('channelFeed')}</span>
+            <Megaphone
+              className={`w-4 h-4 transition-all duration-200 ${
+                activeTab === 'channel' ? 'text-amber-500 scale-105' : 'text-slate-400 dark:text-slate-500'
+              }`}
+            />
+            <span className="tracking-tight">{t('channelFeed')}</span>
             {channelUnreadCount > 0 && (
-              <span className="min-w-[16px] h-4 px-1 rounded-full bg-amber-500 text-white text-[9.5px] font-bold inline-flex items-center justify-center leading-none shadow-xs shrink-0 animate-pulse">
+              <span className="min-w-[18px] h-[18px] px-1.5 rounded-full bg-gradient-to-r from-amber-500 to-amber-600 text-white text-[10px] font-black inline-flex items-center justify-center leading-none shadow-[0_2px_4px_rgba(245,158,11,0.35)] shrink-0 animate-pulse">
                 {channelUnreadCount}
               </span>
             )}
