@@ -39,6 +39,7 @@ exports.saveSubscription = saveSubscription;
 exports.removeSubscription = removeSubscription;
 exports.sendPushToUser = sendPushToUser;
 exports.dispatchPushForMessage = dispatchPushForMessage;
+exports.dispatchPushForChannelPost = dispatchPushForChannelPost;
 const webpush = __importStar(require("web-push"));
 const uuid_1 = require("uuid");
 const index_js_1 = require("../database/index.js");
@@ -178,5 +179,33 @@ async function dispatchPushForMessage(sender, recipientId, rawText) {
     }
     catch (err) {
         console.warn('[Push] Error dispatching push notification for message:', err);
+    }
+}
+async function dispatchPushForChannelPost(postId) {
+    try {
+        const channelTitle = (0, index_js_1.getSettingValue)('channel_title', 'کانال اطلاع‌رسانی');
+        const pwaIconUrl = (0, index_js_1.getSettingValue)('pwa_icon_url', '');
+        // Select all active users (excluding admins who sent the post)
+        const activeUsers = index_js_1.db.prepare("SELECT id FROM users WHERE status = 'active' AND role != 'admin'").all();
+        if (!activeUsers || activeUsers.length === 0) {
+            return;
+        }
+        const notificationBody = 'پست جدیدی در کانال اطلاع‌رسانی منتشر شد';
+        for (const u of activeUsers) {
+            sendPushToUser(u.id, {
+                title: channelTitle,
+                body: notificationBody,
+                icon: pwaIconUrl || '/icon-192.png',
+                badge: '/icon-192.png',
+                tag: `channel-post-${postId}`,
+                data: {
+                    url: '/?tab=channel',
+                    channelPostId: postId
+                }
+            }).catch(() => { });
+        }
+    }
+    catch (err) {
+        console.warn('[Push] Error dispatching push notification for channel post:', err);
     }
 }

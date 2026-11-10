@@ -38,14 +38,14 @@ export function createChannelRouter(io: Server): Router {
       const userId = req.user!.id;
 
       const rows = db.prepare(`
-        SELECT 
-          id, 
-          admin_id, 
-          ciphertext, 
-          iv, 
-          auth_tag, 
-          created_at, 
-          views_count, 
+        SELECT
+          id,
+          admin_id,
+          ciphertext,
+          iv,
+          auth_tag,
+          created_at,
+          views_count,
           reactions
         FROM channel_posts
         ORDER BY created_at ASC
@@ -230,10 +230,6 @@ export function createChannelRouter(io: Server): Router {
       return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
     }
   });
-      console.error('[Channel] Error recording view:', err);
-      return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
-    }
-  });
 
   // 6. Get Granular Post Viewers List (Admin Only)
   router.get('/posts/:id/viewers', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
@@ -246,7 +242,7 @@ export function createChannelRouter(io: Server): Router {
       }
 
       const viewers = db.prepare(`
-        SELECT 
+        SELECT
           u.id as userId,
           u.username,
           u.avatar_url as avatarUrl,
@@ -415,4 +411,3 @@ export function createChannelRouter(io: Server): Router {
 
   return router;
 }
-

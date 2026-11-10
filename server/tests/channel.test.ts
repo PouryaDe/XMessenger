@@ -95,7 +95,7 @@ describe('Telegram-style Broadcast Channel Tests', () => {
 
     // Check viewers query returned for admin
     const viewers = db.prepare(`
-      SELECT 
+      SELECT
         u.id as userId,
         u.username,
         u.avatar_url as avatarUrl,
@@ -274,4 +274,3 @@ describe('Telegram-style Broadcast Channel Tests', () => {
     assert.equal(viewsCount.count, 0, 'Associated views must be completely cleaned up');
   });
 });
-

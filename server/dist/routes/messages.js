@@ -24,17 +24,32 @@ function createMessagesRouter(io) {
     }
     /**
      * Fixes Multer / Busboy Latin-1 header decoding bug for non-ASCII (Persian, Arabic, UTF-8) filenames.
+     * Handles both pure Latin-1 strings and mixed strings with valid Unicode characters.
      */
     function fixMulterFilename(name) {
         if (!name || typeof name !== 'string')
             return '';
-        try {
-            const fixed = Buffer.from(name, 'latin1').toString('utf8');
-            if (!fixed.includes('\uFFFD') && /[\u00C0-\u00FF]/.test(name)) {
-                return fixed;
+        if (/[\u00C0-\u00FF]/.test(name)) {
+            const hasHighChars = [...name].some((c) => c.charCodeAt(0) > 255);
+            if (!hasHighChars) {
+                try {
+                    const fixed = Buffer.from(name, 'latin1').toString('utf8');
+                    if (!fixed.includes('\uFFFD')) {
+                        return fixed;
+                    }
+                }
+                catch { }
+            }
+            else {
+                try {
+                    return name.replace(/[\u00C0-\u00FF][\u0080-\u00BF]+/g, (match) => {
+                        const fixed = Buffer.from(match, 'latin1').toString('utf8');
+                        return fixed.includes('\uFFFD') ? match : fixed;
+                    });
+                }
+                catch { }
             }
         }
-        catch { }
         return name;
     }
     // Security: Strict blacklist of executable and script files
@@ -162,7 +177,7 @@ function createMessagesRouter(io) {
             const now = new Date().toISOString();
             // Fetch non-expired messages in chronological order
             const rows = index_js_1.db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions, forward_from
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -199,6 +214,7 @@ function createMessagesRouter(io) {
                 isRead: Boolean(r.is_read),
                 isOwn: r.sender_id === currentUser.id,
                 replyToId: r.reply_to_id || null,
+                forwardFrom: r.forward_from || null,
                 reactions: r.reactions ? (() => { try {
                     return JSON.parse(r.reactions);
                 }

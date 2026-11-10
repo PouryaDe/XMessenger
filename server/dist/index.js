@@ -20892,7 +20892,7 @@ var require_application = __commonJS({
   "node_modules/express/lib/application.js"(exports2, module2) {
     "use strict";
     var finalhandler = require_finalhandler();
-    var Router5 = require_router();
+    var Router6 = require_router();
     var methods = require_methods();
     var middleware = require_init();
     var query = require_query();
@@ -20957,7 +20957,7 @@ var require_application = __commonJS({
     };
     app2.lazyrouter = function lazyrouter() {
       if (!this._router) {
-        this._router = new Router5({
+        this._router = new Router6({
           caseSensitive: this.enabled("case sensitive routing"),
           strict: this.enabled("strict routing")
         });
@@ -22821,7 +22821,7 @@ var require_express = __commonJS({
     var mixin = require_merge_descriptors();
     var proto = require_application();
     var Route = require_route();
-    var Router5 = require_router();
+    var Router6 = require_router();
     var req = require_request();
     var res = require_response();
     exports2 = module2.exports = createApplication;
@@ -22844,7 +22844,7 @@ var require_express = __commonJS({
     exports2.request = req;
     exports2.response = res;
     exports2.Route = Route;
-    exports2.Router = Router5;
+    exports2.Router = Router6;
     exports2.json = bodyParser.json;
     exports2.query = require_query();
     exports2.raw = bodyParser.raw;
@@ -52699,7 +52699,7 @@ __export(index_exports, {
   server: () => server
 });
 module.exports = __toCommonJS(index_exports);
-var import_express5 = __toESM(require_express2());
+var import_express6 = __toESM(require_express2());
 var import_http = __toESM(require("http"));
 var import_cors = __toESM(require_lib3());
 var import_path6 = __toESM(require("path"));
@@ -54602,6 +54602,10 @@ function initDatabase() {
     db.exec("ALTER TABLE messages ADD COLUMN reactions TEXT DEFAULT '[]';");
   } catch (_) {
   }
+  try {
+    db.exec("ALTER TABLE messages ADD COLUMN forward_from TEXT DEFAULT NULL;");
+  } catch (_) {
+  }
   db.exec(`
     CREATE TABLE IF NOT EXISTS push_subscriptions (
       id TEXT PRIMARY KEY,
@@ -54632,6 +54636,34 @@ function initDatabase() {
       FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
     );
   `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channel_posts (
+      id TEXT PRIMARY KEY,
+      admin_id TEXT NOT NULL,
+      ciphertext TEXT NOT NULL,
+      iv TEXT NOT NULL,
+      auth_tag TEXT NOT NULL,
+      created_at TEXT NOT NULL,
+      views_count INTEGER DEFAULT 0,
+      reactions TEXT DEFAULT '[]',
+      FOREIGN KEY (admin_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_channel_posts_created_at ON channel_posts(created_at);
+  `);
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS channel_post_views (
+      post_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      viewed_at TEXT NOT NULL,
+      PRIMARY KEY (post_id, user_id),
+      FOREIGN KEY (post_id) REFERENCES channel_posts(id) ON DELETE CASCADE,
+      FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    );
+
+    CREATE INDEX IF NOT EXISTS idx_channel_views_post_id ON channel_post_views(post_id);
+    CREATE INDEX IF NOT EXISTS idx_channel_views_user_id ON channel_post_views(user_id);
+  `);
   const getSetting = db.prepare("SELECT value FROM settings WHERE key = ?");
   const setSetting = db.prepare("INSERT OR IGNORE INTO settings (key, value) VALUES (?, ?)");
   setSetting.run("registration_enabled", "true");
@@ -54643,6 +54675,8 @@ function initDatabase() {
   setSetting.run("pwa_short_name", "XMessenger");
   setSetting.run("pwa_icon_url", "");
   setSetting.run("admin_avatar_url", "");
+  setSetting.run("channel_title", "\u06A9\u0627\u0646\u0627\u0644 \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC");
+  setSetting.run("channel_description", "\u06A9\u0627\u0646\u0627\u0644 \u0631\u0633\u0645\u06CC \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC \u0648 \u0627\u062E\u0628\u0627\u0631 \u0633\u0627\u0645\u0627\u0646\u0647");
   const existingAdmin = db.prepare("SELECT id, username FROM users WHERE role = 'admin'").get();
   if (!existingAdmin) {
     const adminId = v4_default();
@@ -55928,6 +55962,33 @@ async function dispatchPushForMessage(sender, recipientId, rawText) {
     console.warn("[Push] Error dispatching push notification for message:", err);
   }
 }
+async function dispatchPushForChannelPost(postId) {
+  try {
+    const channelTitle = getSettingValue("channel_title", "\u06A9\u0627\u0646\u0627\u0644 \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC");
+    const pwaIconUrl = getSettingValue("pwa_icon_url", "");
+    const activeUsers = db.prepare("SELECT id FROM users WHERE status = 'active' AND role != 'admin'").all();
+    if (!activeUsers || activeUsers.length === 0) {
+      return;
+    }
+    const notificationBody = "\u067E\u0633\u062A \u062C\u062F\u06CC\u062F\u06CC \u062F\u0631 \u06A9\u0627\u0646\u0627\u0644 \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC \u0645\u0646\u062A\u0634\u0631 \u0634\u062F";
+    for (const u of activeUsers) {
+      sendPushToUser(u.id, {
+        title: channelTitle,
+        body: notificationBody,
+        icon: pwaIconUrl || "/icon-192.png",
+        badge: "/icon-192.png",
+        tag: `channel-post-${postId}`,
+        data: {
+          url: "/?tab=channel",
+          channelPostId: postId
+        }
+      }).catch(() => {
+      });
+    }
+  } catch (err) {
+    console.warn("[Push] Error dispatching push notification for channel post:", err);
+  }
+}
 
 // src/socket/index.ts
 var userSockets = /* @__PURE__ */ new Map();
@@ -57200,12 +57261,25 @@ function createMessagesRouter(io3) {
   }
   function fixMulterFilename(name) {
     if (!name || typeof name !== "string") return "";
-    try {
-      const fixed = Buffer.from(name, "latin1").toString("utf8");
-      if (!fixed.includes("\uFFFD") && /[\u00C0-\u00FF]/.test(name)) {
-        return fixed;
+    if (/[\u00C0-\u00FF]/.test(name)) {
+      const hasHighChars = [...name].some((c) => c.charCodeAt(0) > 255);
+      if (!hasHighChars) {
+        try {
+          const fixed = Buffer.from(name, "latin1").toString("utf8");
+          if (!fixed.includes("\uFFFD")) {
+            return fixed;
+          }
+        } catch {
+        }
+      } else {
+        try {
+          return name.replace(/[\u00C0-\u00FF][\u0080-\u00BF]+/g, (match) => {
+            const fixed = Buffer.from(match, "latin1").toString("utf8");
+            return fixed.includes("\uFFFD") ? match : fixed;
+          });
+        } catch {
+        }
       }
-    } catch {
     }
     return name;
   }
@@ -57353,7 +57427,7 @@ function createMessagesRouter(io3) {
       }
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const rows = db.prepare(`
-        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, reply_to_id, reactions, forward_from
         FROM messages
         WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
           AND expires_at > ?
@@ -57386,6 +57460,7 @@ function createMessagesRouter(io3) {
         isRead: Boolean(r.is_read),
         isOwn: r.sender_id === currentUser.id,
         replyToId: r.reply_to_id || null,
+        forwardFrom: r.forward_from || null,
         reactions: r.reactions ? (() => {
           try {
             return JSON.parse(r.reactions);
@@ -57604,9 +57679,298 @@ function createMessagesRouter(io3) {
   return router;
 }
 
-// src/routes/push.ts
+// src/routes/channel.ts
 var import_express4 = __toESM(require_express2());
-var pushRouter = (0, import_express4.Router)();
+function createChannelRouter(io3) {
+  const router = import_express4.default.Router();
+  router.use(authenticate, requireActive);
+  router.get("/meta", (req, res) => {
+    try {
+      const channelTitle = getSettingValue("channel_title", "\u06A9\u0627\u0646\u0627\u0644 \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC");
+      const channelDescription = getSettingValue("channel_description", "\u06A9\u0627\u0646\u0627\u0644 \u0631\u0633\u0645\u06CC \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC \u0648 \u0627\u062E\u0628\u0627\u0631 \u0633\u0627\u0645\u0627\u0646\u0647");
+      const subscribersRow = db.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").get();
+      return res.json({
+        title: channelTitle,
+        description: channelDescription,
+        subscribersCount: subscribersRow.count || 1
+      });
+    } catch (err) {
+      console.error("[Channel] Error fetching metadata:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.get("/posts", (req, res) => {
+    try {
+      const userId = req.user.id;
+      const rows = db.prepare(`
+        SELECT
+          id,
+          admin_id,
+          ciphertext,
+          iv,
+          auth_tag,
+          created_at,
+          views_count,
+          reactions
+        FROM channel_posts
+        ORDER BY created_at ASC
+      `).all();
+      const userViews = /* @__PURE__ */ new Set();
+      const viewRows = db.prepare("SELECT post_id FROM channel_post_views WHERE user_id = ?").all(userId);
+      viewRows.forEach((v) => userViews.add(v.post_id));
+      const posts = rows.map((r) => {
+        let text = "";
+        try {
+          text = decryptMessage(r.ciphertext, r.iv, r.auth_tag);
+        } catch (_) {
+          text = "[Encrypted message]";
+        }
+        let reactions = [];
+        try {
+          reactions = r.reactions ? JSON.parse(r.reactions) : [];
+        } catch {
+          reactions = [];
+        }
+        return {
+          id: r.id,
+          adminId: r.admin_id,
+          text,
+          createdAt: r.created_at,
+          viewsCount: r.views_count,
+          reactions,
+          hasViewed: userViews.has(r.id)
+        };
+      });
+      return res.json({ posts });
+    } catch (err) {
+      console.error("[Channel] Error fetching posts:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.post("/posts", requireAdmin, async (req, res) => {
+    try {
+      const { text } = req.body;
+      if (!text || typeof text !== "string" || !text.trim()) {
+        return res.status(400).json({ error: "EMPTY_TEXT", message: "Post content cannot be empty" });
+      }
+      if (text.length > 5e4) {
+        return res.status(400).json({ error: "TEXT_TOO_LONG", message: "Post exceeds maximum allowed length of 50,000 characters" });
+      }
+      const postId = v4_default();
+      const adminId = req.user.id;
+      const createdAt = (/* @__PURE__ */ new Date()).toISOString();
+      const trimmedText = text.trim();
+      const encrypted = encryptMessage(trimmedText);
+      db.prepare(`
+        INSERT INTO channel_posts (id, admin_id, ciphertext, iv, auth_tag, created_at, views_count, reactions)
+        VALUES (?, ?, ?, ?, ?, ?, 1, '[]')
+      `).run(postId, adminId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt);
+      db.prepare(`
+        INSERT OR IGNORE INTO channel_post_views (post_id, user_id, viewed_at)
+        VALUES (?, ?, ?)
+      `).run(postId, adminId, createdAt);
+      const postPayload = {
+        id: postId,
+        adminId,
+        text: trimmedText,
+        createdAt,
+        viewsCount: 1,
+        reactions: [],
+        hasViewed: true
+      };
+      io3.emit("channel:post_new", postPayload);
+      dispatchPushForChannelPost(postId).catch(() => {
+      });
+      return res.status(201).json({ success: true, post: postPayload });
+    } catch (err) {
+      console.error("[Channel] Error creating post:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.delete("/posts/:id", requireAdmin, (req, res) => {
+    try {
+      const { id } = req.params;
+      const row = db.prepare("SELECT id, ciphertext, iv, auth_tag FROM channel_posts WHERE id = ?").get(id);
+      if (!row) {
+        return res.status(404).json({ error: "POST_NOT_FOUND", message: "Post not found" });
+      }
+      if (row.ciphertext && row.iv && row.auth_tag) {
+        try {
+          const decrypted = decryptMessage(row.ciphertext, row.iv, row.auth_tag);
+          deleteAttachmentFromMessageText(decrypted);
+        } catch (_) {
+        }
+      }
+      db.prepare("DELETE FROM channel_post_views WHERE post_id = ?").run(id);
+      db.prepare("DELETE FROM channel_posts WHERE id = ?").run(id);
+      io3.emit("channel:post_deleted", { postId: id });
+      return res.json({ success: true });
+    } catch (err) {
+      console.error("[Channel] Error deleting post:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.post("/posts/:id/view", (req, res) => {
+    try {
+      const { id } = req.params;
+      const userId = req.user.id;
+      const now = (/* @__PURE__ */ new Date()).toISOString();
+      const post = db.prepare("SELECT id, views_count FROM channel_posts WHERE id = ?").get(id);
+      if (!post) {
+        return res.status(404).json({ error: "POST_NOT_FOUND", message: "Post not found" });
+      }
+      const insertResult = db.prepare(`
+        INSERT OR IGNORE INTO channel_post_views (post_id, user_id, viewed_at)
+        VALUES (?, ?, ?)
+      `).run(id, userId, now);
+      let currentViews = post.views_count;
+      if (insertResult.changes > 0) {
+        const countRow = db.prepare("SELECT COUNT(*) as count FROM channel_post_views WHERE post_id = ?").get(id);
+        currentViews = countRow.count || 1;
+        db.prepare("UPDATE channel_posts SET views_count = ? WHERE id = ?").run(currentViews, id);
+        io3.emit("channel:post_viewed", { postId: id, viewsCount: currentViews, userId });
+      }
+      return res.json({ success: true, viewsCount: currentViews });
+    } catch (err) {
+      console.error("[Channel] Error recording view:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.get("/posts/:id/viewers", requireAdmin, (req, res) => {
+    try {
+      const { id } = req.params;
+      const post = db.prepare("SELECT id FROM channel_posts WHERE id = ?").get(id);
+      if (!post) {
+        return res.status(404).json({ error: "POST_NOT_FOUND", message: "Post not found" });
+      }
+      const viewers = db.prepare(`
+        SELECT
+          u.id as userId,
+          u.username,
+          u.avatar_url as avatarUrl,
+          u.category,
+          cpv.viewed_at as viewedAt
+        FROM channel_post_views cpv
+        JOIN users u ON u.id = cpv.user_id
+        WHERE cpv.post_id = ?
+        ORDER BY cpv.viewed_at DESC
+      `).all(id);
+      return res.json({ viewers });
+    } catch (err) {
+      console.error("[Channel] Error fetching viewers:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.post("/posts/:id/react", (req, res) => {
+    try {
+      const { id } = req.params;
+      const user = req.user;
+      const rawEmoji = typeof req.body?.emoji === "string" && req.body.emoji.trim() ? req.body.emoji.trim() : "\u{1F44D}";
+      const reactionEmoji = ["\u{1F44D}", "\u2764\uFE0F"].includes(rawEmoji) ? rawEmoji : "\u{1F44D}";
+      const post = db.prepare("SELECT id, reactions FROM channel_posts WHERE id = ?").get(id);
+      if (!post) {
+        return res.status(404).json({ error: "POST_NOT_FOUND", message: "Post not found" });
+      }
+      let reactions = [];
+      try {
+        reactions = post.reactions ? JSON.parse(post.reactions) : [];
+      } catch {
+      }
+      const liveUser = db.prepare("SELECT username, avatar_url FROM users WHERE id = ?").get(user.id);
+      const existingIndex = reactions.findIndex((r) => r.userId === user.id && r.emoji === reactionEmoji);
+      if (existingIndex !== -1) {
+        reactions.splice(existingIndex, 1);
+      } else {
+        reactions = reactions.filter((r) => r.userId !== user.id);
+        reactions.push({
+          userId: user.id,
+          username: liveUser?.username || user.username,
+          avatarUrl: liveUser?.avatar_url || user.avatarUrl || void 0,
+          emoji: reactionEmoji,
+          createdAt: (/* @__PURE__ */ new Date()).toISOString()
+        });
+      }
+      const reactionsJson = JSON.stringify(reactions);
+      db.prepare("UPDATE channel_posts SET reactions = ? WHERE id = ?").run(reactionsJson, id);
+      io3.emit("channel:post_reaction", { postId: id, reactions });
+      return res.json({ success: true, reactions });
+    } catch (err) {
+      console.error("[Channel] Error toggling reaction:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.post("/posts/:id/forward", async (req, res) => {
+    try {
+      const { id } = req.params;
+      const { targetUserId } = req.body;
+      const user = req.user;
+      const post = db.prepare("SELECT id, ciphertext, iv, auth_tag FROM channel_posts WHERE id = ?").get(id);
+      if (!post) {
+        return res.status(404).json({ error: "POST_NOT_FOUND", message: "Post not found" });
+      }
+      const postText = decryptMessage(post.ciphertext, post.iv, post.auth_tag);
+      let recipientId;
+      if (user.role === "admin") {
+        if (!targetUserId) {
+          return res.status(400).json({ error: "MISSING_RECIPIENT", message: "targetUserId required for admin forward" });
+        }
+        const recipientCheck = db.prepare("SELECT id, status FROM users WHERE id = ?").get(targetUserId);
+        if (!recipientCheck || recipientCheck.status === "banned") {
+          return res.status(400).json({ error: "RECIPIENT_BANNED", message: "Recipient is not active" });
+        }
+        recipientId = targetUserId;
+      } else {
+        const admin = db.prepare("SELECT id FROM users WHERE role = 'admin'").get();
+        if (!admin) {
+          return res.status(500).json({ error: "ADMIN_NOT_FOUND", message: "Admin account not found" });
+        }
+        recipientId = admin.id;
+      }
+      const defaultTtl = parseInt(getSettingValue("default_ttl_seconds", "86400"), 10);
+      const nowTime = /* @__PURE__ */ new Date();
+      const expiresAt = new Date(nowTime.getTime() + defaultTtl * 1e3).toISOString();
+      const createdAt = nowTime.toISOString();
+      const messageId = v4_default();
+      const encrypted = encryptMessage(postText);
+      db.prepare(`
+        INSERT INTO messages (id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at, is_read, forward_from, reactions)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 0, 'channel', '[]')
+      `).run(messageId, user.id, recipientId, encrypted.ciphertext, encrypted.iv, encrypted.authTag, createdAt, expiresAt);
+      const messagePayload = {
+        id: messageId,
+        senderId: user.id,
+        recipientId,
+        text: postText,
+        createdAt,
+        expiresAt,
+        isRead: false,
+        forwardFrom: "channel",
+        reactions: []
+      };
+      if (user.role === "admin") {
+        io3.to(`user:${recipientId}`).emit("message:new", messagePayload);
+        io3.to("room:admin").emit("message:sent", messagePayload);
+      } else {
+        io3.to("room:admin").emit("message:new", {
+          ...messagePayload,
+          senderUsername: user.username
+        });
+        io3.to(`user:${user.id}`).emit("message:sent", messagePayload);
+      }
+      dispatchPushForMessage(user, recipientId, postText).catch(() => {
+      });
+      return res.status(201).json({ success: true, message: messagePayload });
+    } catch (err) {
+      console.error("[Channel] Error forwarding post:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  return router;
+}
+
+// src/routes/push.ts
+var import_express5 = __toESM(require_express2());
+var pushRouter = (0, import_express5.Router)();
 pushRouter.get("/vapid-public-key", (_req, res) => {
   try {
     const publicKey = getVapidPublicKey();
@@ -57717,7 +58081,7 @@ function startTtlWorker(io3) {
 // src/index.ts
 initDatabase();
 initVapid();
-var app = (0, import_express5.default)();
+var app = (0, import_express6.default)();
 var server = import_http.default.createServer(app);
 app.disable("x-powered-by");
 app.set("trust proxy", 1);
@@ -57731,10 +58095,11 @@ setupSocketServer(io2);
 startTtlWorker(io2);
 app.use(securityHeadersMiddleware);
 app.use((0, import_cors.default)());
-app.use(import_express5.default.json({ limit: "5mb" }));
+app.use(import_express6.default.json({ limit: "5mb" }));
 app.use("/api/auth", createAuthRouter(io2));
 app.use("/api/admin", createAdminRouter(io2));
 app.use("/api/messages", createMessagesRouter(io2));
+app.use("/api/channel", createChannelRouter(io2));
 app.use("/api/push", pushRouter);
 app.get("/api/health", (req, res) => {
   try {
@@ -57760,7 +58125,7 @@ var uploadsDir = import_path6.default.join(config.dataDir, "uploads");
 if (!import_fs7.default.existsSync(uploadsDir)) {
   import_fs7.default.mkdirSync(uploadsDir, { recursive: true });
 }
-app.use("/uploads", import_express5.default.static(uploadsDir, {
+app.use("/uploads", import_express6.default.static(uploadsDir, {
   maxAge: "7d",
   dotfiles: "ignore",
   setHeaders: (res) => {
@@ -57841,7 +58206,7 @@ var localDistPath = import_path6.default.resolve(process.cwd(), "./client-dist")
 var staticDir = import_fs7.default.existsSync(clientDistPath) ? clientDistPath : import_fs7.default.existsSync(localDistPath) ? localDistPath : null;
 if (staticDir) {
   console.log(`[Server] Serving static client from: ${staticDir}`);
-  app.use(import_express5.default.static(staticDir, {
+  app.use(import_express6.default.static(staticDir, {
     setHeaders: (res, filePath) => {
       const isUncached = filePath.endsWith(".html") || filePath.endsWith("sw.js") || filePath.endsWith("manifest.json") || filePath.endsWith(".png") || filePath.endsWith(".svg") || filePath.endsWith(".ico") || filePath.endsWith(".json") || !filePath.includes(import_path6.default.sep + "assets" + import_path6.default.sep);
       if (isUncached) {
