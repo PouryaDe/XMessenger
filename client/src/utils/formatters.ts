@@ -12,17 +12,29 @@ export function formatFileSize(bytes: number): string {
 /**
  * Automatically detects and repairs Latin-1 / ISO-8859-1 mojibake of UTF-8 text
  * (such as Persian / Arabic filenames mistakenly decoded as Latin-1 by multipart parsers).
+ * Handles both pure Latin-1 strings and mixed strings with valid Unicode characters.
  */
 export function decodeMojibake(str: string): string {
   if (!str || typeof str !== 'string') return '';
   if (/[\u00C0-\u00FF]/.test(str)) {
-    try {
-      const bytes = new Uint8Array(str.split('').map((c) => c.charCodeAt(0) & 0xff));
-      const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
-      if (!decoded.includes('\uFFFD')) {
-        return decoded;
-      }
-    } catch {}
+    const hasHighChars = str.split('').some((c) => c.charCodeAt(0) > 255);
+    if (!hasHighChars) {
+      try {
+        const bytes = new Uint8Array(str.split('').map((c) => c.charCodeAt(0)));
+        const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+        if (!decoded.includes('\uFFFD')) {
+          return decoded;
+        }
+      } catch {}
+    } else {
+      try {
+        return str.replace(/[\u00C0-\u00FF][\u0080-\u00BF]+/g, (match) => {
+          const bytes = new Uint8Array(match.split('').map((c) => c.charCodeAt(0)));
+          const decoded = new TextDecoder('utf-8', { fatal: false }).decode(bytes);
+          return decoded.includes('\uFFFD') ? match : decoded;
+        });
+      } catch {}
+    }
   }
   return str;
 }

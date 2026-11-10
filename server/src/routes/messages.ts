@@ -22,15 +22,28 @@ export function createMessagesRouter(io?: Server) {
 
   /**
    * Fixes Multer / Busboy Latin-1 header decoding bug for non-ASCII (Persian, Arabic, UTF-8) filenames.
+   * Handles both pure Latin-1 strings and mixed strings with valid Unicode characters.
    */
   function fixMulterFilename(name: string): string {
     if (!name || typeof name !== 'string') return '';
-    try {
-      const fixed = Buffer.from(name, 'latin1').toString('utf8');
-      if (!fixed.includes('\uFFFD') && /[\u00C0-\u00FF]/.test(name)) {
-        return fixed;
+    if (/[\u00C0-\u00FF]/.test(name)) {
+      const hasHighChars = [...name].some((c) => c.charCodeAt(0) > 255);
+      if (!hasHighChars) {
+        try {
+          const fixed = Buffer.from(name, 'latin1').toString('utf8');
+          if (!fixed.includes('\uFFFD')) {
+            return fixed;
+          }
+        } catch {}
+      } else {
+        try {
+          return name.replace(/[\u00C0-\u00FF][\u0080-\u00BF]+/g, (match) => {
+            const fixed = Buffer.from(match, 'latin1').toString('utf8');
+            return fixed.includes('\uFFFD') ? match : fixed;
+          });
+        } catch {}
       }
-    } catch {}
+    }
     return name;
   }
 

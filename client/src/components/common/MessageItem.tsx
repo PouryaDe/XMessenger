@@ -81,23 +81,30 @@ const MessageItemComponent: React.FC<Props> = ({
   const fileName = fileMatch ? decodeMojibake(fileMatch[2]) : null;
   const fileSize = fileMatch ? parseInt(fileMatch[3], 10) : 0;
 
-  const caption = imageMatch
+  const rawCaption = imageMatch
     ? (imageMatch[2] || '').trim()
     : fileMatch
     ? (fileMatch[4] || '').trim()
     : message.text;
+  const caption = decodeMojibake(rawCaption);
 
   // Parse replied message preview if present
   const repliedImageMatch = repliedMessage?.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
   const repliedImageUrl = repliedImageMatch ? repliedImageMatch[1] : null;
   const repliedFileMatch = repliedMessage?.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
   const repliedFileName = repliedFileMatch ? decodeMojibake(repliedFileMatch[2]) : '';
+  const repliedCaption = repliedImageMatch
+    ? decodeMojibake((repliedImageMatch[2] || '').trim())
+    : repliedFileMatch
+    ? decodeMojibake((repliedFileMatch[4] || '').trim())
+    : decodeMojibake(repliedMessage?.text || '');
+
   const repliedTextSnippet = repliedMessage
     ? (repliedImageMatch
-        ? ((repliedImageMatch[2] || '').trim() || `📷 ${t('photo')}`)
+        ? (repliedCaption || `📷 ${t('photo')}`)
         : repliedFileMatch
-        ? (`📎 ${repliedFileName}` + ((repliedFileMatch[4] || '').trim() ? ` — ${(repliedFileMatch[4] || '').trim()}` : ''))
-        : repliedMessage.text)
+        ? (`📎 ${repliedFileName || t('file')}` + (repliedCaption ? ` — ${repliedCaption}` : ''))
+        : repliedCaption)
     : '';
 
   // Calculate pixel-perfect, collision-free menu position clamped to viewport & active chat container
@@ -176,7 +183,14 @@ const MessageItemComponent: React.FC<Props> = ({
 
   const handleCopy = (e?: React.MouseEvent) => {
     e?.stopPropagation();
-    navigator.clipboard.writeText(caption || message.text);
+    const copyContent = caption
+      ? caption
+      : fileMatch
+      ? (fileName || t('file'))
+      : imageMatch
+      ? t('photo')
+      : message.text;
+    navigator.clipboard.writeText(decodeMojibake(copyContent));
     setCopied(true);
     setShowMenu(false);
     setTimeout(() => setCopied(false), 2000);

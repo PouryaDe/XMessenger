@@ -535,11 +535,16 @@ export const UserChatView: React.FC = () => {
             const replyImgUrl = replyImgMatch ? replyImgMatch[1] : null;
             const replyFileMatch = replyingTo.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
             const replyFileName = replyFileMatch ? decodeMojibake(replyFileMatch[2]) : '';
-            const replyPreviewText = replyImgMatch
-              ? ((replyImgMatch[2] || '').trim() || `📷 ${t('photo')}`)
+            const replyCaption = replyImgMatch
+              ? decodeMojibake((replyImgMatch[2] || '').trim())
               : replyFileMatch
-              ? (`📎 ${replyFileName}` + ((replyFileMatch[4] || '').trim() ? ` — ${(replyFileMatch[4] || '').trim()}` : ''))
-              : replyingTo.text;
+              ? decodeMojibake((replyFileMatch[4] || '').trim())
+              : decodeMojibake(replyingTo.text);
+            const replyPreviewText = replyImgMatch
+              ? (replyCaption || `📷 ${t('photo')}`)
+              : replyFileMatch
+              ? (`📎 ${replyFileName || t('file')}` + (replyCaption ? ` — ${replyCaption}` : ''))
+              : replyCaption;
             const isReplyingSelf = replyingTo.senderId === user?.id || replyingTo.isOwn === true;
 
             return (

@@ -8,6 +8,7 @@ import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
 import { getAvatarPalette } from '../../utils/avatar.js';
 import { formatMessageTime } from '../../utils/date.js';
+import { decodeMojibake } from '../../utils/formatters.js';
 import { 
   Users, 
   Search, 
@@ -283,10 +284,16 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser }) 
                           (() => {
                             const imgMatch = u.lastMessage.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
                             if (imgMatch) {
-                              const cap = imgMatch[2] ? imgMatch[2].trim() : '';
+                              const cap = imgMatch[2] ? decodeMojibake(imgMatch[2].trim()) : '';
                               return `📷 ${t('photo')}${cap ? `: ${cap}` : ''}`;
                             }
-                            return u.lastMessage.text;
+                            const fileMatch = u.lastMessage.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
+                            if (fileMatch) {
+                              const fName = decodeMojibake(fileMatch[2]);
+                              const cap = fileMatch[4] ? decodeMojibake(fileMatch[4].trim()) : '';
+                              return `📎 ${fName || t('file')}${cap ? `: ${cap}` : ''}`;
+                            }
+                            return decodeMojibake(u.lastMessage.text);
                           })()
                         ) : (
                           t('noPreviousMessage')

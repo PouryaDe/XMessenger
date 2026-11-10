@@ -191,19 +191,34 @@ describe('File Attachment Upload & Download Security Tests', () => {
 
   it('correctly detects and repairs Multer Latin-1 mojibake for Persian filenames', () => {
     function fixMulterFilename(name: string): string {
-      try {
-        const fixed = Buffer.from(name, 'latin1').toString('utf8');
-        if (!fixed.includes('\uFFFD') && /[\u00C0-\u00FF]/.test(name)) {
-          return fixed;
+      if (!name || typeof name !== 'string') return '';
+      if (/[\u00C0-\u00FF]/.test(name)) {
+        const hasHighChars = [...name].some((c) => c.charCodeAt(0) > 255);
+        if (!hasHighChars) {
+          try {
+            const fixed = Buffer.from(name, 'latin1').toString('utf8');
+            if (!fixed.includes('\uFFFD')) {
+              return fixed;
+            }
+          } catch {}
+        } else {
+          try {
+            return name.replace(/[\u00C0-\u00FF][\u0080-\u00BF]+/g, (match) => {
+              const fixed = Buffer.from(match, 'latin1').toString('utf8');
+              return fixed.includes('\uFFFD') ? match : fixed;
+            });
+          } catch {}
         }
-      } catch {}
+      }
       return name;
     }
 
     const testCases = [
       { original: 'امتحان زبان', latinMojibake: Buffer.from('امتحان زبان', 'utf8').toString('latin1') },
       { original: 'گزارش_مالی_۱۴۰۵', latinMojibake: Buffer.from('گزارش_مالی_۱۴۰۵', 'utf8').toString('latin1') },
-      { original: 'فایل صوتی فارسی', latinMojibake: Buffer.from('فایل صوتی فارسی', 'utf8').toString('latin1') }
+      { original: 'فایل صوتی فارسی', latinMojibake: Buffer.from('فایل صوتی فارسی', 'utf8').toString('latin1') },
+      { original: '_Persian (auto-generated)_ اقتصاد زیر سایه.txt', latinMojibake: Buffer.from('_Persian (auto-generated)_ اقتصاد زیر سایه.txt', 'utf8').toString('latin1') },
+      { original: 'فولدر تست / اقتصاد زیر سایه', latinMojibake: 'فولدر تست / ' + Buffer.from('اقتصاد زیر سایه', 'utf8').toString('latin1') }
     ];
 
     for (const { original, latinMojibake } of testCases) {
@@ -217,6 +232,35 @@ describe('File Attachment Upload & Download Security Tests', () => {
     // Ensure English and already-clean Persian are untouched
     assert.strictEqual(fixMulterFilename('EnglishReport.pdf'), 'EnglishReport.pdf');
     assert.strictEqual(fixMulterFilename('امتحان_تمیز.pdf'), 'امتحان_تمیز.pdf');
+  });
+
+  it('correctly formats conversation previews in sidebar for image and file attachments', () => {
+    function formatSidebarSnippet(text: string): string {
+      const imgMatch = text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
+      if (imgMatch) {
+        const cap = imgMatch[2] ? imgMatch[2].trim() : '';
+        return `📷 عکس${cap ? `: ${cap}` : ''}`;
+      }
+      const fileMatch = text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
+      if (fileMatch) {
+        const fName = fileMatch[2];
+        const cap = fileMatch[4] ? fileMatch[4].trim() : '';
+        return `📎 ${fName || 'فایل'}${cap ? `: ${cap}` : ''}`;
+      }
+      return text;
+    }
+
+    const textMsg = 'سلام خسته نباشید';
+    const imgMsgNoCap = '[image:/uploads/chat/abc-123.jpg]';
+    const imgMsgWithCap = '[image:/uploads/chat/abc-123.jpg]\nنمودار تحلیل';
+    const fileMsgNoCap = '[file:/api/messages/download/uuid.pdf|گزارش پروژه.pdf|204800]';
+    const fileMsgWithCap = '[file:/api/messages/download/uuid.pdf|گزارش پروژه.pdf|204800]\nنسخه نهایی';
+
+    assert.strictEqual(formatSidebarSnippet(textMsg), 'سلام خسته نباشید');
+    assert.strictEqual(formatSidebarSnippet(imgMsgNoCap), '📷 عکس');
+    assert.strictEqual(formatSidebarSnippet(imgMsgWithCap), '📷 عکس: نمودار تحلیل');
+    assert.strictEqual(formatSidebarSnippet(fileMsgNoCap), '📎 گزارش پروژه.pdf');
+    assert.strictEqual(formatSidebarSnippet(fileMsgWithCap), '📎 گزارش پروژه.pdf: نسخه نهایی');
   });
 
   it('unlinks attached files from disk when message text is parsed for deletion', () => {
