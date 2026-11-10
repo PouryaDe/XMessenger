@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
@@ -10,6 +10,7 @@ import { UserProfileModal } from './UserProfileModal.js';
 import { ChannelView } from '../channel/ChannelView.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
+import { SkeletonChat } from '../common/SkeletonChat.js';
 import { formatLastSeen, isSameDay } from '../../utils/date.js';
 import { getErrorMessage } from '../../utils/errors.js';
 import { getAvatarPalette } from '../../utils/avatar.js';
@@ -70,8 +71,7 @@ export const AdminDashboard: React.FC = () => {
   } = useChatStore();
 
   useEffect(() => {
-    loadChannelMeta();
-    loadChannelPosts();
+    Promise.allSettled([loadChannelMeta(), loadChannelPosts()]);
   }, []);
 
   const [settingsModalOpen, setSettingsModalOpen] = useState(false);
@@ -91,6 +91,9 @@ export const AdminDashboard: React.FC = () => {
   const prevMessagesLengthRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // O(1) Fast Message Map lookup for replies (prevents O(N^2) searches inside render loop)
+  const messagesMap = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
 
   // Clear replyingTo when switching active conversation or if message is deleted
   useEffect(() => {
@@ -421,7 +424,7 @@ export const AdminDashboard: React.FC = () => {
                         : getAvatarPalette(activeUser.username)
                     }`}>
                       {activeUser.avatarUrl ? (
-                        <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" />
+                        <img src={activeUser.avatarUrl} alt={activeUser.username} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                       ) : (
                         <span className="select-none tracking-wider">{activeUser.username.substring(0, 2)}</span>
                       )}
@@ -548,14 +551,7 @@ export const AdminDashboard: React.FC = () => {
                 className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none overscroll-y-contain touch-pan-y px-4 sm:px-6 py-3 relative w-full"
               >
                 {isLoadingMessages && messages.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none animate-fade-in">
-                    <div className="w-12 h-12 rounded-full bg-amber-500/15 border border-amber-500/25 text-amber-500 flex items-center justify-center mb-3 shadow-xs">
-                      <Loader2 className="w-6 h-6 animate-spin" />
-                    </div>
-                    <p className="text-xs font-semibold text-slate-600 dark:text-slate-300">
-                      {t('loadingConversation')}
-                    </p>
-                  </div>
+                  <SkeletonChat />
                 ) : messages.length === 0 ? (
                   <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
                     <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-4 text-amber-500 transition-transform hover:scale-105">
@@ -590,7 +586,7 @@ export const AdminDashboard: React.FC = () => {
 
                       const isFirstInGroup = showDateSeparator || !prevMsg || (prevIsOwn !== currIsOwn);
                       const isLastInGroup = !nextMsg || (nextIsOwn !== currIsOwn) || !isSameDay(msg.createdAt, nextMsg.createdAt);
-                      const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
+                      const repliedMsg = msg.replyToId ? messagesMap.get(msg.replyToId) || null : null;
                       const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
                       const repliedSenderName = repliedMsg
                         ? (repliedIsOwn ? t('replyToSelf') : activeUser.username)

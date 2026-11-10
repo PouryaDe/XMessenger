@@ -119,6 +119,48 @@ export class ApiError extends Error {
   }
 }
 
+const DEFAULT_TIMEOUT_MS = 12000;
+const activeAbortControllers = new Map<string, AbortController>();
+
+async function fetchWithTimeout(
+  url: string,
+  options: RequestInit = {},
+  timeoutMs = DEFAULT_TIMEOUT_MS,
+  dedupeKey?: string
+): Promise<Response> {
+  if (dedupeKey) {
+    const prev = activeAbortControllers.get(dedupeKey);
+    if (prev) {
+      prev.abort();
+    }
+  }
+
+  const controller = new AbortController();
+  if (dedupeKey) {
+    activeAbortControllers.set(dedupeKey, controller);
+  }
+
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+  try {
+    const res = await fetch(url, {
+      ...options,
+      signal: options.signal || controller.signal
+    });
+    return res;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new ApiError('Request timed out or superseded', 'TIMEOUT_OR_CANCELLED', 408);
+    }
+    throw err;
+  } finally {
+    clearTimeout(timer);
+    if (dedupeKey && activeAbortControllers.get(dedupeKey) === controller) {
+      activeAbortControllers.delete(dedupeKey);
+    }
+  }
+}
+
 async function safeJson<T = any>(res: Response, defaultErrorMsg: string): Promise<T> {
   const text = await res.text();
   let data: any = null;
@@ -152,79 +194,79 @@ async function safeJson<T = any>(res: Response, defaultErrorMsg: string): Promis
 export const api = {
   // Public Meta
   async getMeta(): Promise<AppMeta> {
-    const res = await fetch(`${API_BASE}/auth/meta`);
+    const res = await fetchWithTimeout(`${API_BASE}/auth/meta`, {}, 8000, 'meta');
     return safeJson<AppMeta>(res, 'Failed to fetch app meta');
   },
 
   // Auth
   async login(username: string, password: string): Promise<{ token: string; user: User }> {
-    const res = await fetch(`${API_BASE}/auth/login`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
-    });
+    }, 10000);
     return safeJson<{ token: string; user: User }>(res, 'Login failed');
   },
 
   async register(username: string, password: string): Promise<{ token: string; user: User; message: string }> {
-    const res = await fetch(`${API_BASE}/auth/register`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ username, password })
-    });
+    }, 10000);
     return safeJson<{ token: string; user: User; message: string }>(res, 'Registration failed');
   },
 
   async getMe(): Promise<{ user: User; adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null }> {
-    const res = await fetch(`${API_BASE}/auth/me`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/me`, {
       headers: { ...getAuthHeader() }
-    });
+    }, 10000, 'getMe');
     return safeJson<{ user: User; adminInfo: { id: string; username: string; lastSeen: string; isOnline?: boolean; avatarUrl?: string } | null }>(res, 'Failed to fetch user');
   },
 
   async uploadAvatar(file: File): Promise<{ success: boolean; avatarUrl: string; message: string }> {
     const formData = new FormData();
     formData.append('avatar', file);
-    const res = await fetch(`${API_BASE}/auth/avatar`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/avatar`, {
       method: 'POST',
       headers: { ...getAuthHeader() },
       body: formData
-    });
+    }, 20000);
     return safeJson<{ success: boolean; avatarUrl: string; message: string }>(res, 'Failed to upload avatar');
   },
 
   async deleteAvatar(): Promise<{ success: boolean }> {
-    const res = await fetch(`${API_BASE}/auth/avatar`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/avatar`, {
       method: 'DELETE',
       headers: { ...getAuthHeader() }
-    });
+    }, 10000);
     return safeJson<{ success: boolean }>(res, 'Failed to delete avatar');
   },
 
   async changePassword(currentPassword: string, newPassword: string): Promise<{ success: boolean; message: string }> {
-    const res = await fetch(`${API_BASE}/auth/change-password`, {
+    const res = await fetchWithTimeout(`${API_BASE}/auth/change-password`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ currentPassword, newPassword })
-    });
+    }, 10000);
     return safeJson<{ success: boolean; message: string }>(res, 'Failed to change password');
   },
 
   // Messages
   async getMessages(targetUserId?: string): Promise<{ messages: Message[] }> {
     const url = targetUserId ? `${API_BASE}/messages?userId=${targetUserId}` : `${API_BASE}/messages`;
-    const res = await fetch(url, {
+    const res = await fetchWithTimeout(url, {
       headers: { ...getAuthHeader() }
-    });
+    }, 12000, 'getMessages');
     return safeJson<{ messages: Message[] }>(res, 'Failed to fetch messages');
   },
 
   async sendMessage(text: string, targetUserId?: string, ttlSeconds?: number, replyToId?: string | null): Promise<{ message: Message }> {
-    const res = await fetch(`${API_BASE}/messages`, {
+    const res = await fetchWithTimeout(`${API_BASE}/messages`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json', ...getAuthHeader() },
       body: JSON.stringify({ text, targetUserId, ttlSeconds, replyToId })
-    });
+    }, 12000);
     return safeJson<{ message: Message }>(res, 'Failed to send message');
   },
 
@@ -295,9 +337,9 @@ export const api = {
 
   // Admin
   async getAdminUsers(): Promise<{ users: AdminUserItem[] }> {
-    const res = await fetch(`${API_BASE}/admin/users`, {
+    const res = await fetchWithTimeout(`${API_BASE}/admin/users`, {
       headers: { ...getAuthHeader() }
-    });
+    }, 12000, 'adminUsers');
     return safeJson<{ users: AdminUserItem[] }>(res, 'Failed to fetch users');
   },
 

@@ -74,25 +74,35 @@ export function createAdminRouter(io?: Server) {
       }>;
 
       const now = new Date().toISOString();
+      const adminId = req.user!.id;
+
+      // 1-query aggregation for all unread message counts (eliminates N+1 query bottleneck)
+      const unreadRows = db.prepare(`
+        SELECT sender_id, COUNT(*) as count
+        FROM messages
+        WHERE recipient_id = ? AND is_read = 0 AND expires_at > ?
+        GROUP BY sender_id
+      `).all(adminId, now) as Array<{ sender_id: string; count: number }>;
+
+      const unreadMap = new Map<string, number>();
+      for (const row of unreadRows) {
+        unreadMap.set(row.sender_id, row.count);
+      }
+
+      // Pre-compiled statement for last message lookup (executed with indexed plan)
+      const stmtLastMsg = db.prepare(`
+        SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at
+        FROM messages
+        WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
+          AND expires_at > ?
+        ORDER BY created_at DESC
+        LIMIT 1
+      `);
 
       // Enhance with conversation summary
       const usersWithMeta = users.map(user => {
-        // Count unread non-expired messages sent by user to admin
-        const unreadCount = db.prepare(`
-          SELECT COUNT(*) as count
-          FROM messages
-          WHERE sender_id = ? AND recipient_id = ? AND is_read = 0 AND expires_at > ?
-        `).get(user.id, req.user!.id, now) as { count: number } | undefined;
-
-        // Get last non-expired message
-        const lastMsgRow = db.prepare(`
-          SELECT id, sender_id, recipient_id, ciphertext, iv, auth_tag, created_at, expires_at
-          FROM messages
-          WHERE ((sender_id = ? AND recipient_id = ?) OR (sender_id = ? AND recipient_id = ?))
-            AND expires_at > ?
-          ORDER BY created_at DESC
-          LIMIT 1
-        `).get(user.id, req.user!.id, req.user!.id, user.id, now) as {
+        const unreadCount = unreadMap.get(user.id) || 0;
+        const lastMsgRow = stmtLastMsg.get(user.id, adminId, adminId, user.id, now) as {
           id: string;
           sender_id: string;
           recipient_id: string;
@@ -125,7 +135,7 @@ export function createAdminRouter(io?: Server) {
           avatarUrl: user.avatar_url || undefined,
           category: user.category || null,
           isOnline: isUserOnline(user.id),
-          unreadCount: unreadCount ? unreadCount.count : 0,
+          unreadCount,
           lastMessage
         };
       });

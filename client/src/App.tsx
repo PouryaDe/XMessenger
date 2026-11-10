@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, Suspense } from 'react';
 import { useAuthStore } from './stores/authStore.js';
 import { api } from './services/api.js';
 import { syncPushSubscription } from './services/push.js';
-import { AuthModal } from './components/auth/AuthModal.js';
-import { PendingApprovalScreen } from './components/auth/PendingApprovalScreen.js';
-import { SystemDisabledScreen } from './components/common/SystemDisabledScreen.js';
-import { UserChatView } from './components/user/UserChatView.js';
-import { AdminDashboard } from './components/admin/AdminDashboard.js';
 import { Shield, ShieldAlert, LogOut, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-
 import { setOriginalDocumentTitle } from './utils/notifications.js';
+
+// Lazy-loaded routes for code splitting and instant bundle hydration
+const AuthModal = React.lazy(() => import('./components/auth/AuthModal.js').then((m) => ({ default: m.AuthModal })));
+const PendingApprovalScreen = React.lazy(() => import('./components/auth/PendingApprovalScreen.js').then((m) => ({ default: m.PendingApprovalScreen })));
+const SystemDisabledScreen = React.lazy(() => import('./components/common/SystemDisabledScreen.js').then((m) => ({ default: m.SystemDisabledScreen })));
+const UserChatView = React.lazy(() => import('./components/user/UserChatView.js').then((m) => ({ default: m.UserChatView })));
+const AdminDashboard = React.lazy(() => import('./components/admin/AdminDashboard.js').then((m) => ({ default: m.AdminDashboard })));
 
 export const App: React.FC = () => {
   const { t } = useTranslation();
@@ -84,27 +85,29 @@ export const App: React.FC = () => {
     }
   }, [token, user]);
 
+  const renderFallback = () => (
+    <div className="fixed inset-0 flex flex-col items-center justify-center bg-ambient-canvas text-slate-800 dark:text-white transition-opacity duration-300">
+      <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 mb-4 animate-pulse">
+        <Shield className="w-8 h-8" />
+      </div>
+      <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-300">
+        {t('loadingSecure')}
+      </p>
+    </div>
+  );
+
   // 1. Loading state (smooth ambient canvas theme, no pitch-black flash)
   if (isLoading) {
-    return (
-      <div className="fixed inset-0 flex flex-col items-center justify-center bg-ambient-canvas text-slate-800 dark:text-white transition-opacity duration-300">
-        <div className="w-16 h-16 rounded-full bg-amber-500/15 border border-amber-500/30 flex items-center justify-center text-amber-500 mb-4 animate-pulse">
-          <Shield className="w-8 h-8" />
-        </div>
-        <p className="text-sm font-medium tracking-wide text-slate-600 dark:text-slate-300">
-          {t('loadingSecure')}
-        </p>
-      </div>
-    );
+    return renderFallback();
   }
 
   // 2. Not logged in
   if (!token || !user) {
     return (
-      <>
+      <Suspense fallback={renderFallback()}>
         <AuthModal />
         {isAppUpdating && renderUpdatingOverlay()}
-      </>
+      </Suspense>
     );
   }
 
@@ -165,7 +168,7 @@ export const App: React.FC = () => {
   }
 
   return (
-    <>
+    <Suspense fallback={renderFallback()}>
       {user.role === 'user' && user.status === 'pending' ? (
         <PendingApprovalScreen />
       ) : user.role === 'user' && !systemEnabled ? (
@@ -178,7 +181,7 @@ export const App: React.FC = () => {
 
       {/* Smooth PWA / App Updating Transition Overlay */}
       {isAppUpdating && renderUpdatingOverlay()}
-    </>
+    </Suspense>
   );
 };
 

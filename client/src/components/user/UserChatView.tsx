@@ -1,9 +1,10 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { MessageItem } from '../common/MessageItem.js';
 import { DateSeparator } from '../common/DateSeparator.js';
+import { SkeletonChat } from '../common/SkeletonChat.js';
 import { ChangePasswordModal } from '../common/ChangePasswordModal.js';
 import { UserDrawer } from './UserDrawer.js';
 import { ChannelView } from '../channel/ChannelView.js';
@@ -57,6 +58,7 @@ export const UserChatView: React.FC = () => {
     isAdminOnline,
     adminLastSeen,
     syncMessages,
+    isLoadingMessages,
     typingUsers,
     sendTyping,
     markConversationAsRead,
@@ -75,8 +77,7 @@ export const UserChatView: React.FC = () => {
   });
 
   useEffect(() => {
-    loadChannelMeta();
-    loadChannelPosts();
+    Promise.allSettled([loadChannelMeta(), loadChannelPosts()]);
   }, []);
 
   const [inputText, setInputText] = useState('');
@@ -98,6 +99,9 @@ export const UserChatView: React.FC = () => {
   const prevMessagesLengthRef = useRef(0);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // O(1) Fast Message Map lookup for replies (prevents O(N^2) searches inside render loop)
+  const messagesMap = useMemo(() => new Map(messages.map((m) => [m.id, m])), [messages]);
 
   // Clear replyingTo if the referenced message was deleted
   useEffect(() => {
@@ -392,7 +396,7 @@ export const UserChatView: React.FC = () => {
             <div className="relative">
               <div className="w-10 h-10 rounded-full bg-amber-500/15 dark:bg-amber-500/20 text-amber-600 dark:text-amber-400 border border-amber-500/30 flex items-center justify-center font-bold shadow-xs overflow-hidden">
                 {adminInfo?.avatarUrl ? (
-                  <img src={adminInfo.avatarUrl} alt="Admin" className="w-full h-full object-cover" />
+                  <img src={adminInfo.avatarUrl} alt="Admin" className="w-full h-full object-cover" loading="lazy" decoding="async" />
                 ) : (
                   <ShieldCheck className="w-5 h-5 text-amber-500" />
                 )}
@@ -545,7 +549,9 @@ export const UserChatView: React.FC = () => {
           onScroll={handleScroll}
           className="flex-1 overflow-y-auto overflow-x-hidden overscroll-x-none overscroll-y-contain touch-pan-y px-2 sm:px-4 py-2 relative w-full"
         >
-          {messages.length === 0 ? (
+          {isLoadingMessages && messages.length === 0 ? (
+            <SkeletonChat />
+          ) : messages.length === 0 ? (
             <div className="h-full flex flex-col items-center justify-center text-center p-6 text-slate-400 select-none">
               <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/[0.06] dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
                 <Lock className="w-7 h-7" />
@@ -579,7 +585,7 @@ export const UserChatView: React.FC = () => {
 
                 const isFirstInGroup = showDateSeparator || !prevMsg || (prevIsOwn !== currIsOwn);
                 const isLastInGroup = !nextMsg || (nextIsOwn !== currIsOwn) || !isSameDay(msg.createdAt, nextMsg.createdAt);
-                const repliedMsg = msg.replyToId ? messages.find((m) => m.id === msg.replyToId) || null : null;
+                const repliedMsg = msg.replyToId ? messagesMap.get(msg.replyToId) || null : null;
                 const repliedIsOwn = repliedMsg ? (repliedMsg.senderId === user?.id || repliedMsg.isOwn === true) : false;
                 const repliedSenderName = repliedMsg
                   ? (repliedIsOwn ? t('replyToSelf') : t('chatWithAdmin'))

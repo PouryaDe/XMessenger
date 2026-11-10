@@ -1,6 +1,7 @@
 import express from 'express';
 import http from 'http';
 import cors from 'cors';
+import compression from 'compression';
 import path from 'path';
 import fs from 'fs';
 import { Server } from 'socket.io';
@@ -44,6 +45,27 @@ startTtlWorker(io);
 
 // 5. Middlewares
 app.use(securityHeadersMiddleware);
+app.use(compression({
+  threshold: 1024, // Only compress responses above 1KB
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) return false;
+    return compression.filter(req, res);
+  }
+}));
+
+// Performance Latency Tracker (Core Web Vitals & Server Timing)
+app.use((req, res, next) => {
+  const start = Date.now();
+  res.on('finish', () => {
+    const duration = Date.now() - start;
+    res.setHeader('X-Response-Time', `${duration}ms`);
+    if (duration > 150 && !req.path.startsWith('/uploads') && !req.path.includes('/download')) {
+      console.warn(`[Performance] Slow request: ${req.method} ${req.path} took ${duration}ms`);
+    }
+  });
+  next();
+});
+
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 

@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useDeferredValue } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore, sortAdminUsersByLastMessage } from '../../stores/chatStore.js';
@@ -6,6 +6,7 @@ import { AdminUserItem } from '../../services/api.js';
 import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
+import { SkeletonSidebar } from '../common/SkeletonSidebar.js';
 import { getAvatarPalette } from '../../utils/avatar.js';
 import { formatMessageTime } from '../../utils/date.js';
 import { decodeMojibake } from '../../utils/formatters.js';
@@ -31,13 +32,15 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
   const adminAvatar = user?.avatarUrl || adminInfo?.avatarUrl;
 
   const [searchTerm, setSearchTerm] = useState('');
+  const deferredSearchTerm = useDeferredValue(searchTerm);
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'active' | 'banned'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   // Filter and sort users by latest message timestamp DESC (most active conversations at top)
   const filteredUsers = useMemo(() => {
+    const cleanSearch = deferredSearchTerm.toLowerCase().trim();
     const matched = adminUsers.filter((u) => {
-      const matchesSearch = u.username.toLowerCase().includes(searchTerm.toLowerCase().trim());
+      const matchesSearch = !cleanSearch || u.username.toLowerCase().includes(cleanSearch);
       if (!matchesSearch) return false;
       if (filterTab !== 'all' && u.status !== filterTab) return false;
       if (categoryFilter !== 'all') {
@@ -50,7 +53,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
       return true;
     });
     return sortAdminUsersByLastMessage(matched);
-  }, [adminUsers, searchTerm, filterTab, categoryFilter]);
+  }, [adminUsers, deferredSearchTerm, filterTab, categoryFilter]);
 
   const pendingCount = useMemo(() => {
     return adminUsers.filter((u) => u.status === 'pending').length;
@@ -67,7 +70,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
         <div className="flex items-center gap-2.5">
           <div className="w-8 h-8 rounded-full bg-amber-50 dark:bg-white/[0.08] text-slate-800 dark:text-amber-400 flex items-center justify-center font-bold shadow-xs border border-black/5 dark:border-white/[0.09] shrink-0 overflow-hidden">
             {adminAvatar ? (
-              <img src={adminAvatar} alt="Admin" className="w-full h-full object-cover" />
+              <img src={adminAvatar} alt="Admin" className="w-full h-full object-cover" loading="lazy" decoding="async" />
             ) : (
               <Users className="w-4 h-4" />
             )}
@@ -253,7 +256,9 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
 
           <div className="h-[1px] bg-black/[0.05] dark:bg-white/[0.05] my-1.5 mx-1" />
 
-          {filteredUsers.length === 0 ? (
+          {adminUsers.length === 0 ? (
+            <SkeletonSidebar />
+          ) : filteredUsers.length === 0 ? (
             <div className="p-8 text-center text-xs text-slate-400">
               {t('noUsersFound')}
             </div>
@@ -281,7 +286,7 @@ export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, on
                           : getAvatarPalette(u.username)
                       }`}>
                         {u.avatarUrl ? (
-                          <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" />
+                          <img src={u.avatarUrl} alt={u.username} className="w-full h-full object-cover" loading="lazy" decoding="async" />
                         ) : (
                           <span className="select-none tracking-wider">{u.username.substring(0, 2)}</span>
                         )}

@@ -15,6 +15,10 @@ export const db = new Database(config.dbPath);
 // Enable WAL mode & foreign keys for high performance and integrity
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+db.pragma('synchronous = NORMAL');
+db.pragma('cache_size = -64000'); // 64MB In-Memory Cache for SQLite
+db.pragma('mmap_size = 268435456'); // 256MB Memory-Mapped I/O
+db.pragma('temp_store = MEMORY');
 
 export function initDatabase() {
   // 1. Users table
@@ -64,6 +68,9 @@ export function initDatabase() {
 
     CREATE INDEX IF NOT EXISTS idx_messages_expires_at ON messages(expires_at);
     CREATE INDEX IF NOT EXISTS idx_messages_participants ON messages(sender_id, recipient_id);
+    CREATE INDEX IF NOT EXISTS idx_messages_conv_created ON messages(sender_id, recipient_id, created_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_messages_unread_lookup ON messages(recipient_id, sender_id, is_read, expires_at);
+    CREATE INDEX IF NOT EXISTS idx_users_role_last_seen ON users(role, last_seen DESC);
   `);
 
   // Ensure reply_to_id column exists for existing databases
@@ -196,11 +203,22 @@ function hashPasswordSync(password: string): string {
   return bcrypt.hashSync(password, 12);
 }
 
+// Fast In-Memory Cache for system settings to guarantee 0ms overhead
+const settingsCache = new Map<string, string>();
+
 export function getSettingValue(key: string, defaultValue: string): string {
+  if (settingsCache.has(key)) {
+    return settingsCache.get(key)!;
+  }
   const row = db.prepare('SELECT value FROM settings WHERE key = ?').get(key) as { value: string } | undefined;
-  return row ? row.value : defaultValue;
+  if (row) {
+    settingsCache.set(key, row.value);
+    return row.value;
+  }
+  return defaultValue;
 }
 
 export function updateSettingValue(key: string, value: string): void {
+  settingsCache.set(key, value);
   db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, value);
 }

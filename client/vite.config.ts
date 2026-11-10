@@ -46,6 +46,33 @@ export default defineConfig({
     __APP_BUILD_VERSION__: JSON.stringify(Date.now().toString(36))
   },
   plugins: [react(), swVersionPlugin()],
+  build: {
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          if (id.includes('node_modules')) {
+            if (id.includes('react') || id.includes('react-dom')) {
+              return 'vendor-react';
+            }
+            if (id.includes('lucide-react')) {
+              return 'vendor-icons';
+            }
+            if (id.includes('socket.io-client')) {
+              return 'vendor-socket';
+            }
+            if (id.includes('i18next') || id.includes('react-i18next')) {
+              return 'vendor-i18n';
+            }
+            if (id.includes('@fontsource')) {
+              return 'vendor-fonts';
+            }
+            return 'vendor-misc';
+          }
+        }
+      }
+    },
+    chunkSizeWarningLimit: 600
+  },
   server: {
     port: 5173,
     proxy: {

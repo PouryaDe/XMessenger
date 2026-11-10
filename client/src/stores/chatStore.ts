@@ -492,35 +492,38 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const authUser = useAuthStore.getState().user;
     if (!authUser) return;
 
-    // 1. Optimistic toggle
+    // 1. Optimistic toggle with rollback backup
     const currentMsgs = get().messages;
     const msg = currentMsgs.find((m) => m.id === messageId);
-    if (msg) {
-      const curReactions = msg.reactions || [];
-      const hasReaction = curReactions.some((r) => r.userId === authUser.id && r.emoji === emoji);
-      let nextReactions: MessageReaction[];
-      if (hasReaction) {
-        nextReactions = curReactions.filter((r) => !(r.userId === authUser.id && r.emoji === emoji));
-      } else {
-        nextReactions = [
-          ...curReactions.filter((r) => r.userId !== authUser.id),
-          {
-            userId: authUser.id,
-            username: authUser.username,
-            avatarUrl: authUser.avatarUrl,
-            emoji,
-            createdAt: new Date().toISOString()
-          }
-        ];
-      }
-      get().updateMessageReactions(messageId, nextReactions);
-    }
+    if (!msg) return;
 
-    // 2. Transmit via socket or fallback to REST
+    const previousReactions = msg.reactions || [];
+    const hasReaction = previousReactions.some((r) => r.userId === authUser.id && r.emoji === emoji);
+    let nextReactions: MessageReaction[];
+    if (hasReaction) {
+      nextReactions = previousReactions.filter((r) => !(r.userId === authUser.id && r.emoji === emoji));
+    } else {
+      nextReactions = [
+        ...previousReactions.filter((r) => r.userId !== authUser.id),
+        {
+          userId: authUser.id,
+          username: authUser.username,
+          avatarUrl: authUser.avatarUrl,
+          emoji,
+          createdAt: new Date().toISOString()
+        }
+      ];
+    }
+    get().updateMessageReactions(messageId, nextReactions);
+
+    // 2. Transmit via socket or fallback to REST with rollback on error
     const socket = getSocket();
     if (socket && socket.connected) {
       socket.emit('message:react', { messageId, emoji }, (res: any) => {
-        if (res?.reactions) {
+        if (res?.error) {
+          // Rollback on rejection
+          get().updateMessageReactions(messageId, previousReactions);
+        } else if (res?.reactions) {
           get().updateMessageReactions(messageId, res.reactions);
         }
       });
@@ -531,7 +534,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           get().updateMessageReactions(messageId, res.reactions);
         }
       } catch (err) {
-        console.warn('Failed to react via REST:', err);
+        console.warn('Failed to react via REST, rolling back optimistic state:', err);
+        get().updateMessageReactions(messageId, previousReactions);
       }
     }
   },
