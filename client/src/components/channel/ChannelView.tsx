@@ -3,24 +3,19 @@ import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore } from '../../stores/chatStore.js';
 import { api, ChannelPost } from '../../services/api.js';
-import { FormattedMessageText } from '../common/FormattedMessageText.js';
+import { ChannelPostCard } from './ChannelPostCard.js';
 import { DateSeparator } from '../common/DateSeparator.js';
 import { PostViewersModal } from './PostViewersModal.js';
 import { ForwardPostModal } from './ForwardPostModal.js';
-import { formatMessageTime, isSameDay } from '../../utils/date.js';
-import { formatFileSize, decodeMojibake } from '../../utils/formatters.js';
+import { isSameDay } from '../../utils/date.js';
+import { formatFileSize } from '../../utils/formatters.js';
 import { 
   Megaphone, 
-  Eye, 
-  Forward, 
-  Trash2, 
   Paperclip, 
-  Send, 
   Loader2, 
   X, 
   ArrowLeft, 
   FileText, 
-  Download,
   CheckCircle2,
   ChevronDown
 } from 'lucide-react';
@@ -47,7 +42,7 @@ interface Props {
 }
 
 export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitchToSupportChat, hideHeader = false }) => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { user } = useAuthStore();
   const { 
     channelPosts, 
@@ -72,6 +67,8 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
   const fileInputRef = useRef<HTMLInputElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const viewedPostsRef = useRef<Set<string>>(new Set());
+
+  const isInputRtl = !inputText || /[\u0600-\u06FF]/.test(inputText);
 
   // Load posts and meta on mount
   useEffect(() => {
@@ -98,40 +95,28 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
   const handleScroll = () => {
     if (!scrollContainerRef.current) return;
     const { scrollTop, scrollHeight, clientHeight } = scrollContainerRef.current;
-    const distanceToBottom = scrollHeight - scrollTop - clientHeight;
-    setShowScrollBottom(distanceToBottom > 200);
+    setShowScrollBottom(scrollHeight - scrollTop - clientHeight > 160);
   };
 
   const handleSelectedFile = (file: File) => {
-    if (file.size > MAX_FILE_SIZE) {
-      alert(t('errFileTooLarge'));
-      if (fileInputRef.current) fileInputRef.current.value = '';
-      return;
-    }
-
-    const cleanName = file.name.trim().replace(/[.\s\r\n\t]+$/, '');
-    const ext = '.' + (cleanName.split('.').pop() || '').toLowerCase();
+    const ext = '.' + file.name.split('.').pop()?.toLowerCase();
     if (FORBIDDEN_EXTENSIONS.has(ext)) {
-      alert(t('errForbiddenFileType'));
-      if (fileInputRef.current) fileInputRef.current.value = '';
+      alert(t('executableBlocked') || 'File type blocked for security reasons.');
       return;
     }
 
-    const isImg = file.type.startsWith('image/');
+    if (file.size > MAX_FILE_SIZE) {
+      alert(t('fileTooLarge') || 'File size exceeds maximum 200MB limit.');
+      return;
+    }
+
+    const isImage = file.type.startsWith('image/');
     let previewUrl: string | undefined;
-    if (isImg) {
+    if (isImage) {
       previewUrl = URL.createObjectURL(file);
     }
 
-    if (selectedAttachment?.previewUrl) {
-      URL.revokeObjectURL(selectedAttachment.previewUrl);
-    }
-
-    setSelectedAttachment({
-      file,
-      isImage: isImg,
-      previewUrl
-    });
+    setSelectedAttachment({ file, isImage, previewUrl });
   };
 
   const handleRemoveAttachment = () => {
@@ -139,9 +124,7 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
       URL.revokeObjectURL(selectedAttachment.previewUrl);
     }
     setSelectedAttachment(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
   };
 
   const handleSend = async (e: React.FormEvent) => {
@@ -152,10 +135,7 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
     if (!trimmed && !selectedAttachment) return;
 
     setIsUploading(true);
-
     try {
-      let finalContent = trimmed;
-
       if (selectedAttachment) {
         const uploadRes = await api.uploadChatAttachment(selectedAttachment.file);
         const fileUrl = uploadRes.url;
@@ -163,17 +143,15 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
         const fileSize = uploadRes.size || selectedAttachment.file.size;
 
         if (selectedAttachment.isImage) {
-          finalContent = trimmed
-            ? `[image:${fileUrl}]\n${trimmed}`
-            : `[image:${fileUrl}]`;
+          const formattedText = `[image:${fileUrl}]${trimmed ? `\n${trimmed}` : ''}`;
+          await api.createChannelPost(formattedText);
         } else {
-          finalContent = trimmed
-            ? `[file:${fileUrl}|${fileName}|${fileSize}]\n${trimmed}`
-            : `[file:${fileUrl}|${fileName}|${fileSize}]`;
+          const formattedText = `[file:${fileUrl}|${fileName}|${fileSize}]${trimmed ? `\n${trimmed}` : ''}`;
+          await api.createChannelPost(formattedText);
         }
+      } else {
+        await api.createChannelPost(trimmed);
       }
-
-      await api.createChannelPost(finalContent);
 
       setInputText('');
       handleRemoveAttachment();
@@ -186,24 +164,15 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
   };
 
   const handleDeletePost = async (postId: string) => {
-    if (!isAdmin) return;
-    if (!window.confirm(t('confirmDeleteChannelPost'))) return;
+    if (!window.confirm(t('confirmDeleteChannelPost') || 'Delete this post for all users?')) {
+      return;
+    }
 
     try {
       await api.deleteChannelPost(postId);
       removeChannelPost(postId);
     } catch (err: any) {
       alert(err.message || 'Failed to delete post');
-    }
-  };
-
-  const handleUserForward = async (post: ChannelPost) => {
-    try {
-      await api.forwardChannelPost(post.id);
-      setForwardToast(t('forwardSuccess'));
-      setTimeout(() => setForwardToast(null), 3000);
-    } catch (err: any) {
-      alert(err.message || 'Failed to forward');
     }
   };
 
@@ -274,14 +243,6 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
           <div className="px-4 py-2 rounded-2xl bg-emerald-500 text-white shadow-floating flex items-center gap-2 text-xs font-bold">
             <CheckCircle2 className="w-4 h-4" />
             <span>{forwardToast}</span>
-            {onSwitchToSupportChat && (
-              <button
-                onClick={onSwitchToSupportChat}
-                className="ms-2 px-2 py-0.5 rounded-lg bg-white/20 hover:bg-white/30 text-white underline text-[11px] cursor-pointer"
-              >
-                {t('directChat')}
-              </button>
-            )}
           </div>
         </div>
       )}
@@ -309,181 +270,25 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
           <main
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-6 py-4 space-y-4 max-w-3xl mx-auto w-full select-text"
+            className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-6 pt-4 pb-safe pb-4 sm:pb-6 space-y-4 max-w-3xl mx-auto w-full select-text"
           >
             {channelPosts.map((post, index) => {
               const prevPost = index > 0 ? channelPosts[index - 1] : null;
               const showDateSeparator = !prevPost || !isSameDay(prevPost.createdAt, post.createdAt);
 
-              // Parse post image and file attachments
-              const imgMatch = post.text.match(/^\[image:(.+?)\](?:\n([\s\S]*))?$/);
-              const imageUrl = imgMatch ? imgMatch[1] : null;
-
-              const fileMatch = post.text.match(/^\[file:(.+?)\|(.+?)\|(\d+?)\](?:\n([\s\S]*))?$/);
-              const fileUrl = fileMatch ? fileMatch[1] : null;
-              const fileName = fileMatch ? decodeMojibake(fileMatch[2]) : '';
-              const fileSize = fileMatch ? parseInt(fileMatch[3], 10) : 0;
-
-              const rawCaption = imgMatch
-                ? (imgMatch[2] || '').trim()
-                : fileMatch
-                ? (fileMatch[4] || '').trim()
-                : post.text;
-              const caption = decodeMojibake(rawCaption);
-
-              const formattedTime = formatMessageTime(post.createdAt);
-
-              // Group reactions by emoji
-              const reactionCounts: Record<string, { count: number; hasReacted: boolean }> = {};
-              (post.reactions || []).forEach((r) => {
-                if (!reactionCounts[r.emoji]) {
-                  reactionCounts[r.emoji] = { count: 0, hasReacted: false };
-                }
-                reactionCounts[r.emoji].count += 1;
-                if (r.userId === user?.id) {
-                  reactionCounts[r.emoji].hasReacted = true;
-                }
-              });
-
               return (
                 <React.Fragment key={post.id}>
                   {showDateSeparator && <DateSeparator date={post.createdAt} />}
-
-                  {/* Telegram Channel Post Card */}
-                  <article className="w-full bg-white/90 dark:bg-[#121620]/80 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] rounded-[24px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-sm overflow-hidden transition-all hover:shadow-md animate-fade-in">
-                    {/* Post Card Header */}
-                    <div className="px-4 pt-3.5 pb-2 flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.04]">
-                      <div className="flex items-center gap-2">
-                        <div className="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                          <Megaphone className="w-3.5 h-3.5" />
-                        </div>
-                        <span className="font-bold text-xs text-slate-900 dark:text-white">
-                          {title}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 select-none">
-                        <span>{formattedTime}</span>
-                        {isAdmin && (
-                          <button
-                            onClick={() => handleDeletePost(post.id)}
-                            className="w-6 h-6 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 flex items-center justify-center transition-colors cursor-pointer"
-                            title={t('delete')}
-                          >
-                            <Trash2 className="w-3.5 h-3.5" />
-                          </button>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Image Attachment */}
-                    {imageUrl && (
-                      <div className="relative w-full bg-black/5 dark:bg-black/20 overflow-hidden max-h-[460px] flex items-center justify-center">
-                        <img
-                          src={imageUrl}
-                          alt=""
-                          loading="lazy"
-                          className="w-full h-auto max-h-[460px] object-contain cursor-pointer"
-                          onClick={() => window.open(imageUrl, '_blank')}
-                        />
-                      </div>
-                    )}
-
-                    {/* File Attachment */}
-                    {fileUrl && (
-                      <div className="p-3">
-                        <a
-                          href={`/api/messages/download/${encodeURIComponent(fileUrl.replace('/uploads/chat/', ''))}?name=${encodeURIComponent(fileName)}`}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                          download={fileName}
-                          className="flex items-center gap-3 p-3 rounded-2xl bg-black/[0.03] dark:bg-white/[0.05] hover:bg-black/[0.06] dark:hover:bg-white/[0.08] transition-colors border border-black/[0.05] dark:border-white/[0.06]"
-                        >
-                          <div className="w-10 h-10 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-                            <FileText className="w-5 h-5" />
-                          </div>
-                          <div className="min-w-0 flex-1">
-                            <div className="font-bold text-xs text-slate-900 dark:text-slate-100 truncate">
-                              {fileName}
-                            </div>
-                            <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-                              {formatFileSize(fileSize)}
-                            </div>
-                          </div>
-                          <div className="w-8 h-8 rounded-full bg-black/5 dark:bg-white/10 flex items-center justify-center text-slate-600 dark:text-slate-300 shrink-0">
-                            <Download className="w-4 h-4" />
-                          </div>
-                        </a>
-                      </div>
-                    )}
-
-                    {/* Caption / Text */}
-                    {caption && (
-                      <div className="px-4 py-3 text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed break-words whitespace-pre-wrap select-text font-sans">
-                        <FormattedMessageText text={caption} />
-                      </div>
-                    )}
-
-                    {/* Post Card Footer Toolbar (Telegram-Style) */}
-                    <div className="px-4 py-2.5 bg-black/[0.02] dark:bg-white/[0.02] border-t border-black/[0.04] dark:border-white/[0.04] flex items-center justify-between gap-2 select-none">
-                      {/* Left: Reactions */}
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        {['👍', '❤️'].map((emoji) => {
-                          const state = reactionCounts[emoji] || { count: 0, hasReacted: false };
-                          return (
-                            <button
-                              key={emoji}
-                              type="button"
-                              onClick={() => handleToggleReaction(post.id, emoji)}
-                              className={`h-7 px-2.5 rounded-full text-xs font-semibold flex items-center gap-1.5 transition-all cursor-pointer ${
-                                state.hasReacted
-                                  ? 'bg-amber-500/15 dark:bg-amber-500/20 text-amber-700 dark:text-amber-400 border border-amber-500/35 dark:border-amber-500/40 shadow-xs scale-102'
-                                  : 'bg-black/[0.04] dark:bg-white/[0.06] text-slate-700 dark:text-slate-300 hover:bg-black/[0.07] dark:hover:bg-white/[0.10] border border-black/[0.04] dark:border-transparent'
-                              }`}
-                            >
-                              <span>{emoji}</span>
-                              {state.count > 0 && (
-                                <span className="text-[11px] font-mono">{state.count}</span>
-                              )}
-                            </button>
-                          );
-                        })}
-                      </div>
-
-                      {/* Right: Views Counter & Forward Button */}
-                      <div className="flex items-center gap-2">
-                        {/* Views Button (Admin Only) */}
-                        {isAdmin && (
-                          <button
-                            type="button"
-                            onClick={() => setActiveViewerPostId(post.id)}
-                            className="h-7 px-2.5 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-amber-500/15 text-slate-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-black/[0.04] dark:border-transparent hover:border-amber-500/30"
-                            title={t('postViewers')}
-                          >
-                            <Eye className="w-3.5 h-3.5 text-amber-500" />
-                            <span className="font-mono text-[11px]">{post.viewsCount || 1}</span>
-                          </button>
-                        )}
-
-                        {/* Forward Button */}
-                        <button
-                          type="button"
-                          onClick={() => {
-                            if (isAdmin) {
-                              setActiveForwardPost(post);
-                            } else {
-                              handleUserForward(post);
-                            }
-                          }}
-                          className="h-7 px-3 rounded-full bg-black/[0.04] dark:bg-white/[0.06] hover:bg-amber-500/15 text-slate-700 dark:text-slate-300 hover:text-amber-700 dark:hover:text-amber-400 text-xs font-bold flex items-center gap-1.5 transition-all cursor-pointer border border-black/[0.04] dark:border-transparent hover:border-amber-500/30"
-                          title={t('forward')}
-                        >
-                          <Forward className="w-3.5 h-3.5 rtl:scale-x-[-1]" />
-                          <span>{t('forward')}</span>
-                        </button>
-                      </div>
-                    </div>
-                  </article>
+                  <ChannelPostCard
+                    post={post}
+                    isAdmin={isAdmin}
+                    channelTitle={title}
+                    currentUser={user}
+                    onDelete={handleDeletePost}
+                    onReact={handleToggleReaction}
+                    onViewersClick={(postId) => setActiveViewerPostId(postId)}
+                    onForwardClick={(p) => setActiveForwardPost(p)}
+                  />
                 </React.Fragment>
               );
             })}
@@ -504,13 +309,13 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
         )}
       </div>
 
-      {/* Footer Area: Admin Composer */}
+      {/* Footer Area: Admin Composer (Telegram Chat Style) */}
       {isAdmin && (
-        <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-white/40 dark:bg-[#0E1218]/40 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.06]">
+        <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-transparent border-t border-black/[0.05] dark:border-white/[0.06]">
           <form onSubmit={handleSend} className="max-w-3xl mx-auto">
-            {/* Attachment Preview */}
+            {/* Attachment Preview Chip */}
             {selectedAttachment && (
-              <div className="mb-2 p-2 rounded-2xl bg-black/[0.03] dark:bg-white/[0.06] border border-black/5 dark:border-white/10 flex items-center justify-between gap-3 animate-fade-in">
+              <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none animate-message">
                 <div className="flex items-center gap-2.5 min-w-0">
                   {selectedAttachment.previewUrl ? (
                     <img
@@ -536,56 +341,91 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                   type="button"
                   onClick={handleRemoveAttachment}
                   className="w-7 h-7 rounded-full text-slate-400 hover:text-red-500 hover:bg-black/5 dark:hover:bg-white/10 flex items-center justify-center transition-colors cursor-pointer"
+                  title={t('removeAttachment')}
                 >
                   <X className="w-4 h-4" />
                 </button>
               </div>
             )}
 
-            <div className="relative flex items-center pb-2">
-              <input
-                ref={fileInputRef}
-                type="file"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) handleSelectedFile(file);
-                }}
-              />
-
+            {/* Telegram-style Input Pill */}
+            <div
+              data-input-pill
+              dir={i18n.language === 'fa' ? 'rtl' : 'ltr'}
+              className="relative flex items-center h-12 px-1.5 rounded-full bg-white dark:bg-[#151922]/95 backdrop-blur-xl shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-none border border-black/[0.08] dark:border-white/[0.08]"
+            >
+              {/* Attachment Button */}
               <button
                 type="button"
                 onClick={() => fileInputRef.current?.click()}
                 disabled={isUploading}
-                className="absolute start-2.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-amber-500 hover:bg-black/5 dark:hover:bg-white/10 transition-colors cursor-pointer"
+                className="w-8 h-8 rounded-full flex items-center justify-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors shrink-0 ms-1 cursor-pointer"
                 title={t('attachFile')}
               >
                 <Paperclip className="w-4 h-4" />
               </button>
 
+              {/* Input Field with Auto-Direction, iOS keyboard optimization */}
               <input
                 ref={inputRef}
                 type="text"
+                name="message"
+                enterKeyHint="send"
+                autoComplete="off"
+                autoCorrect="on"
+                autoCapitalize="sentences"
+                spellCheck={false}
+                dir={isInputRtl ? 'rtl' : 'ltr'}
                 value={inputText}
                 onChange={(e) => setInputText(e.target.value)}
-                placeholder={t('writeChannelPost')}
+                placeholder={
+                  selectedAttachment
+                    ? selectedAttachment.isImage
+                      ? t('imageCaptionPlaceholder')
+                      : t('attachmentCaptionPlaceholder')
+                    : t('writeChannelPost')
+                }
                 disabled={isUploading}
-                className="w-full h-11 ps-11 pe-12 rounded-full bg-black/[0.04] dark:bg-white/[0.06] text-xs sm:text-sm text-slate-900 dark:text-white border border-black/5 dark:border-white/10 focus:outline-none focus:border-amber-500/50 shadow-inner font-sans"
+                className={`flex-1 h-full bg-transparent border-none text-xs text-slate-900 dark:text-slate-100 focus:outline-none placeholder:text-slate-400 dark:placeholder:text-slate-500 font-sans px-3 ${
+                  isInputRtl ? 'text-right' : 'text-left'
+                }`}
               />
 
+              {/* Direct Send Icon Button WITHOUT Background (Matches Chat Send Button Exactly) */}
               <button
                 type="submit"
-                disabled={isUploading || (!inputText.trim() && !selectedAttachment)}
-                className="absolute end-1.5 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-amber-500 hover:bg-amber-600 active:scale-95 text-white flex items-center justify-center transition-all shadow-xs cursor-pointer disabled:opacity-40"
+                disabled={(!inputText.trim() && !selectedAttachment) || isUploading}
+                className="w-9 h-9 flex items-center justify-center text-[#2AABEE] hover:text-[#1d98d6] transition-all hover:scale-110 active:scale-95 disabled:text-slate-300 dark:disabled:text-slate-600 disabled:scale-100 disabled:cursor-not-allowed shrink-0 mx-1 bg-transparent border-none outline-none cursor-pointer"
+                title={t('send')}
               >
                 {isUploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-5 h-5 animate-spin text-[#2AABEE]" />
                 ) : (
-                  <Send className="w-4 h-4 rtl:scale-x-[-1]" />
+                  <svg
+                    viewBox="0 0 24 24"
+                    fill="currentColor"
+                    className={`w-6 h-6 transition-transform ${
+                      i18n.language === 'fa' ? '-scale-x-100' : ''
+                    }`}
+                  >
+                    <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                  </svg>
                 )}
               </button>
             </div>
           </form>
+
+          {/* Hidden File Input placed outside the form to suppress iOS WebKit multi-input accessory navigation arrows */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            tabIndex={-1}
+            className="hidden"
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) handleSelectedFile(file);
+            }}
+          />
         </footer>
       )}
 

@@ -92,7 +92,7 @@ export function createChannelRouter(io: Server): Router {
           adminId: r.admin_id,
           text,
           createdAt: r.created_at,
-          ...(isAdmin ? { viewsCount: r.views_count } : {}),
+          viewsCount: r.views_count,
           reactions,
           hasViewed: userViews.has(r.id)
         };
@@ -232,7 +232,7 @@ export function createChannelRouter(io: Server): Router {
         io.emit('channel:post_viewed', { postId: id, viewsCount: currentViews, userId });
       }
 
-      return res.json({ success: true, ...(isAdmin ? { viewsCount: currentViews } : {}) });
+      return res.json({ success: true, viewsCount: currentViews });
     } catch (err: any) {
       console.error('[Channel] Error recording view:', err);
       return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
