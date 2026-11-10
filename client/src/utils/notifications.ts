@@ -1,6 +1,8 @@
 // Browser desktop notifications & tab title badge manager
 
-let originalTitle = typeof document !== 'undefined' ? document.title : 'XMessenger';
+let originalTitle = typeof document !== 'undefined' 
+  ? ((typeof localStorage !== 'undefined' && localStorage.getItem('xmessenger_app_name')) || document.title || 'XMessenger')
+  : 'XMessenger';
 let unreadCount = 0;
 
 if (typeof window !== 'undefined') {

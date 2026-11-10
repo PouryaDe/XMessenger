@@ -31,6 +31,7 @@ import {
   unsubscribeFromPush, 
   sendTestNotification 
 } from '../../services/push.js';
+import { setOriginalDocumentTitle } from '../../utils/notifications.js';
 
 interface Props {
   isOpen: boolean;
@@ -122,6 +123,18 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
     setMsg(null);
     try {
       await api.updateAdminSettings(settings);
+      if (settings.appName !== undefined) {
+        const titleToSet = settings.appName.trim() || 'XMessenger';
+        document.title = titleToSet;
+        setOriginalDocumentTitle(titleToSet);
+        try {
+          if (settings.appName.trim()) {
+            localStorage.setItem('xmessenger_app_name', settings.appName.trim());
+          } else {
+            localStorage.removeItem('xmessenger_app_name');
+          }
+        } catch (_) {}
+      }
       if (settings.adminAvatarUrl !== undefined) {
         updateUserAvatar(settings.adminAvatarUrl || undefined);
         updateAdminAvatar(settings.adminAvatarUrl || undefined);

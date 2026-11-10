@@ -2,9 +2,14 @@
 <html lang="fa" dir="rtl" class="bg-ambient-canvas">
   <head>
     <meta charset="UTF-8" />
+    <title>XMessenger - پیام‌رسان امن و خصوصی</title>
     <script>
       (function() {
         try {
+          var n = localStorage.getItem('xmessenger_app_name');
+          if (n) {
+            document.title = n;
+          }
           var t = localStorage.getItem('xmessenger_theme') || 'dark';
           if (t === 'dark') {
             document.documentElement.classList.add('dark');
@@ -45,13 +50,12 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>XMessenger - پیام‌رسان امن و خصوصی</title>
 
     <!-- Google Fonts: Vazirmatn for Persian typography & Inter for Latin -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;500;600;700;800&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
-    <script type="module" crossorigin src="/assets/index-y0rfQNGQ.js"></script>
+    <script type="module" crossorigin src="/assets/index-BZpHvCEs.js"></script>
     <link rel="stylesheet" crossorigin href="/assets/index-B6RAlHvW.css">
   </head>
   <body class="bg-ambient-canvas text-gray-900 dark:text-gray-100 font-sans antialiased overflow-hidden select-none">

@@ -36,6 +36,9 @@ export const App: React.FC = () => {
       if (meta.appName) {
         document.title = meta.appName;
         setOriginalDocumentTitle(meta.appName);
+        try {
+          localStorage.setItem('xmessenger_app_name', meta.appName);
+        } catch (_) {}
       }
       if (meta.pwaIconUrl) {
         const linkIcon = document.querySelector('link[rel="icon"]');

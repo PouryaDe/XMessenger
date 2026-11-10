@@ -2,9 +2,14 @@
 <html lang="fa" dir="rtl" class="bg-ambient-canvas">
   <head>
     <meta charset="UTF-8" />
+    <title>XMessenger - پیام‌رسان امن و خصوصی</title>
     <script>
       (function() {
         try {
+          var n = localStorage.getItem('xmessenger_app_name');
+          if (n) {
+            document.title = n;
+          }
           var t = localStorage.getItem('xmessenger_theme') || 'dark';
           if (t === 'dark') {
             document.documentElement.classList.add('dark');
@@ -45,7 +50,6 @@
     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
     <meta http-equiv="Pragma" content="no-cache" />
     <meta http-equiv="Expires" content="0" />
-    <title>XMessenger - پیام‌رسان امن و خصوصی</title>
 
     <!-- Google Fonts: Vazirmatn for Persian typography & Inter for Latin -->
     <link rel="preconnect" href="https://fonts.googleapis.com">

@@ -171,8 +171,51 @@ const staticDir = fs.existsSync(clientDistPath) ? clientDistPath : (fs.existsSyn
 if (staticDir) {
   console.log(`[Server] Serving static client from: ${staticDir}`);
 
-  // Serve static assets with caching, but index.html, sw.js and manifest.json must NEVER be cached
+  // Escape HTML utility to prevent XSS in dynamic title/meta injection
+  const escapeHtml = (str: string): string =>
+    str.replace(/[&<>"']/g, (m) => ({
+      '&': '&amp;',
+      '<': '&lt;',
+      '>': '&gt;',
+      '"': '&quot;',
+      "'": '&#39;'
+    }[m] || m));
+
+  // Dynamic index.html renderer that stamps customized appName directly into <title> and apple-mobile-web-app-title
+  const renderIndexHtml = (_req: express.Request, res: express.Response) => {
+    const indexPath = path.join(staticDir, 'index.html');
+    if (!fs.existsSync(indexPath)) {
+      return res.status(404).send('Not Found');
+    }
+
+    try {
+      let html = fs.readFileSync(indexPath, 'utf-8');
+      const appName = getSettingValue('app_name', 'XMessenger');
+      const safeAppName = escapeHtml(appName);
+
+      // Replace <title> tag with dynamic configured appName
+      html = html.replace(/<title>.*?<\/title>/i, `<title>${safeAppName}</title>`);
+      // Replace <meta name="apple-mobile-web-app-title" content="...">
+      html = html.replace(
+        /<meta\s+name=["']apple-mobile-web-app-title["']\s+content=["'].*?["']/i,
+        `<meta name="apple-mobile-web-app-title" content="${safeAppName}"`
+      );
+
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate, max-age=0');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+      res.setHeader('Content-Type', 'text/html; charset=utf-8');
+      return res.send(html);
+    } catch (err) {
+      console.error('[Server] Error rendering index.html with custom title:', err);
+      return res.sendFile(indexPath);
+    }
+  };
+
+  // Serve static assets with caching, but index.html, sw.js and manifest.json must NEVER be cached.
+  // index: false ensures root '/' is handled by renderIndexHtml rather than static index.html.
   app.use(express.static(staticDir, {
+    index: false,
     setHeaders: (res, filePath) => {
       const isUncached = 
         filePath.endsWith('.html') || 
@@ -209,14 +252,16 @@ if (staticDir) {
     }
   });
 
+  // Explicit routes for root and /index.html with stamped custom title
+  app.get('/', renderIndexHtml);
+  app.get('/index.html', renderIndexHtml);
+
+  // SPA fallback route for all other page navigations
   app.get('*', (req, res, next) => {
     if (req.path.startsWith('/api') || req.path.startsWith('/socket.io')) {
       return next();
     }
-    res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
-    res.setHeader('Pragma', 'no-cache');
-    res.setHeader('Expires', '0');
-    res.sendFile(path.join(staticDir, 'index.html'));
+    renderIndexHtml(req, res);
   });
 }
 
