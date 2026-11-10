@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Wrench, RefreshCw, LogOut, Shield } from 'lucide-react';
+import { useAuthStore } from '../../stores/authStore.js';
 
 interface Props {
   onRetry: () => Promise<void> | void;
@@ -9,6 +10,7 @@ interface Props {
 
 export const SystemDisabledScreen: React.FC<Props> = ({ onRetry, onLogout }) => {
   const { t } = useTranslation();
+  const { appName } = useAuthStore();
   const [checking, setChecking] = useState(false);
 
   const handleRetry = async () => {
@@ -67,7 +69,7 @@ export const SystemDisabledScreen: React.FC<Props> = ({ onRetry, onLogout }) => 
         {/* Footer brand snippet */}
         <div className="mt-6 pt-4 border-t border-black/5 dark:border-white/5 flex items-center justify-center gap-1.5 text-[10px] text-slate-400">
           <Shield className="w-3 h-3 text-amber-500" />
-          <span>XMessenger Secure Core</span>
+          <span>{appName || 'XMessenger'} Secure Core</span>
         </div>
       </div>
     </div>

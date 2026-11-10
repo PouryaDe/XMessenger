@@ -34,7 +34,7 @@ interface Props {
 
 export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassword }) => {
   const { t, i18n } = useTranslation();
-  const { user, logout, updateUserAvatar } = useAuthStore();
+  const { user, logout, updateUserAvatar, appName } = useAuthStore();
   const { clearMessages } = useChatStore();
   const avatarInputRef = useRef<HTMLInputElement>(null);
   const [isUploadingAvatar, setIsUploadingAvatar] = useState(false);
@@ -402,7 +402,7 @@ export const UserDrawer: React.FC<Props> = ({ isOpen, onClose, onOpenChangePassw
             <span>{t('logout')}</span>
           </button>
           <div className="text-center text-[10px] text-slate-400 dark:text-slate-500 select-none">
-            XMessenger v{APP_VERSION}
+            {appName || 'XMessenger'} v{APP_VERSION}
           </div>
         </div>
       </div>

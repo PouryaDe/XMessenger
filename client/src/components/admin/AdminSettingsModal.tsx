@@ -127,13 +127,7 @@ export const AdminSettingsModal: React.FC<Props> = ({ isOpen, onClose }) => {
         const titleToSet = settings.appName.trim() || 'XMessenger';
         document.title = titleToSet;
         setOriginalDocumentTitle(titleToSet);
-        try {
-          if (settings.appName.trim()) {
-            localStorage.setItem('xmessenger_app_name', settings.appName.trim());
-          } else {
-            localStorage.removeItem('xmessenger_app_name');
-          }
-        } catch (_) {}
+        useAuthStore.getState().setAppName(titleToSet);
       }
       if (settings.adminAvatarUrl !== undefined) {
         updateUserAvatar(settings.adminAvatarUrl || undefined);

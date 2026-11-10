@@ -10,7 +10,7 @@ import { Lock, User as UserIcon, ArrowRight, CheckCircle2, AlertCircle } from 'l
 
 export const AuthModal: React.FC = () => {
   const { t } = useTranslation();
-  const { login } = useAuthStore();
+  const { login, appName } = useAuthStore();
   const [isRegister, setIsRegister] = useState(false);
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
@@ -96,13 +96,13 @@ export const AuthModal: React.FC = () => {
             <div className="relative w-12 h-12 sm:w-14 sm:h-14 rounded-[16px] sm:rounded-[18px] overflow-hidden border border-black/[0.06] dark:border-white/[0.10] shadow-md dark:shadow-[0_6px_16px_rgba(0,0,0,0.45)] bg-[#0E1218] flex items-center justify-center shrink-0">
               <img 
                 src={appMeta?.pwaIconUrl || `/icon-192.png?v=${APP_VERSION}`} 
-                alt={appMeta?.appName || 'XMessenger'} 
+                alt={appMeta?.appName || appName || 'XMessenger'} 
                 className="w-full h-full object-cover shrink-0" 
               />
             </div>
           </div>
           <h1 className="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 dark:text-white">
-            {appMeta?.appName || 'XMessenger'}
+            {appMeta?.appName || appName || 'XMessenger'}
           </h1>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-xs leading-relaxed">
             {t('tagline')}
@@ -228,7 +228,7 @@ export const AuthModal: React.FC = () => {
 
         {/* Footer Version */}
         <div className="text-center text-xs text-slate-400 dark:text-slate-500 mt-4 select-none font-mono" dir="ltr">
-          {appMeta?.appName || 'XMessenger'} v{APP_VERSION}
+          {appMeta?.appName || appName || 'XMessenger'} v{APP_VERSION}
         </div>
       </div>
     </div>

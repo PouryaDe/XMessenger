@@ -1,8 +1,8 @@
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useAuthStore } from '../../stores/authStore.js';
 import { useChatStore, sortAdminUsersByLastMessage } from '../../stores/chatStore.js';
-import { api, AdminUserItem } from '../../services/api.js';
+import { AdminUserItem } from '../../services/api.js';
 import { APP_VERSION } from '../../config/version.js';
 import { LanguageToggle } from '../common/LanguageToggle.js';
 import { ThemeToggle } from '../common/ThemeToggle.js';
@@ -26,20 +26,13 @@ interface Props {
 
 export const AdminSidebar: React.FC<Props> = ({ onOpenSettings, onSelectUser, onSelectChannel }) => {
   const { t, i18n } = useTranslation();
-  const { user, adminInfo, logout } = useAuthStore();
+  const { user, adminInfo, logout, appName } = useAuthStore();
   const { adminUsers, activeUserId, onlineUsers, channelPosts, channelMeta } = useChatStore();
   const adminAvatar = user?.avatarUrl || adminInfo?.avatarUrl;
 
   const [searchTerm, setSearchTerm] = useState('');
   const [filterTab, setFilterTab] = useState<'all' | 'pending' | 'active' | 'banned'>('all');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
-  const [appName, setAppName] = useState<string>('XMessenger');
-
-  useEffect(() => {
-    api.getMeta().then((meta) => {
-      if (meta?.appName) setAppName(meta.appName);
-    }).catch(() => {});
-  }, []);
 
   // Filter and sort users by latest message timestamp DESC (most active conversations at top)
   const filteredUsers = useMemo(() => {

@@ -14,7 +14,7 @@ import { setOriginalDocumentTitle } from './utils/notifications.js';
 
 export const App: React.FC = () => {
   const { t } = useTranslation();
-  const { user, token, isLoading, systemEnabled, checkAuth, logout, theme } = useAuthStore();
+  const { user, token, isLoading, systemEnabled, checkAuth, logout, theme, setAppName } = useAuthStore();
   const [isAppUpdating, setIsAppUpdating] = useState(false);
 
   useEffect(() => {
@@ -36,9 +36,7 @@ export const App: React.FC = () => {
       if (meta.appName) {
         document.title = meta.appName;
         setOriginalDocumentTitle(meta.appName);
-        try {
-          localStorage.setItem('xmessenger_app_name', meta.appName);
-        } catch (_) {}
+        setAppName(meta.appName);
       }
       if (meta.pwaIconUrl) {
         const linkIcon = document.querySelector('link[rel="icon"]');

@@ -9,10 +9,12 @@ interface AuthState {
   isLoading: boolean;
   systemEnabled: boolean;
   theme: 'dark' | 'light';
+  appName: string;
   login: (token: string, user: User) => void;
   logout: () => void;
   setUser: (user: User) => void;
   setSystemEnabled: (enabled: boolean) => void;
+  setAppName: (appName: string) => void;
   updateUserAvatar: (avatarUrl?: string) => void;
   updateAdminAvatar: (avatarUrl?: string) => void;
   checkAuth: () => Promise<void>;
@@ -49,6 +51,8 @@ const savedAdminInfo = typeof window !== 'undefined' ? (() => {
   }
 })() : null;
 
+const savedAppName = typeof window !== 'undefined' ? (localStorage.getItem('xmessenger_app_name') || 'XMessenger') : 'XMessenger';
+
 export const useAuthStore = create<AuthState>((set, get) => ({
   token: savedToken,
   user: savedUser,
@@ -57,6 +61,7 @@ export const useAuthStore = create<AuthState>((set, get) => ({
   isLoading: Boolean(savedToken && !savedUser),
   systemEnabled: true,
   theme: savedTheme,
+  appName: savedAppName,
 
   login: (token, user) => {
     localStorage.setItem('xmessenger_token', token);
@@ -85,6 +90,16 @@ export const useAuthStore = create<AuthState>((set, get) => ({
 
   setSystemEnabled: (systemEnabled: boolean) => {
     set({ systemEnabled });
+  },
+
+  setAppName: (appName: string) => {
+    const clean = appName?.trim() || 'XMessenger';
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem('xmessenger_app_name', clean);
+      } catch (_) {}
+    }
+    set({ appName: clean });
   },
 
   updateUserAvatar: (avatarUrl?: string) => {

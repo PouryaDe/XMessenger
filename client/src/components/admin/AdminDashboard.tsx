@@ -47,7 +47,7 @@ interface SelectedAttachment {
 
 export const AdminDashboard: React.FC = () => {
   const { t, i18n } = useTranslation();
-  const { user } = useAuthStore();
+  const { user, appName } = useAuthStore();
   const { 
     messages, 
     activeUserId, 
@@ -835,7 +835,7 @@ export const AdminDashboard: React.FC = () => {
               {t('selectConversationDesc')}
             </p>
             <div className="mt-4 px-3 py-1 rounded-full bg-black/[0.03] dark:bg-white/[0.05] border border-black/[0.05] dark:border-white/[0.06] text-[11px] text-slate-400 select-none">
-              XMessenger v{APP_VERSION}
+              {appName || 'XMessenger'} v{APP_VERSION}
             </div>
           </div>
         )}
