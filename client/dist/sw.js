@@ -1,8 +1,10 @@
 // XMessenger PWA Service Worker (Automated Build Stamping)
-const BUILD_VERSION = 'vmwa4d0ke-20261110';
+const BUILD_VERSION = 'vmwany18d-20261110';
 const CACHE_NAME = 'xmessenger-' + BUILD_VERSION;
 
 const PRECACHE_ASSETS = [
+  '/',
+  '/index.html',
   '/manifest.json',
   '/shield.svg',
   '/shield.svg?v=2.2.0',
@@ -16,14 +18,36 @@ const PRECACHE_ASSETS = [
   '/apple-touch-icon.png?v=2.2.0'
 ];
 
+// Helper to safely cache a response without throwing unhandled rejections
+function safeCachePut(cacheName, request, response) {
+  if (
+    !request ||
+    request.method !== 'GET' ||
+    (!request.url.startsWith('http://') && !request.url.startsWith('https://')) ||
+    !response ||
+    response.status !== 200
+  ) {
+    return;
+  }
+  const copy = response.clone();
+  caches.open(cacheName)
+    .then((cache) => cache.put(request, copy))
+    .catch(() => {});
+}
+
 self.addEventListener('install', (event) => {
   // Force this new service worker to become the active worker immediately without waiting
   self.skipWaiting();
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => {
-      return cache.addAll(PRECACHE_ASSETS).catch((err) => {
-        console.warn('[SW] Precache non-fatal warning:', err);
-      });
+    caches.open(CACHE_NAME).then(async (cache) => {
+      // Precache assets individually so a single missing asset or temporary glitch never aborts installation
+      await Promise.allSettled(
+        PRECACHE_ASSETS.map((asset) =>
+          cache.add(asset).catch((err) => {
+            console.warn(`[SW] Precache skipped for ${asset}:`, err?.message || err);
+          })
+        )
+      );
     })
   );
 });
@@ -121,7 +145,19 @@ self.addEventListener('notificationclick', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
-  const url = new URL(event.request.url);
+  // 0. Only handle HTTP and HTTPS requests.
+  // CRITICAL: Extension requests (chrome-extension://, moz-extension://), blob:, data:, etc.
+  // must NEVER be intercepted or passed to the Cache API, which throws TypeError on unsupported schemes.
+  if (!event.request.url.startsWith('http://') && !event.request.url.startsWith('https://')) {
+    return;
+  }
+
+  let url;
+  try {
+    url = new URL(event.request.url);
+  } catch (e) {
+    return;
+  }
 
   // 1. Bypass API, WebSocket, and uploads completely (never intercept or cache)
   if (
@@ -139,7 +175,9 @@ self.addEventListener('fetch', (event) => {
     url.pathname === '/manifest.json' || 
     url.pathname === '/version.json'
   ) {
-    event.respondWith(fetch(event.request));
+    event.respondWith(
+      fetch(event.request).catch(() => new Response('', { status: 503, statusText: 'Service Unavailable' }))
+    );
     return;
   }
 
@@ -157,18 +195,30 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            safeCachePut(CACHE_NAME, event.request, networkResponse);
           }
           return networkResponse;
         })
         .catch(async () => {
-          // Offline fallback when network is completely unavailable
-          const cached = await caches.match(event.request);
-          if (cached) return cached;
-          const rootCached = await caches.match('/');
-          if (rootCached) return rootCached;
-          return caches.match('/index.html');
+          // Offline fallback when network is completely unavailable or restarting
+          try {
+            const cached = await caches.match(event.request);
+            if (cached) return cached;
+            const rootCached = await caches.match('/');
+            if (rootCached) return rootCached;
+            const indexCached = await caches.match('/index.html');
+            if (indexCached) return indexCached;
+          } catch (e) {}
+
+          // Fallback Response: NEVER allow event.respondWith to resolve to undefined or reject!
+          return new Response(
+            '<!doctype html><html lang="fa" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>XMessenger</title><style>body{background:#0E1218;color:#e5e7eb;font-family:system-ui,-apple-system,sans-serif;display:flex;align-items:center;justify-content:center;height:100vh;margin:0;direction:rtl;text-align:center;padding:24px;box-sizing:border-box}h2{font-size:1.25rem;margin-bottom:8px;color:#f3f4f6}p{font-size:0.95rem;color:#9ca3af;margin-top:0}button{background:#d97706;color:#ffffff;border:none;padding:10px 24px;border-radius:12px;font-weight:600;font-size:0.95rem;margin-top:16px;cursor:pointer;-webkit-tap-highlight-color:transparent}button:hover{background:#b45309}</style></head><body><div><h2>در حال اتصال به سامانه...</h2><p>ارتباط با سرور برقرار نشد. لطفاً چند لحظه دیگر صفحه را بازنشانی کنید.</p><button onclick="location.reload()">تلاش مجدد</button></div></body></html>',
+            {
+              status: 503,
+              statusText: 'Service Unavailable',
+              headers: { 'Content-Type': 'text/html; charset=utf-8' }
+            }
+          );
         })
     );
     return;
@@ -185,28 +235,39 @@ self.addEventListener('fetch', (event) => {
       fetch(event.request)
         .then((networkResponse) => {
           if (networkResponse && networkResponse.status === 200) {
-            const copy = networkResponse.clone();
-            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+            safeCachePut(CACHE_NAME, event.request, networkResponse);
           }
           return networkResponse;
         })
-        .catch(() => caches.match(event.request))
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
+          return new Response('', { status: 404, statusText: 'Not Found' });
+        })
     );
     return;
   }
 
   // 5. Static Assets (Hashed JS/CSS, images, fonts)
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      if (cached) return cached;
-      return fetch(event.request).then((networkResponse) => {
-        if (!networkResponse || networkResponse.status !== 200 || networkResponse.type !== 'basic') {
+    caches.match(event.request)
+      .then((cached) => {
+        if (cached) return cached;
+        return fetch(event.request).then((networkResponse) => {
+          if (
+            networkResponse && 
+            networkResponse.status === 200 && 
+            (networkResponse.type === 'basic' || networkResponse.type === 'cors')
+          ) {
+            safeCachePut(CACHE_NAME, event.request, networkResponse);
+          }
           return networkResponse;
-        }
-        const copy = networkResponse.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-        return networkResponse;
-      });
-    })
+        }).catch(() => {
+          return new Response('', { status: 408, statusText: 'Request Timeout' });
+        });
+      })
+      .catch(() => {
+        return new Response('', { status: 503, statusText: 'Service Unavailable' });
+      })
   );
 });
