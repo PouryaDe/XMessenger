@@ -4,7 +4,7 @@ import path from 'path';
 import fs from 'fs';
 import multer from 'multer';
 import { config } from '../config/index.js';
-import { db, getSettingValue, updateSettingValue } from '../database/index.js';
+import { db, getSettingValue, updateSettingValue, clearSettingsCache } from '../database/index.js';
 import { authenticate, requireAdmin, AuthenticatedRequest } from '../middleware/auth.js';
 import { encryptMessage, decryptMessage } from '../utils/crypto.js';
 import { deleteAttachmentFromMessageText } from '../utils/fileCleaner.js';
@@ -548,8 +548,9 @@ export function createAdminRouter(io?: Server) {
       await uploadedDb.backup(config.dbPath);
       uploadedDb.close();
 
-      // Checkpoint WAL
+      // Checkpoint WAL & clear in-memory cache to reload restored settings
       db.pragma('wal_checkpoint(TRUNCATE)');
+      clearSettingsCache();
 
       // Delete the temporary uploaded file
       if (fs.existsSync(uploadedFilePath)) {

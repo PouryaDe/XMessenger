@@ -11,7 +11,7 @@ export const SkeletonSidebar: React.FC = () => {
           <div className="flex items-center gap-2.5 flex-1 min-w-0">
             {/* Avatar circle */}
             <div className="w-9 h-9 rounded-full bg-black/[0.06] dark:bg-white/[0.08] shrink-0" />
-            
+
             {/* Text lines */}
             <div className="flex-1 space-y-1.5 min-w-0">
               <div className="h-3 bg-black/[0.07] dark:bg-white/[0.09] rounded-md w-1/3" />

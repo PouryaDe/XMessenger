@@ -222,3 +222,7 @@ export function updateSettingValue(key: string, value: string): void {
   settingsCache.set(key, value);
   db.prepare('INSERT INTO settings (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value').run(key, value);
 }
+
+export function clearSettingsCache(): void {
+  settingsCache.clear();
+}

@@ -205,3 +205,24 @@ This document provides a comprehensive inventory of all built-in features, archi
 4. **Real-time Notifications & Web Push**:
    - Live socket broadcast (`channel:post_new`, `channel:post_viewed`, `channel:post_reaction`).
    - Web Push notification dispatched to all active subscribers.
+
+---
+
+## 14. Performance, Caching & Scalability Engine
+
+1. **Modular Code Splitting & Chunking**:
+   - React.lazy dynamic loading isolates admin panels and modals.
+   - Regular client bundle reduced to 77 kB initial payload.
+2. **Self-Hosted Typography**:
+   - WOFF2 fonts bundled directly into `dist/assets/` via `@fontsource/vazirmatn` and `@fontsource/inter`.
+   - Eliminates Google Fonts network overhead, blocking, and FOIT in offline or restricted environments.
+3. **Database High Performance**:
+   - Composite indexes (`idx_messages_conv_created`, `idx_messages_unread_lookup`, `idx_users_role_last_seen`).
+   - N+1 query elimination via 1-query `GROUP BY` unread aggregation.
+   - SQLite WAL pragmas (`mmap_size = 256MB`, `cache_size = 64MB`, `temp_store = MEMORY`).
+   - In-memory settings cache (`settingsCache`) for 0ns lookups with automatic cache purging on restore.
+4. **Modern UI UX Shimmers**:
+   - `SkeletonChat.tsx` and `SkeletonSidebar.tsx` glassmorphism shimmer loaders.
+5. **Network Resilience & Deduplication**:
+   - `fetchWithTimeout` auto-aborts stale requests on fast conversation switching to prevent race conditions.
+   - Transparent gzip compression via `compression()`.

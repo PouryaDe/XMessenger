@@ -237,7 +237,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
           )
         }));
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'TIMEOUT_OR_CANCELLED') {
+        return;
+      }
       console.error('Failed to load messages:', err);
       set({ isLoadingMessages: false });
     }
@@ -278,7 +281,8 @@ export const useChatStore = create<ChatState>((set, get) => ({
           )
         }));
       }
-    } catch (err) {
+    } catch (err: any) {
+      if (err?.code === 'TIMEOUT_OR_CANCELLED') return;
       console.warn('Background sync failed:', err);
     }
   },
