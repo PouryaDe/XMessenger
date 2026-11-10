@@ -8,6 +8,7 @@ interface ChatState {
   messages: Message[];
   messagesByConversation: Record<string, Message[]>; // Fast in-memory cache per conversation for 0ms chat switching
   activeUserId: string | null; // Selected user for Admin
+  activeTab: 'chat' | 'channel'; // Active view tab for Regular User
   adminUsers: AdminUserItem[];
   isAdminOnline: boolean;
   adminLastSeen: string | null;
@@ -22,6 +23,7 @@ interface ChatState {
 
   // Actions
   setActiveUserId: (id: string | null) => void;
+  setActiveTab: (tab: 'chat' | 'channel') => void;
   setAdminUsers: (users: AdminUserItem[]) => void;
   addAdminUser: (user: AdminUserItem) => void;
   updateAdminUserStatus: (userId: string, status: 'active' | 'pending' | 'banned') => void;
@@ -96,6 +98,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   messages: initialCachedMessages,
   messagesByConversation: {},
   activeUserId: null,
+  activeTab: (typeof window !== 'undefined' && window.location.search.includes('tab=channel')) ? 'channel' : 'chat',
   adminUsers: [],
   isAdminOnline: false,
   adminLastSeen: null,
@@ -107,6 +110,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   channelMeta: null,
   isLoadingChannel: false,
   channelUnreadCount: 0,
+
+  setActiveTab: (tab) => {
+    set({ activeTab: tab });
+  },
 
   setActiveUserId: (id) => {
     const prevActiveId = get().activeUserId;
@@ -548,7 +555,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const authStore = useAuthStore.getState();
     const currentUserId = authStore.user?.id || '';
     const isCurrentUserAdmin = authStore.user?.role === 'admin';
-    const { activeUserId } = get();
+    const { activeUserId, activeTab } = get();
 
     // Determine target conversation key
     let convPartnerId: string;
@@ -558,7 +565,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       convPartnerId = 'main';
     }
 
-    const isActive = isCurrentUserAdmin ? (activeUserId === convPartnerId) : true;
+    const isActive = isCurrentUserAdmin ? (activeUserId === convPartnerId) : (activeTab === 'chat');
 
     // If incoming message in the active chat, mark it read immediately!
     if (isActive && msg.senderId !== currentUserId) {

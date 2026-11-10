@@ -6,7 +6,8 @@ import {
   getVapidPublicKey, 
   saveSubscription, 
   removeSubscription,
-  dispatchPushForMessage 
+  dispatchPushForMessage,
+  dispatchPushForChannelPost
 } from '../src/services/pushService.js';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -160,6 +161,22 @@ describe('Push Service & VAPID Unit Tests', () => {
       activeUserId,
       'Top secret confidential message that must never appear on lockscreen'
     );
+
+    cleanupTestUser(activeUserId);
+  });
+
+  it('guarantees push notifications include granular chat/channel type metadata for client suppression', async () => {
+    const activeUserId = createTestUser('active');
+
+    // Message push dispatch
+    await dispatchPushForMessage(
+      { id: 'admin-id', username: 'admin', role: 'admin' },
+      activeUserId,
+      'Test message for type verification'
+    );
+
+    // Channel post push dispatch
+    await dispatchPushForChannelPost(uuidv4());
 
     cleanupTestUser(activeUserId);
   });

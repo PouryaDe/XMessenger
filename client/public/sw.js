@@ -116,14 +116,55 @@ self.addEventListener('push', (event) => {
     }
   }
 
-  event.waitUntil(
-    self.registration.showNotification(title, options).catch((err) => {
+  event.waitUntil((async () => {
+    try {
+      // 1. Check if any open window is visible and focused on this conversation
+      const clientList = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+      const focusedClients = clientList.filter((client) => client.visibilityState === 'visible' && client.focused);
+
+      if (focusedClients.length > 0) {
+        const pushType = data.data?.channelPostId ? 'channel' : (data.data?.type || 'chat');
+        const senderId = data.data?.senderId;
+
+        // Query focused clients via MessageChannel with fast 400ms timeout protection
+        const checkPromises = focusedClients.map((client) => {
+          return new Promise((resolve) => {
+            const channel = new MessageChannel();
+            const timer = setTimeout(() => resolve(false), 400);
+            channel.port1.onmessage = (msgEvent) => {
+              clearTimeout(timer);
+              resolve(Boolean(msgEvent.data && msgEvent.data.isActive));
+            };
+            client.postMessage({
+              type: 'CHECK_CHAT_ACTIVE',
+              senderId: senderId,
+              pushType: pushType
+            }, [channel.port2]);
+          });
+        });
+
+        const isChatActive = await Promise.race([
+          Promise.all(checkPromises).then((results) => results.some(Boolean)),
+          new Promise((resolve) => setTimeout(() => resolve(false), 450))
+        ]);
+
+        if (isChatActive) {
+          // User is actively in this conversation with window focused. Suppress notification!
+          return;
+        }
+      }
+    } catch (err) {
+      console.warn('[SW] Error checking active client focus:', err);
+    }
+
+    // 2. Fallback to showing system push notification if chat is not active
+    return self.registration.showNotification(title, options).catch((err) => {
       console.warn('[SW] showNotification fallback triggered:', err);
       return self.registration.showNotification(title, {
         body: data.body || 'شما یک پیام جدید دارید'
       });
-    })
-  );
+    });
+  })());
 });
 
 self.addEventListener('notificationclick', (event) => {

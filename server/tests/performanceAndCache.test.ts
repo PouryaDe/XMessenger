@@ -1,12 +1,12 @@
 import test, { describe, it } from 'node:test';
 import assert from 'node:assert/strict';
 import { v4 as uuidv4 } from 'uuid';
-import { 
-  db, 
-  initDatabase, 
-  getSettingValue, 
-  updateSettingValue, 
-  clearSettingsCache 
+import {
+  db,
+  initDatabase,
+  getSettingValue,
+  updateSettingValue,
+  clearSettingsCache
 } from '../src/database/index.js';
 import { encryptMessage } from '../src/utils/crypto.js';
 

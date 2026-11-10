@@ -171,7 +171,8 @@ export async function dispatchPushForMessage(
       tag: `msg-${sender.id}`,
       data: {
         url: '/',
-        senderId: sender.id
+        senderId: sender.id,
+        type: 'chat'
       }
     });
   } catch (err) {
@@ -201,7 +202,8 @@ export async function dispatchPushForChannelPost(postId: string): Promise<void> 
         tag: `channel-post-${postId}`,
         data: {
           url: '/?tab=channel',
-          channelPostId: postId
+          channelPostId: postId,
+          type: 'channel'
         }
       }).catch(() => {});
     }

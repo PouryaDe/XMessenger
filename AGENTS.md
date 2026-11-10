@@ -67,6 +67,10 @@ This file serves as the high-level roadmap and engineering guide for AI agents w
   - Granular view tracking (`channel_post_views`): regular users see total count (`👁 14`), while admin can inspect full list of viewers with avatars, categories, and timestamps via `PostViewersModal.tsx`.
   - Telegram-style post forwarding: users forward channel posts into 1-on-1 support chat with `forwardedFromChannel` banner; admin can forward posts to any target user thread via `ForwardPostModal.tsx`.
   - Real-time socket broadcast (`channel:post_new`, `channel:post_viewed`, `channel:post_reaction`) and asynchronous Web Push notification dispatch.
+- **Smart Active-Screen Notification Suppression**:
+  - Context-aware suppression of Web Push notifications, desktop browser notifications, tab title badges, and audio chimes when user or admin is actively viewing that specific conversation with window focus.
+  - Inter-thread `MessageChannel` verification between Service Worker (`sw.js`) and focused client windows (`isConversationActive`).
+  - Preserves notifications when the window is blurred, tab is backgrounded, or when viewing a different conversation or channel tab.
 - **High-Performance Architecture & Optimization Engine (31-Point Standard)**:
   - **Modular Code Splitting**: Dynamic `React.lazy` imports isolate heavy admin components (`AdminDashboard`, `AdminSettingsModal`, `UserProfileModal`) so unprivileged users download a lightweight 77 kB core bundle.
   - **Self-Hosted Typography**: Fully bundled WOFF2 Vazirmatn & Inter fonts via `@fontsource`, neutralizing FOIT/FOUT and external blocking in restricted networks (Iran filtering).

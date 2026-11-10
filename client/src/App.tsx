@@ -4,7 +4,7 @@ import { api } from './services/api.js';
 import { syncPushSubscription } from './services/push.js';
 import { Shield, ShieldAlert, LogOut, RefreshCw } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
-import { setOriginalDocumentTitle } from './utils/notifications.js';
+import { setOriginalDocumentTitle, isConversationActive } from './utils/notifications.js';
 
 // Lazy-loaded routes for code splitting and instant bundle hydration
 const AuthModal = React.lazy(() => import('./components/auth/AuthModal.js').then((m) => ({ default: m.AuthModal })));
@@ -84,6 +84,29 @@ export const App: React.FC = () => {
       syncPushSubscription().catch(() => {});
     }
   }, [token, user]);
+
+  // Listen for active chat verification requests from Service Worker push handler
+  useEffect(() => {
+    if (typeof navigator === 'undefined' || !('serviceWorker' in navigator)) return;
+
+    const handleSwMessage = (event: MessageEvent) => {
+      if (event.data && event.data.type === 'CHECK_CHAT_ACTIVE') {
+        const { senderId, pushType } = event.data;
+        const isChannel = pushType === 'channel';
+        const isActive = isConversationActive(senderId, isChannel);
+
+        const replyPort = event.ports && event.ports[0];
+        if (replyPort) {
+          replyPort.postMessage({ isActive });
+        }
+      }
+    };
+
+    navigator.serviceWorker.addEventListener('message', handleSwMessage);
+    return () => {
+      navigator.serviceWorker.removeEventListener('message', handleSwMessage);
+    };
+  }, []);
 
   const renderFallback = () => (
     <div className="fixed inset-0 flex flex-col items-center justify-center bg-ambient-canvas text-slate-800 dark:text-white transition-opacity duration-300">

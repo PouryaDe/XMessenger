@@ -66,19 +66,21 @@ export const UserChatView: React.FC = () => {
     channelUnreadCount,
     channelMeta,
     loadChannelPosts,
-    loadChannelMeta
+    loadChannelMeta,
+    activeTab,
+    setActiveTab
   } = useChatStore();
-
-  const [activeTab, setActiveTab] = useState<'chat' | 'channel'>(() => {
-    if (typeof window !== 'undefined' && window.location.search.includes('tab=channel')) {
-      return 'channel';
-    }
-    return 'chat';
-  });
 
   useEffect(() => {
     Promise.allSettled([loadChannelMeta(), loadChannelPosts()]);
   }, []);
+
+  // Sync conversation read status when switching back to support chat tab
+  useEffect(() => {
+    if (activeTab === 'chat' && adminInfo?.id) {
+      markConversationAsRead(adminInfo.id);
+    }
+  }, [activeTab, adminInfo?.id, markConversationAsRead]);
 
   const [inputText, setInputText] = useState('');
   const [drawerOpen, setDrawerOpen] = useState(false);

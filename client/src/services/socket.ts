@@ -2,7 +2,7 @@ import { io, Socket } from 'socket.io-client';
 import { useChatStore } from '../stores/chatStore.js';
 import { useAuthStore } from '../stores/authStore.js';
 import { playReceiveSound } from '../utils/sound.js';
-import { notifyIncomingMessage } from '../utils/notifications.js';
+import { notifyIncomingMessage, isConversationActive } from '../utils/notifications.js';
 import { AdminUserItem } from './api.js';
 
 let socket: Socket | null = null;
@@ -73,11 +73,14 @@ export function initSocket(token: string): Socket {
     useChatStore.getState().addMessage({ ...msg, isOwn });
 
     if (!isOwn && msg.senderId !== currentUserId) {
-      playReceiveSound();
-      const senderName = authStore.user?.role === 'admin'
-        ? (msg.senderUsername || 'کاربر')
-        : (authStore.adminInfo?.username || 'مدیریت');
-      notifyIncomingMessage(senderName, msg.text);
+      const isActive = isConversationActive(msg.senderId, false);
+      if (!isActive) {
+        playReceiveSound();
+        const senderName = authStore.user?.role === 'admin'
+          ? (msg.senderUsername || 'کاربر')
+          : (authStore.adminInfo?.username || 'مدیریت');
+        notifyIncomingMessage(senderName, msg.text, msg.senderId, false);
+      }
     }
   });
 
@@ -190,9 +193,12 @@ export function initSocket(token: string): Socket {
     useChatStore.getState().addChannelPost({ ...post, hasViewed: isOwn });
 
     if (!isOwn) {
-      playReceiveSound();
-      const channelTitle = useChatStore.getState().channelMeta?.title || 'کانال اطلاع‌رسانی';
-      notifyIncomingMessage(channelTitle, post.text);
+      const isChannelActive = isConversationActive('__channel__', true);
+      if (!isChannelActive) {
+        playReceiveSound();
+        const channelTitle = useChatStore.getState().channelMeta?.title || 'کانال اطلاع‌رسانی';
+        notifyIncomingMessage(channelTitle, post.text, '__channel__', true);
+      }
     }
   });
 
