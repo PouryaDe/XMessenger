@@ -285,30 +285,30 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
 
       {/* Posts Stream */}
       <div className="relative flex-1 flex flex-col min-h-0 w-full overflow-hidden">
-        <main
-          ref={scrollContainerRef}
-          onScroll={handleScroll}
-          className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-6 py-4 space-y-4 max-w-3xl mx-auto w-full select-text"
-        >
-          {isLoadingChannel && channelPosts.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
-              <span className="text-xs">{t('loadingConversation')}</span>
+        {isLoadingChannel && channelPosts.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-slate-400 gap-3 select-none">
+            <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+            <span className="text-xs">{t('loadingConversation')}</span>
+          </div>
+        ) : channelPosts.length === 0 ? (
+          <div className="flex-1 flex flex-col items-center justify-center text-center p-8 text-slate-400 select-none">
+            <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
+              <Megaphone className="w-8 h-8" />
             </div>
-          ) : channelPosts.length === 0 ? (
-            <div className="h-full flex flex-col items-center justify-center text-center p-8 text-slate-400 select-none">
-              <div className="w-16 h-16 rounded-full bg-white dark:bg-white/[0.07] backdrop-blur-md shadow-xs border border-black/5 dark:border-white/[0.08] flex items-center justify-center mb-3 text-amber-500">
-                <Megaphone className="w-8 h-8" />
-              </div>
-              <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
-                {title}
-              </h4>
-              <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
-                {t('noChannelPosts')}
-              </p>
-            </div>
-          ) : (
-            channelPosts.map((post, index) => {
+            <h4 className="font-bold text-sm text-slate-800 dark:text-slate-200">
+              {title}
+            </h4>
+            <p className="text-xs max-w-xs mt-1 text-slate-400 leading-relaxed">
+              {t('noChannelPosts')}
+            </p>
+          </div>
+        ) : (
+          <main
+            ref={scrollContainerRef}
+            onScroll={handleScroll}
+            className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-6 py-4 space-y-4 max-w-3xl mx-auto w-full select-text"
+          >
+            {channelPosts.map((post, index) => {
               const prevPost = index > 0 ? channelPosts[index - 1] : null;
               const showDateSeparator = !prevPost || !isSameDay(prevPost.createdAt, post.createdAt);
 
@@ -488,13 +488,13 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                   </article>
                 </React.Fragment>
               );
-            })
-          )}
-          <div ref={messagesEndRef} />
-        </main>
+            })}
+            <div ref={messagesEndRef} />
+          </main>
+        )}
 
         {/* Scroll to bottom floating button */}
-        {showScrollBottom && (
+        {showScrollBottom && channelPosts.length > 0 && (
           <button
             type="button"
             onClick={() => scrollToBottom('smooth')}
