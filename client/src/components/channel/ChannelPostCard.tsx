@@ -361,7 +361,7 @@ export const ChannelPostCard: React.FC<Props> = ({
                   >
                     <span className="text-[13px] leading-none drop-shadow-xs">{group.emoji}</span>
                     {group.count > 0 && (
-                      <span className="ms-1.5 font-mono text-xs leading-none tabular-nums font-semibold">{group.count}</span>
+                      <span className="ms-1.5 font-mono text-xs leading-none tabular-nums font-semibold relative top-[0.5px]">{group.count}</span>
                     )}
                   </button>
                 );
@@ -387,14 +387,14 @@ export const ChannelPostCard: React.FC<Props> = ({
                 title={t('postViewers')}
               >
                 <Eye className="w-3.5 h-3.5 text-amber-500 group-hover/eye:scale-110 transition-transform shrink-0" />
-                <span className="font-mono text-xs leading-none tabular-nums font-medium text-slate-500 dark:text-slate-400">{post.viewsCount || 1}</span>
+                <span className="font-mono text-xs leading-none tabular-nums font-medium text-slate-500 dark:text-slate-400 relative top-[1.5px]">{post.viewsCount || 1}</span>
               </button>
             )}
 
             {/* Timestamp with Clock icon */}
             <div className="inline-flex items-center gap-1.5 leading-none text-slate-400 dark:text-slate-500">
               <Clock className="w-3.5 h-3.5 text-slate-400 dark:text-slate-500 shrink-0" />
-              <span className="font-mono text-xs leading-none tabular-nums font-medium tracking-tight">
+              <span className="font-mono text-xs leading-none tabular-nums font-medium tracking-tight relative top-[1.5px]">
                 {formattedTime}
               </span>
             </div>
