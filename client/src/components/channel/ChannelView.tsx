@@ -265,7 +265,7 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
           <main
             ref={scrollContainerRef}
             onScroll={handleScroll}
-            className="flex-1 overflow-y-auto overscroll-contain px-2 sm:px-6 pt-4 pb-safe pb-4 sm:pb-6 space-y-4 max-w-3xl mx-auto w-full select-text"
+            className="flex-1 overflow-y-auto overscroll-contain px-3.5 sm:px-6 md:px-8 pt-4 pb-safe pb-4 sm:pb-6 space-y-4 max-w-2xl mx-auto w-full select-text"
           >
             {channelPosts.map((post, index) => {
               const prevPost = index > 0 ? channelPosts[index - 1] : null;
@@ -306,8 +306,8 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
 
       {/* Footer Area: Admin Composer (Telegram Chat Style) */}
       {isAdmin && (
-        <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-transparent border-t border-black/[0.05] dark:border-white/[0.06]">
-          <form onSubmit={handleSend} className="max-w-3xl mx-auto">
+        <footer className="px-3.5 sm:px-6 md:px-8 pt-2 pb-safe shrink-0 bg-transparent border-t border-black/[0.05] dark:border-white/[0.06]">
+          <form onSubmit={handleSend} className="max-w-2xl mx-auto">
             {/* Attachment Preview Chip */}
             {selectedAttachment && (
               <div className="mb-2 p-2 rounded-2xl bg-white/95 dark:bg-[#151922]/95 backdrop-blur-xl border border-black/[0.08] dark:border-white/[0.08] flex items-center justify-between gap-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] dark:shadow-none animate-message">

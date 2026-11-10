@@ -7,7 +7,6 @@ import { formatMessageTime } from '../../utils/date.js';
 import { calculateMessageMenuPosition } from '../../utils/menuPosition.js';
 import { formatFileSize, decodeMojibake } from '../../utils/formatters.js';
 import { 
-  Megaphone, 
   Eye, 
   Copy, 
   Trash2, 
@@ -20,7 +19,7 @@ import {
 interface Props {
   post: ChannelPost;
   isAdmin: boolean;
-  channelTitle: string;
+  channelTitle?: string;
   currentUser: User | null;
   onDelete: (postId: string) => void;
   onReact: (postId: string, emoji: string) => void;
@@ -31,7 +30,7 @@ interface Props {
 export const ChannelPostCard: React.FC<Props> = ({
   post,
   isAdmin,
-  channelTitle,
+  channelTitle: _channelTitle,
   currentUser,
   onDelete,
   onReact,
@@ -255,7 +254,7 @@ export const ChannelPostCard: React.FC<Props> = ({
         }}
         onTouchStart={handleTouchStart}
         onTouchEnd={handleTouchEnd}
-        className="w-full bg-white/90 dark:bg-[#121620]/80 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] rounded-[24px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-sm overflow-hidden transition-all hover:shadow-md animate-fade-in cursor-pointer relative"
+        className="w-full bg-white/90 dark:bg-[#121620]/80 backdrop-blur-xl border border-black/[0.06] dark:border-white/[0.08] rounded-[20px] sm:rounded-[24px] shadow-[0_1px_3px_rgba(0,0,0,0.04)] dark:shadow-sm overflow-hidden transition-all hover:shadow-md animate-fade-in cursor-pointer relative"
       >
         {/* Animated reaction burst on double-tap / reaction */}
         {showReactionAnim && (
@@ -271,34 +270,6 @@ export const ChannelPostCard: React.FC<Props> = ({
             </div>
           </div>
         )}
-
-        {/* Post Card Header */}
-        <div className="px-4 pt-3.5 pb-2 flex items-center justify-between border-b border-black/[0.04] dark:border-white/[0.04] select-none">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-lg bg-amber-500/15 text-amber-600 dark:text-amber-400 flex items-center justify-center shrink-0">
-              <Megaphone className="w-3.5 h-3.5" />
-            </div>
-            <span className="font-bold text-xs text-slate-900 dark:text-white truncate">
-              {channelTitle}
-            </span>
-          </div>
-
-          <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
-            {isAdmin && (
-              <button
-                type="button"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onDelete(post.id);
-                }}
-                className="w-6 h-6 rounded-lg text-slate-400 hover:text-red-500 hover:bg-red-500/10 flex items-center justify-center transition-colors cursor-pointer"
-                title={t('delete')}
-              >
-                <Trash2 className="w-3.5 h-3.5" />
-              </button>
-            )}
-          </div>
-        </div>
 
         {/* Image Attachment */}
         {imageUrl && (
@@ -347,7 +318,9 @@ export const ChannelPostCard: React.FC<Props> = ({
 
         {/* Caption / Text */}
         {caption && (
-          <div className="px-4 py-3 text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed break-words whitespace-pre-wrap select-text font-sans">
+          <div className={`px-4 text-xs sm:text-sm text-slate-900 dark:text-slate-100 leading-relaxed break-words whitespace-pre-wrap select-text font-sans ${
+            imageUrl || fileUrl ? 'py-2.5' : 'pt-3.5 pb-2.5 sm:pt-4 sm:pb-3'
+          }`}>
             <FormattedMessageText text={caption} />
           </div>
         )}
