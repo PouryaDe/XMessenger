@@ -52750,7 +52750,7 @@ var APP_VERSION = (() => {
     }
   } catch {
   }
-  return "2.2.1";
+  return "2.2.2";
 })();
 var DEFAULT_KEY = process.env.ENCRYPTION_KEY || import_crypto.default.createHash("sha256").update(process.env.JWT_SECRET || "xmessenger-default-secret-key-2026").digest("hex");
 var config = {
@@ -56706,6 +56706,9 @@ function createAuthRouter(io3) {
       db.prepare("UPDATE users SET avatar_url = ? WHERE id = ?").run(avatarUrl, userId);
       if (req.user.role === "admin") {
         updateSettingValue("admin_avatar_url", avatarUrl);
+        if (io3) {
+          io3.emit("admin:avatar_changed", { avatarUrl });
+        }
       }
       res.json({
         success: true,
@@ -56733,6 +56736,9 @@ function createAuthRouter(io3) {
       db.prepare("UPDATE users SET avatar_url = NULL WHERE id = ?").run(userId);
       if (req.user.role === "admin") {
         updateSettingValue("admin_avatar_url", "");
+        if (io3) {
+          io3.emit("admin:avatar_changed", { avatarUrl: void 0 });
+        }
       }
       res.json({ success: true, message: "Avatar removed" });
     } catch (err) {
@@ -57061,9 +57067,11 @@ function createAdminRouter(io3) {
         updateSettingValue("pwa_icon_url", pwaIconUrl.trim());
       }
       if (typeof adminAvatarUrl === "string") {
-        updateSettingValue("admin_avatar_url", adminAvatarUrl.trim());
-        if (adminAvatarUrl.trim()) {
-          db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(adminAvatarUrl.trim());
+        const trimmed = adminAvatarUrl.trim();
+        updateSettingValue("admin_avatar_url", trimmed);
+        db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(trimmed || null);
+        if (io3) {
+          io3.emit("admin:avatar_changed", { avatarUrl: trimmed || void 0 });
         }
       }
       res.json({ success: true, message: "Settings updated successfully" });
@@ -57688,11 +57696,16 @@ function createChannelRouter(io3) {
     try {
       const channelTitle = getSettingValue("channel_title", "\u06A9\u0627\u0646\u0627\u0644 \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC");
       const channelDescription = getSettingValue("channel_description", "\u06A9\u0627\u0646\u0627\u0644 \u0631\u0633\u0645\u06CC \u0627\u0637\u0644\u0627\u0639\u200C\u0631\u0633\u0627\u0646\u06CC \u0648 \u0627\u062E\u0628\u0627\u0631 \u0633\u0627\u0645\u0627\u0646\u0647");
-      const subscribersRow = db.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").get();
+      const isAdmin = req.user?.role === "admin";
+      let subscribersCount;
+      if (isAdmin) {
+        const subscribersRow = db.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").get();
+        subscribersCount = subscribersRow.count || 1;
+      }
       return res.json({
         title: channelTitle,
         description: channelDescription,
-        subscribersCount: subscribersRow.count || 1
+        ...isAdmin ? { subscribersCount } : {}
       });
     } catch (err) {
       console.error("[Channel] Error fetching metadata:", err);
@@ -57702,6 +57715,7 @@ function createChannelRouter(io3) {
   router.get("/posts", (req, res) => {
     try {
       const userId = req.user.id;
+      const isAdmin = req.user?.role === "admin";
       const rows = db.prepare(`
         SELECT
           id,
@@ -57814,6 +57828,7 @@ function createChannelRouter(io3) {
     try {
       const { id } = req.params;
       const userId = req.user.id;
+      const isAdmin = req.user?.role === "admin";
       const now = (/* @__PURE__ */ new Date()).toISOString();
       const post = db.prepare("SELECT id, views_count FROM channel_posts WHERE id = ?").get(id);
       if (!post) {
@@ -57858,6 +57873,47 @@ function createChannelRouter(io3) {
       return res.json({ viewers });
     } catch (err) {
       console.error("[Channel] Error fetching viewers:", err);
+      return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
+    }
+  });
+  router.get("/posts/:id/reactions", requireAdmin, (req, res) => {
+    try {
+      const { id } = req.params;
+      const post = db.prepare("SELECT id, reactions FROM channel_posts WHERE id = ?").get(id);
+      if (!post) {
+        return res.status(404).json({ error: "POST_NOT_FOUND", message: "Post not found" });
+      }
+      let storedReactions = [];
+      try {
+        storedReactions = post.reactions ? JSON.parse(post.reactions) : [];
+      } catch {
+        storedReactions = [];
+      }
+      if (storedReactions.length === 0) {
+        return res.json({ reactions: [] });
+      }
+      const userIds = storedReactions.map((r) => r.userId);
+      const placeholders = userIds.map(() => "?").join(",");
+      const users = db.prepare(`
+        SELECT id, username, avatar_url as avatarUrl, category
+        FROM users
+        WHERE id IN (${placeholders})
+      `).all(...userIds);
+      const userMap = new Map(users.map((u) => [u.id, u]));
+      const reactions = storedReactions.map((r) => {
+        const u = userMap.get(r.userId);
+        return {
+          userId: r.userId,
+          username: u?.username || "\u06A9\u0627\u0631\u0628\u0631",
+          avatarUrl: u?.avatarUrl,
+          category: u?.category,
+          emoji: r.emoji,
+          createdAt: r.createdAt
+        };
+      }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+      return res.json({ reactions });
+    } catch (err) {
+      console.error("[Channel] Error fetching reactions:", err);
       return res.status(500).json({ error: "INTERNAL_ERROR", message: err.message });
     }
   });
@@ -58206,7 +58262,39 @@ var localDistPath = import_path6.default.resolve(process.cwd(), "./client-dist")
 var staticDir = import_fs7.default.existsSync(clientDistPath) ? clientDistPath : import_fs7.default.existsSync(localDistPath) ? localDistPath : null;
 if (staticDir) {
   console.log(`[Server] Serving static client from: ${staticDir}`);
+  const escapeHtml = (str) => str.replace(/[&<>"']/g, (m) => ({
+    "&": "&amp;",
+    "<": "&lt;",
+    ">": "&gt;",
+    '"': "&quot;",
+    "'": "&#39;"
+  })[m] || m);
+  const renderIndexHtml = (_req, res) => {
+    const indexPath = import_path6.default.join(staticDir, "index.html");
+    if (!import_fs7.default.existsSync(indexPath)) {
+      return res.status(404).send("Not Found");
+    }
+    try {
+      let html = import_fs7.default.readFileSync(indexPath, "utf-8");
+      const appName = getSettingValue("app_name", "XMessenger");
+      const safeAppName = escapeHtml(appName);
+      html = html.replace(/<title>.*?<\/title>/i, `<title>${safeAppName}</title>`);
+      html = html.replace(
+        /<meta\s+name=["']apple-mobile-web-app-title["']\s+content=["'].*?["']/i,
+        `<meta name="apple-mobile-web-app-title" content="${safeAppName}"`
+      );
+      res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate, max-age=0");
+      res.setHeader("Pragma", "no-cache");
+      res.setHeader("Expires", "0");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.send(html);
+    } catch (err) {
+      console.error("[Server] Error rendering index.html with custom title:", err);
+      return res.sendFile(indexPath);
+    }
+  };
   app.use(import_express6.default.static(staticDir, {
+    index: false,
     setHeaders: (res, filePath) => {
       const isUncached = filePath.endsWith(".html") || filePath.endsWith("sw.js") || filePath.endsWith("manifest.json") || filePath.endsWith(".png") || filePath.endsWith(".svg") || filePath.endsWith(".ico") || filePath.endsWith(".json") || !filePath.includes(import_path6.default.sep + "assets" + import_path6.default.sep);
       if (isUncached) {
@@ -58230,14 +58318,13 @@ if (staticDir) {
       res.status(404).send("// Service worker not found");
     }
   });
+  app.get("/", renderIndexHtml);
+  app.get("/index.html", renderIndexHtml);
   app.get("*", (req, res, next) => {
     if (req.path.startsWith("/api") || req.path.startsWith("/socket.io")) {
       return next();
     }
-    res.setHeader("Cache-Control", "no-cache, no-store, must-revalidate");
-    res.setHeader("Pragma", "no-cache");
-    res.setHeader("Expires", "0");
-    res.sendFile(import_path6.default.join(staticDir, "index.html"));
+    renderIndexHtml(req, res);
   });
 }
 server.listen(config.port, "0.0.0.0", () => {

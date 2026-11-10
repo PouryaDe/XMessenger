@@ -332,9 +332,11 @@ function createAdminRouter(io) {
                 (0, index_js_2.updateSettingValue)('pwa_icon_url', pwaIconUrl.trim());
             }
             if (typeof adminAvatarUrl === 'string') {
-                (0, index_js_2.updateSettingValue)('admin_avatar_url', adminAvatarUrl.trim());
-                if (adminAvatarUrl.trim()) {
-                    index_js_2.db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(adminAvatarUrl.trim());
+                const trimmed = adminAvatarUrl.trim();
+                (0, index_js_2.updateSettingValue)('admin_avatar_url', trimmed);
+                index_js_2.db.prepare("UPDATE users SET avatar_url = ? WHERE role = 'admin'").run(trimmed || null);
+                if (io) {
+                    io.emit('admin:avatar_changed', { avatarUrl: trimmed || undefined });
                 }
             }
             res.json({ success: true, message: 'Settings updated successfully' });

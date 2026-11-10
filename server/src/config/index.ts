@@ -44,7 +44,7 @@ const APP_VERSION = (() => {
     }
   } catch {}
 
-  return '2.2.1';
+  return '2.2.2';
 })();
 
 // Ensure a fallback 32-byte key if none provided in development

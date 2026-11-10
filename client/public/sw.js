@@ -7,15 +7,15 @@ const PRECACHE_ASSETS = [
   '/index.html',
   '/manifest.json',
   '/shield.svg',
-  '/shield.svg?v=2.2.0',
+  '/shield.svg?v=2.2.2',
   '/icon-192.png',
-  '/icon-192.png?v=2.2.0',
+  '/icon-192.png?v=2.2.2',
   '/icon-512.png',
-  '/icon-512.png?v=2.2.0',
+  '/icon-512.png?v=2.2.2',
   '/icon-512-maskable.png',
-  '/icon-512-maskable.png?v=2.2.0',
+  '/icon-512-maskable.png?v=2.2.2',
   '/apple-touch-icon.png',
-  '/apple-touch-icon.png?v=2.2.0'
+  '/apple-touch-icon.png?v=2.2.2'
 ];
 
 // Helper to safely cache a response without throwing unhandled rejections

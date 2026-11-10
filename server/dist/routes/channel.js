@@ -20,11 +20,16 @@ function createChannelRouter(io) {
         try {
             const channelTitle = (0, index_js_1.getSettingValue)('channel_title', 'کانال اطلاع‌رسانی');
             const channelDescription = (0, index_js_1.getSettingValue)('channel_description', 'کانال رسمی اطلاع‌رسانی و اخبار سامانه');
-            const subscribersRow = index_js_1.db.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").get();
+            const isAdmin = req.user?.role === 'admin';
+            let subscribersCount;
+            if (isAdmin) {
+                const subscribersRow = index_js_1.db.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").get();
+                subscribersCount = subscribersRow.count || 1;
+            }
             return res.json({
                 title: channelTitle,
                 description: channelDescription,
-                subscribersCount: subscribersRow.count || 1
+                ...(isAdmin ? { subscribersCount } : {})
             });
         }
         catch (err) {
@@ -36,6 +41,7 @@ function createChannelRouter(io) {
     router.get('/posts', (req, res) => {
         try {
             const userId = req.user.id;
+            const isAdmin = req.user?.role === 'admin';
             const rows = index_js_1.db.prepare(`
         SELECT
           id,
@@ -163,6 +169,7 @@ function createChannelRouter(io) {
         try {
             const { id } = req.params;
             const userId = req.user.id;
+            const isAdmin = req.user?.role === 'admin';
             const now = new Date().toISOString();
             const post = index_js_1.db.prepare('SELECT id, views_count FROM channel_posts WHERE id = ?').get(id);
             if (!post) {
@@ -213,6 +220,50 @@ function createChannelRouter(io) {
         }
         catch (err) {
             console.error('[Channel] Error fetching viewers:', err);
+            return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
+        }
+    });
+    // 6.5. Get Granular Post Reactions List (Admin Only)
+    router.get('/posts/:id/reactions', auth_js_1.requireAdmin, (req, res) => {
+        try {
+            const { id } = req.params;
+            const post = index_js_1.db.prepare('SELECT id, reactions FROM channel_posts WHERE id = ?').get(id);
+            if (!post) {
+                return res.status(404).json({ error: 'POST_NOT_FOUND', message: 'Post not found' });
+            }
+            let storedReactions = [];
+            try {
+                storedReactions = post.reactions ? JSON.parse(post.reactions) : [];
+            }
+            catch {
+                storedReactions = [];
+            }
+            if (storedReactions.length === 0) {
+                return res.json({ reactions: [] });
+            }
+            const userIds = storedReactions.map((r) => r.userId);
+            const placeholders = userIds.map(() => '?').join(',');
+            const users = index_js_1.db.prepare(`
+        SELECT id, username, avatar_url as avatarUrl, category
+        FROM users
+        WHERE id IN (${placeholders})
+      `).all(...userIds);
+            const userMap = new Map(users.map((u) => [u.id, u]));
+            const reactions = storedReactions.map((r) => {
+                const u = userMap.get(r.userId);
+                return {
+                    userId: r.userId,
+                    username: u?.username || 'کاربر',
+                    avatarUrl: u?.avatarUrl,
+                    category: u?.category,
+                    emoji: r.emoji,
+                    createdAt: r.createdAt
+                };
+            }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+            return res.json({ reactions });
+        }
+        catch (err) {
+            console.error('[Channel] Error fetching reactions:', err);
             return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
         }
     });

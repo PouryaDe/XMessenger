@@ -268,6 +268,9 @@ function createAuthRouter(io) {
             // If admin, synchronize with global admin avatar setting
             if (req.user.role === 'admin') {
                 (0, index_js_2.updateSettingValue)('admin_avatar_url', avatarUrl);
+                if (io) {
+                    io.emit('admin:avatar_changed', { avatarUrl });
+                }
             }
             res.json({
                 success: true,
@@ -297,6 +300,9 @@ function createAuthRouter(io) {
             index_js_2.db.prepare('UPDATE users SET avatar_url = NULL WHERE id = ?').run(userId);
             if (req.user.role === 'admin') {
                 (0, index_js_2.updateSettingValue)('admin_avatar_url', '');
+                if (io) {
+                    io.emit('admin:avatar_changed', { avatarUrl: undefined });
+                }
             }
             res.json({ success: true, message: 'Avatar removed' });
         }
