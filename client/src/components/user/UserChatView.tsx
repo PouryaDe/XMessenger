@@ -370,23 +370,20 @@ export const UserChatView: React.FC = () => {
     <div className="relative flex flex-col flex-1 h-full min-h-0 w-full max-w-md md:max-w-xl mx-auto bg-ambient-canvas sm:border-x border-black/[0.06] dark:border-white/[0.08] sm:shadow-floating shadow-none overflow-hidden overflow-x-hidden overscroll-x-none select-none font-sans">
       
       {/* Top Header with dynamic safe-area clearance for iOS status bar & Dynamic Island */}
-      <header className="pt-safe pb-2.5 px-4 sm:px-5 flex items-center justify-between shrink-0 bg-transparent border-b border-black/[0.05] dark:border-white/[0.06] z-10">
+      <header className="pt-safe pb-3.5 px-4 sm:px-5 min-h-[58px] sm:min-h-[64px] flex items-center justify-between shrink-0 bg-transparent border-b border-black/[0.05] dark:border-white/[0.06] z-10">
         {activeTab === 'channel' ? (
           /* Channel Avatar & Info */
           <div className="flex items-center gap-3 min-w-0">
             <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-amber-600 to-amber-400 text-white flex items-center justify-center shadow-xs shrink-0">
               <Megaphone className="w-5 h-5" />
             </div>
-            <div className="min-w-0">
+            <div className="min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-1.5">
-                <h2 className="font-extrabold text-sm text-slate-900 dark:text-white truncate">
+                <h2 className="font-extrabold text-sm text-slate-900 dark:text-white leading-tight truncate">
                   {channelMeta?.title || t('channelTitle')}
                 </h2>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               </div>
-              <p className="text-[11px] text-slate-400 truncate">
-                {channelMeta?.description || t('channelSubtitle')}
-              </p>
             </div>
           </div>
         ) : (

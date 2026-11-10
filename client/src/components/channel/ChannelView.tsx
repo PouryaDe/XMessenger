@@ -185,14 +185,13 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
   };
 
   const title = channelMeta?.title || t('channelTitle');
-  const description = channelMeta?.description || t('channelSubtitle');
   const subscribersCount = channelMeta?.subscribersCount || 1;
 
   return (
     <div className="flex-1 flex flex-col h-full bg-transparent overflow-hidden select-none">
       {/* Channel Header */}
       {!hideHeader && (
-        <header className="pt-safe pb-2 px-4 sm:px-6 border-b border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between shrink-0 bg-white/40 dark:bg-[#0E1218]/40 backdrop-blur-xl z-20">
+        <header className="pt-safe pb-3.5 px-4 sm:px-6 min-h-[58px] sm:min-h-[64px] border-b border-black/[0.05] dark:border-white/[0.06] flex items-center justify-between shrink-0 bg-white/40 dark:bg-[#0E1218]/40 backdrop-blur-xl z-20">
           <div className="flex items-center gap-3 min-w-0">
             {onBack && (
               <button
@@ -207,22 +206,18 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
               <Megaphone className="w-5 h-5" />
             </div>
 
-            <div className="min-w-0">
+            <div className="min-w-0 flex flex-col justify-center">
               <div className="flex items-center gap-1.5">
-                <h2 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white truncate">
+                <h2 className="font-extrabold text-sm sm:text-base text-slate-900 dark:text-white leading-tight truncate">
                   {title}
                 </h2>
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               </div>
-              <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                {isAdmin && (
-                  <>
-                    <span>{subscribersCount} {t('subscribers')}</span>
-                    <span>•</span>
-                  </>
-                )}
-                <span className="truncate">{description}</span>
-              </div>
+              {isAdmin && (
+                <p className="text-[11px] text-slate-500 dark:text-slate-400 leading-tight mt-0.5 truncate">
+                  {subscribersCount} {t('subscribers')}
+                </p>
+              )}
             </div>
           </div>
 
