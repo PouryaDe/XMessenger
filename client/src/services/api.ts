@@ -61,7 +61,7 @@ export interface Message {
 export interface ChannelMeta {
   title: string;
   description: string;
-  subscribersCount: number;
+  subscribersCount?: number;
 }
 
 export interface ChannelPost {
@@ -69,7 +69,7 @@ export interface ChannelPost {
   adminId: string;
   text: string;
   createdAt: string;
-  viewsCount: number;
+  viewsCount?: number;
   reactions?: MessageReaction[];
   hasViewed?: boolean;
 }
@@ -494,12 +494,12 @@ export const api = {
     return safeJson<{ success: boolean }>(res, 'Failed to delete channel post');
   },
 
-  async viewChannelPost(postId: string): Promise<{ success: boolean; viewsCount: number }> {
+  async viewChannelPost(postId: string): Promise<{ success: boolean; viewsCount?: number }> {
     const res = await fetch(`${API_BASE}/channel/posts/${postId}/view`, {
       method: 'POST',
       headers: { ...getAuthHeader() }
     });
-    return safeJson<{ success: boolean; viewsCount: number }>(res, 'Failed to record post view');
+    return safeJson<{ success: boolean; viewsCount?: number }>(res, 'Failed to record post view');
   },
 
   async getChannelPostViewers(postId: string): Promise<{ viewers: ChannelViewer[] }> {

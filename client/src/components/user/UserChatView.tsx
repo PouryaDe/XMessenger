@@ -385,7 +385,7 @@ export const UserChatView: React.FC = () => {
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               </div>
               <p className="text-[11px] text-slate-400 truncate">
-                {channelMeta?.subscribersCount || 1} {t('subscribers')}
+                {channelMeta?.description || t('channelSubtitle')}
               </p>
             </div>
           </div>

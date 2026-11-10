@@ -792,7 +792,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const target = state.channelPosts.find((p) => p.id === postId);
       if (!target || target.hasViewed) return state;
       return {
-        channelPosts: state.channelPosts.map((p) => p.id === postId ? { ...p, hasViewed: true, viewsCount: p.viewsCount + 1 } : p),
+        channelPosts: state.channelPosts.map((p) => p.id === postId ? { ...p, hasViewed: true, viewsCount: (p.viewsCount || 0) + 1 } : p),
         channelUnreadCount: Math.max(0, state.channelUnreadCount - 1)
       };
     });

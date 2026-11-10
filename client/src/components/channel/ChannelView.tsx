@@ -22,7 +22,6 @@ import {
   FileText, 
   Download,
   CheckCircle2,
-  Lock,
   ChevronDown
 } from 'lucide-react';
 
@@ -247,8 +246,12 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
               </div>
               <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 truncate">
-                <span>{subscribersCount} {t('subscribers')}</span>
-                <span>•</span>
+                {isAdmin && (
+                  <>
+                    <span>{subscribersCount} {t('subscribers')}</span>
+                    <span>•</span>
+                  </>
+                )}
                 <span className="truncate">{description}</span>
               </div>
             </div>
@@ -449,8 +452,8 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
 
                       {/* Right: Views Counter & Forward Button */}
                       <div className="flex items-center gap-2">
-                        {/* Views Button / Tag */}
-                        {isAdmin ? (
+                        {/* Views Button (Admin Only) */}
+                        {isAdmin && (
                           <button
                             type="button"
                             onClick={() => setActiveViewerPostId(post.id)}
@@ -460,11 +463,6 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                             <Eye className="w-3.5 h-3.5 text-amber-500" />
                             <span className="font-mono text-[11px]">{post.viewsCount || 1}</span>
                           </button>
-                        ) : (
-                          <div className="h-7 px-2 rounded-full bg-black/[0.03] dark:bg-white/[0.04] text-slate-500 dark:text-slate-400 text-xs font-semibold flex items-center gap-1 select-none">
-                            <Eye className="w-3.5 h-3.5" />
-                            <span className="font-mono text-[11px]">{post.viewsCount || 1}</span>
-                          </div>
                         )}
 
                         {/* Forward Button */}
@@ -506,8 +504,8 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
         )}
       </div>
 
-      {/* Footer Area: Admin Composer OR User Read-Only Banner */}
-      {isAdmin ? (
+      {/* Footer Area: Admin Composer */}
+      {isAdmin && (
         <footer className="px-3 sm:px-6 pt-2 pb-safe shrink-0 bg-white/40 dark:bg-[#0E1218]/40 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.06]">
           <form onSubmit={handleSend} className="max-w-3xl mx-auto">
             {/* Attachment Preview */}
@@ -588,13 +586,6 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
               </button>
             </div>
           </form>
-        </footer>
-      ) : (
-        <footer className="px-4 py-3 pb-safe shrink-0 bg-white/40 dark:bg-[#0E1218]/40 backdrop-blur-xl border-t border-black/[0.05] dark:border-white/[0.06] text-center select-none">
-          <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-black/[0.03] dark:bg-white/[0.05] text-slate-500 dark:text-slate-400 text-xs font-medium">
-            <Lock className="w-3.5 h-3.5 text-amber-500" />
-            <span>{t('onlyAdminCanPost')}</span>
-          </div>
         </footer>
       )}
 

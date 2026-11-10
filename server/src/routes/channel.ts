@@ -19,12 +19,18 @@ export function createChannelRouter(io: Server): Router {
       const channelTitle = getSettingValue('channel_title', 'کانال اطلاع‌رسانی');
       const channelDescription = getSettingValue('channel_description', 'کانال رسمی اطلاع‌رسانی و اخبار سامانه');
 
-      const subscribersRow = db.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").get() as { count: number };
+      const isAdmin = req.user?.role === 'admin';
+      let subscribersCount: number | undefined;
+
+      if (isAdmin) {
+        const subscribersRow = db.prepare("SELECT COUNT(*) as count FROM users WHERE status = 'active'").get() as { count: number };
+        subscribersCount = subscribersRow.count || 1;
+      }
 
       return res.json({
         title: channelTitle,
         description: channelDescription,
-        subscribersCount: subscribersRow.count || 1
+        ...(isAdmin ? { subscribersCount } : {})
       });
     } catch (err: any) {
       console.error('[Channel] Error fetching metadata:', err);
@@ -36,6 +42,7 @@ export function createChannelRouter(io: Server): Router {
   router.get('/posts', (req: AuthenticatedRequest, res: Response) => {
     try {
       const userId = req.user!.id;
+      const isAdmin = req.user?.role === 'admin';
 
       const rows = db.prepare(`
         SELECT
@@ -85,7 +92,7 @@ export function createChannelRouter(io: Server): Router {
           adminId: r.admin_id,
           text,
           createdAt: r.created_at,
-          viewsCount: r.views_count,
+          ...(isAdmin ? { viewsCount: r.views_count } : {}),
           reactions,
           hasViewed: userViews.has(r.id)
         };
@@ -195,6 +202,7 @@ export function createChannelRouter(io: Server): Router {
     try {
       const { id } = req.params;
       const userId = req.user!.id;
+      const isAdmin = req.user?.role === 'admin';
       const now = new Date().toISOString();
 
       const post = db.prepare('SELECT id, views_count FROM channel_posts WHERE id = ?').get(id) as {
@@ -224,7 +232,7 @@ export function createChannelRouter(io: Server): Router {
         io.emit('channel:post_viewed', { postId: id, viewsCount: currentViews, userId });
       }
 
-      return res.json({ success: true, viewsCount: currentViews });
+      return res.json({ success: true, ...(isAdmin ? { viewsCount: currentViews } : {}) });
     } catch (err: any) {
       console.error('[Channel] Error recording view:', err);
       return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
