@@ -24,11 +24,9 @@ export function formatLastSeen(
     const diffMin = Math.floor(diffSec / 60);
 
     const locale = i18n.language === 'fa' ? 'fa-IR' : 'en-US';
-    const timeStr = date.toLocaleTimeString(locale, {
-      hour: '2-digit',
-      minute: '2-digit',
-      hour12: false
-    });
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const timeStr = `${hours}:${minutes}`;
 
     if (diffSec < 60) {
       return i18n.t('lastSeenJustNow');
@@ -125,7 +123,7 @@ export function formatChatDateSeparator(dateIso: string, language?: string): str
 }
 
 /**
- * Safely formats message timestamp (e.g., '14:30' or '02:30 PM')
+ * Safely formats message timestamp in pure 24-hour format (e.g., '14:30', '05:33') without AM/PM.
  * Gracefully handles null, undefined, and malformed date strings without throwing
  */
 export function formatMessageTime(dateIso?: string | null): string {
@@ -133,7 +131,9 @@ export function formatMessageTime(dateIso?: string | null): string {
   try {
     const d = new Date(dateIso);
     if (isNaN(d.getTime())) return '';
-    return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    const hours = d.getHours().toString().padStart(2, '0');
+    const minutes = d.getMinutes().toString().padStart(2, '0');
+    return `${hours}:${minutes}`;
   } catch {
     return '';
   }

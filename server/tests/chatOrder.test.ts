@@ -345,15 +345,18 @@ describe('Chat Ordering by Latest Message Tests', () => {
       try {
         const d = new Date(dateIso);
         if (isNaN(d.getTime())) return '';
-        return d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+        const hours = d.getHours().toString().padStart(2, '0');
+        const minutes = d.getMinutes().toString().padStart(2, '0');
+        return `${hours}:${minutes}`;
       } catch {
         return '';
       }
     }
 
-    // Valid date
+    // Valid date: pure 24-hour format without AM/PM
     const formatted = formatMessageTime('2026-11-08T14:30:00.000Z');
-    assert.ok(formatted.length > 0);
+    assert.match(formatted, /^\d{2}:\d{2}$/);
+    assert.ok(!formatted.includes('AM') && !formatted.includes('PM'));
 
     // Null, undefined, empty string
     assert.equal(formatMessageTime(null), '');

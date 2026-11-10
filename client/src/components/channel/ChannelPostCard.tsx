@@ -366,7 +366,7 @@ export const ChannelPostCard: React.FC<Props> = ({
           {/* Footer inside card: Views + Time */}
           <div
             dir="ltr"
-            className="flex items-center gap-2 text-[11px] font-sans justify-end ms-auto pb-0.5 select-none text-slate-500 dark:text-slate-400"
+            className="inline-flex items-center gap-3.5 sm:gap-4 text-[11px] font-sans justify-end ms-auto pb-0.5 select-none text-slate-500 dark:text-slate-400"
           >
             {/* View count inside message card */}
             {isAdmin ? (
@@ -376,20 +376,22 @@ export const ChannelPostCard: React.FC<Props> = ({
                   e.stopPropagation();
                   onViewersClick?.(post.id);
                 }}
-                className="flex items-center gap-1 hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer group/eye"
+                className="inline-flex items-center gap-1.5 leading-none hover:text-amber-600 dark:hover:text-amber-400 transition-colors cursor-pointer group/eye"
                 title={t('postViewers')}
               >
-                <Eye className="w-3.5 h-3.5 text-amber-500 group-hover/eye:scale-110 transition-transform" />
-                <span className="font-mono text-[10.5px]">{post.viewsCount || 1}</span>
+                <Eye className="w-3.5 h-3.5 text-amber-500 group-hover/eye:scale-110 transition-transform shrink-0" />
+                <span className="font-mono text-[11px] leading-none tabular-nums font-medium">{post.viewsCount || 1}</span>
               </button>
             ) : (
-              <div className="flex items-center gap-1 select-none">
-                <Eye className="w-3.5 h-3.5 text-amber-500" />
-                <span className="font-mono text-[10.5px]">{post.viewsCount || 1}</span>
+              <div className="inline-flex items-center gap-1.5 leading-none select-none">
+                <Eye className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                <span className="font-mono text-[11px] leading-none tabular-nums font-medium">{post.viewsCount || 1}</span>
               </div>
             )}
 
-            <span>{formattedTime}</span>
+            <span className="font-mono text-[11px] leading-none tabular-nums tracking-tight text-slate-400 dark:text-slate-500">
+              {formattedTime}
+            </span>
           </div>
         </div>
 
