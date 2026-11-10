@@ -179,7 +179,6 @@ docker compose up -d --build
 ```
 XMessenger/
 ├── .agents/                   # مستندات و قوانین کدنویسی هوش مصنوعی و طراحی UI/UX
-├── graphify-out/              # گراف تحلیل کدبیس و بهینه‌سازی توکن
 ├── server/                    # بک‌اند (Node.js + Express + TypeScript + Socket.io + SQLite)
 │   ├── src/
 │   │   ├── config/            # تنظیمات، پورت‌ها و متغیرها
