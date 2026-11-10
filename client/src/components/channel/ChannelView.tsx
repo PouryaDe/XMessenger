@@ -6,6 +6,7 @@ import { api, ChannelPost } from '../../services/api.js';
 import { ChannelPostCard } from './ChannelPostCard.js';
 import { DateSeparator } from '../common/DateSeparator.js';
 import { PostViewersModal } from './PostViewersModal.js';
+import { PostReactionsModal } from './PostReactionsModal.js';
 import { ForwardPostModal } from './ForwardPostModal.js';
 import { isSameDay } from '../../utils/date.js';
 import { formatFileSize } from '../../utils/formatters.js';
@@ -58,6 +59,11 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
   const [selectedAttachment, setSelectedAttachment] = useState<SelectedAttachment | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [activeViewerPostId, setActiveViewerPostId] = useState<string | null>(null);
+  const [activeReactionsModal, setActiveReactionsModal] = useState<{
+    postId: string;
+    initialEmoji?: string;
+    reactions?: any[];
+  } | null>(null);
   const [activeForwardPost, setActiveForwardPost] = useState<ChannelPost | null>(null);
   const [forwardToast, setForwardToast] = useState<string | null>(null);
   const [showScrollBottom, setShowScrollBottom] = useState(false);
@@ -282,6 +288,13 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
                     onDelete={handleDeletePost}
                     onReact={handleToggleReaction}
                     onViewersClick={(postId) => setActiveViewerPostId(postId)}
+                    onReactionsClick={(postId, emoji) => {
+                      setActiveReactionsModal({
+                        postId,
+                        initialEmoji: emoji,
+                        reactions: post.reactions
+                      });
+                    }}
                     onForwardClick={(p) => setActiveForwardPost(p)}
                   />
                 </React.Fragment>
@@ -429,6 +442,15 @@ export const ChannelView: React.FC<Props> = ({ isAdmin = false, onBack, onSwitch
         <PostViewersModal
           postId={activeViewerPostId}
           onClose={() => setActiveViewerPostId(null)}
+        />
+      )}
+
+      {activeReactionsModal && (
+        <PostReactionsModal
+          postId={activeReactionsModal.postId}
+          initialEmoji={activeReactionsModal.initialEmoji}
+          initialReactions={activeReactionsModal.reactions}
+          onClose={() => setActiveReactionsModal(null)}
         />
       )}
 

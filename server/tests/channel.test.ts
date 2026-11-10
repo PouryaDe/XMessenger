@@ -158,6 +158,21 @@ describe('Telegram-style Broadcast Channel Tests', () => {
     parsed = JSON.parse(row.reactions);
     assert.equal(parsed.length, 0);
 
+    // 3. Test reactions query with user details for admin
+    reactions = [{
+      userId: testUserId,
+      username: testUsername,
+      emoji: '❤️',
+      createdAt: now
+    }];
+    db.prepare('UPDATE channel_posts SET reactions = ? WHERE id = ?').run(JSON.stringify(reactions), postId);
+    db.prepare('UPDATE users SET category = ? WHERE id = ?').run('vip', testUserId);
+
+    const userMap = db.prepare('SELECT id, username, avatar_url as avatarUrl, category FROM users WHERE id = ?').get(testUserId) as any;
+    assert.ok(userMap);
+    assert.equal(userMap.username, testUsername);
+    assert.equal(userMap.category, 'vip');
+
     // Clean up
     db.prepare('DELETE FROM channel_posts WHERE id = ?').run(postId);
     db.prepare('DELETE FROM users WHERE id = ?').run(testUserId);

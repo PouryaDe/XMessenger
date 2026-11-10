@@ -9,6 +9,7 @@ import { formatFileSize, decodeMojibake } from '../../utils/formatters.js';
 import { 
   Eye, 
   Clock,
+  ThumbsUp,
   Copy, 
   Trash2, 
   Download, 
@@ -25,6 +26,7 @@ interface Props {
   onDelete: (postId: string) => void;
   onReact: (postId: string, emoji: string) => void;
   onViewersClick?: (postId: string) => void;
+  onReactionsClick?: (postId: string, emoji?: string) => void;
   onForwardClick?: (post: ChannelPost) => void;
 }
 
@@ -36,6 +38,7 @@ export const ChannelPostCard: React.FC<Props> = ({
   onDelete,
   onReact,
   onViewersClick,
+  onReactionsClick,
   onForwardClick
 }) => {
   const { t, i18n } = useTranslation();
@@ -345,12 +348,16 @@ export const ChannelPostCard: React.FC<Props> = ({
                     type="button"
                     onClick={(e) => {
                       e.stopPropagation();
-                      triggerReaction(group.emoji);
+                      if (isAdmin && onReactionsClick) {
+                        onReactionsClick(post.id, group.emoji);
+                      } else {
+                        triggerReaction(group.emoji);
+                      }
                     }}
                     className={`inline-flex items-center justify-center px-2.5 py-1 rounded-full text-xs font-semibold transition-all duration-150 hover:scale-105 active:scale-95 cursor-pointer border select-none ${
                       group.hasReacted ? activeStyle : inactiveStyle
                     }`}
-                    title={group.users.length > 0 ? group.users.join(i18n.language === 'fa' ? '، ' : ', ') : undefined}
+                    title={isAdmin ? t('postReactions') : (group.users.length > 0 ? group.users.join(i18n.language === 'fa' ? '، ' : ', ') : undefined)}
                   >
                     <span className="text-[13px] leading-none drop-shadow-xs">{group.emoji}</span>
                     {group.count > 0 && (
@@ -492,6 +499,21 @@ export const ChannelPostCard: React.FC<Props> = ({
               >
                 <Eye className="w-4 h-4 text-amber-500 shrink-0" />
                 <span className="flex-1 text-start truncate">{t('postViewers')}</span>
+              </button>
+            )}
+
+            {/* Admin Reactions Option */}
+            {isAdmin && onReactionsClick && reactions.length > 0 && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowMenu(false);
+                  onReactionsClick(post.id);
+                }}
+                className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/[0.08] transition-colors cursor-pointer whitespace-nowrap"
+              >
+                <ThumbsUp className="w-4 h-4 text-amber-500 shrink-0" />
+                <span className="flex-1 text-start truncate">{t('postReactions')}</span>
               </button>
             )}
 

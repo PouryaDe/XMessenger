@@ -275,6 +275,65 @@ export function createChannelRouter(io: Server): Router {
     }
   });
 
+  // 6.5. Get Granular Post Reactions List (Admin Only)
+  router.get('/posts/:id/reactions', requireAdmin, (req: AuthenticatedRequest, res: Response) => {
+    try {
+      const { id } = req.params;
+
+      const post = db.prepare('SELECT id, reactions FROM channel_posts WHERE id = ?').get(id) as {
+        id: string;
+        reactions?: string | null;
+      } | undefined;
+
+      if (!post) {
+        return res.status(404).json({ error: 'POST_NOT_FOUND', message: 'Post not found' });
+      }
+
+      let storedReactions: Array<{ userId: string; emoji: string; createdAt: string }> = [];
+      try {
+        storedReactions = post.reactions ? JSON.parse(post.reactions) : [];
+      } catch {
+        storedReactions = [];
+      }
+
+      if (storedReactions.length === 0) {
+        return res.json({ reactions: [] });
+      }
+
+      const userIds = storedReactions.map((r) => r.userId);
+      const placeholders = userIds.map(() => '?').join(',');
+      const users = db.prepare(`
+        SELECT id, username, avatar_url as avatarUrl, category
+        FROM users
+        WHERE id IN (${placeholders})
+      `).all(...userIds) as Array<{
+        id: string;
+        username: string;
+        avatarUrl?: string;
+        category?: string;
+      }>;
+
+      const userMap = new Map(users.map((u) => [u.id, u]));
+
+      const reactions = storedReactions.map((r) => {
+        const u = userMap.get(r.userId);
+        return {
+          userId: r.userId,
+          username: u?.username || 'کاربر',
+          avatarUrl: u?.avatarUrl,
+          category: u?.category,
+          emoji: r.emoji,
+          createdAt: r.createdAt
+        };
+      }).sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+      return res.json({ reactions });
+    } catch (err: any) {
+      console.error('[Channel] Error fetching reactions:', err);
+      return res.status(500).json({ error: 'INTERNAL_ERROR', message: err.message });
+    }
+  });
+
   // 7. Toggle Reaction on Channel Post
   router.post('/posts/:id/react', (req: AuthenticatedRequest, res: Response) => {
     try {

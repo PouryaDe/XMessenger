@@ -82,6 +82,15 @@ export interface ChannelViewer {
   viewedAt: string;
 }
 
+export interface ChannelReactionItem {
+  userId: string;
+  username: string;
+  avatarUrl?: string;
+  category?: string;
+  emoji: string;
+  createdAt: string;
+}
+
 export interface AdminSettings {
   registrationEnabled: boolean;
   requireApproval: boolean;
@@ -507,6 +516,13 @@ export const api = {
       headers: { ...getAuthHeader() }
     });
     return safeJson<{ viewers: ChannelViewer[] }>(res, 'Failed to fetch post viewers');
+  },
+
+  async getChannelPostReactions(postId: string): Promise<{ reactions: ChannelReactionItem[] }> {
+    const res = await fetch(`${API_BASE}/channel/posts/${postId}/reactions`, {
+      headers: { ...getAuthHeader() }
+    });
+    return safeJson<{ reactions: ChannelReactionItem[] }>(res, 'Failed to fetch post reactions');
   },
 
   async reactChannelPost(postId: string, emoji?: string): Promise<{ success: boolean; reactions: MessageReaction[] }> {
